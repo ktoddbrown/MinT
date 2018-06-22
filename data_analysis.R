@@ -9,6 +9,32 @@ library(deSolve)
 library(dplyr)
 library(FME)
 library(reshape)
+library(reshape2)
+library(ggplot2)
+library(foreach)
+library(doParallel)
+library(data.table)
+
+##ggplot theme
+theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=14, colour="black"),
+                 axis.text.y=element_text(hjust=0.2, size=14, colour="black"),
+                 axis.title=element_text(size=14, colour="black"),
+                 axis.line=element_line(size=0.5, colour="black"),
+                 strip.text=element_text(size=16, face="bold"),
+                 axis.ticks=element_line(size=1, colour="black"),
+                 axis.ticks.length=unit(-0.05, "cm"),
+                 panel.background=element_rect(colour="black", fill="white"),
+                 panel.grid=element_line(linetype=0),
+                 legend.text=element_text(size=14, colour="black"),
+                 legend.title=element_text(size=14, colour="black"),
+                 legend.position=c("right"),
+                 legend.key.size=unit(1, "cm"),
+                 strip.background=element_rect(fill="grey98", colour="black"),
+                 legend.key=element_rect(fill="white", size=1.2),
+                 legend.spacing=unit(0.5, "cm"),
+                 plot.title=element_text(size=28, face="bold", hjust=-0.05))
+
+
 #######################################################################################
 ##############################First order decay########################################
 #######################################################################################
@@ -90,25 +116,28 @@ cost_function(pars = c(k=0.01))
 
 
 #it is minimized by finding the best parameter. This one is shown in summary output
-mcmc<-modMCMC(f=cost_function, p=c(k=0.1), niter=500)
-summary(mcmc)#the output shows k to be 0.0122, which is not bad
+mcmc<-modMCMC(f=cost_function, p=c(k=0.1), niter=5000)
+summary(mcmc)#the output shows k to be 0.0104, which is not bad
 
 
 #let's hope it will work with real data
 ############################################################################################
 Obs_decay<-dat[,c(2, 5, 12)]
 
+m1<-merge(Obs_decay[Obs_decay$Substrate=="Glucose", c(1,3)], 
+      Obs_decay[Obs_decay$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
 
-Obs_decay<-reshape(Obs_decay, idvar = "Time", timevar = "Substrate", direction = "wide")
+m2<-merge(m1, 
+          Obs_decay[Obs_decay$Substrate=="Mix", c(1,3)],all = T, by="Time")
 
 #Glucose = r, Cellobiose = r1, Mix = r2 
-colnames(Obs_decay)<-c("time", "r", "r1", "r2")
+colnames(m2)<-c("time", "r", "r1", "r2")
 
 #create cost function
 cost_decay_all<-function(pars){
   
-  out<-first_order(X=c(33.3*0.75+6.98,35.06*0.75+6.98, 22.6*0.75+6.98), pars = pars, t=seq(0,130))
-  cost<-modCost(model = out, obs = Obs_decay)
+  out<-first_order(X=c(33.3*0.75+6.98, 35.06*0.75+6.98, 22.6*0.75+6.98), pars = pars, t=seq(0,130))
+  cost<-modCost(model = out, obs = m2)
   
   return(cost)
   
@@ -122,11 +151,19 @@ summary(mcmc_decay_all)
 logLik_calc<-function(cost, pars){
   
       x<-as.data.frame(cost(pars = pars)$residuals)
+      mu<-mean(x$obs)
+      variance<-sd(x$obs)^2
       
-      ll<-(-1/2/sd(x$obs)^2*sum((x$obs-x$mod)^2))
+      
+      ll<--1*sum((x$obs-x$mod)^2)/2/variance
       npar=length(pars)
       
-      return(c(logLik=ll, npar=npar))
+      SSmodel<-sum((x$obs-x$mod)^2)
+      SSdata<-sum((x$obs-mean(x$obs))^2)
+      
+      rsq=1-(SSmodel/SSdata)
+      
+      return(c(logLik=ll, npar=npar, rsq=rsq))
 
 
 }
@@ -134,3 +171,350 @@ logLik_calc<-function(cost, pars){
 
 #calculation
 logLik_calc(cost=cost_decay_all, pars = c(k=summary(mcmc_decay_all)[6,1]))
+
+#Storing results
+decay_all_ll<-logLik_calc(cost=cost_decay_all, pars = c(k=summary(mcmc_decay_all)[6,1]))
+
+#Figure
+plot_decay_all<-cost_decay_all(pars = c(k=summary(mcmc_decay_all)[6,1]))$residuals
+ggplot(plot_decay_all, aes(obs, mod))+theme_min+geom_point(cex=6, pch=1)+
+  geom_abline(intercept = 0, slope=1, lwd=1.2)+
+  scale_x_continuous(limits = c(0,1))+
+  scale_y_continuous(limits = c(0,1))+
+  ylab(expression(paste("Predicted respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Observed respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  ggtitle("First order decay function")+
+  theme(plot.title=element_text(size=14, face="bold.italic", hjust=0.5))
+  
+
+#########################################################################################
+##First order decay for each substrate separately
+
+decay_substrates<-function(data){
+  
+  #define 3 different data sets
+  dat<-setDT(dat)[, id := .GRP, by = .(Substrate)]
+  
+  #first order decay function
+  deriv<-function(time, state, pars){
+    
+    with(as.list(c(state, pars)),{
+      
+      dC<--k*C
+      
+      return(list(c(dC), r=k*C))
+      
+    })
+  }
+  
+  #initial carbon concentration
+  cinit=c(33.3*0.75+6.98, 35.06*0.75+6.98, 22.6*0.75+6.98)
+  
+  
+  #parameter estimation function
+  estim<-function(data, cinit){
+    
+    Obs_dat<-data[, c(2,12)]
+    colnames(Obs_dat)<-c("time", "r")
+    
+  
+  
+  #cost function
+  cost_function<-function(pars){
+    
+    out<-as.data.frame(ode(y=c(C=cinit), parms = pars, t=seq(0,130), func = deriv))
+    cost<-modCost(model = out, obs = Obs_dat)
+    
+    return(cost)
+    
+  }
+  
+  res<-modMCMC(f=cost_function, p=c(k=0.01), niter=10000)
+  
+  return(res)
+  
+  }
+  
+  #parameter estimation
+  res<-foreach(i=1:length(unique(dat$id)), .combine=list, .multicombine = TRUE,
+               .packages=c("FME")) %dopar% {
+                 
+                 estim(data=dat[dat$id==i,], cinit = cinit[i])
+                 
+                 }
+  
+  #paraneter
+  parameters<-data.frame(Substrate=c("Glucose", "Cellobiose", "Mix"),
+                         k50=c(summary(res[[1]])[6,1],
+                               summary(res[[2]])[6,1],
+                               summary(res[[3]])[6,1]),
+                         k25=c(summary(res[[1]])[5,1],
+                               summary(res[[2]])[5,1],
+                               summary(res[[3]])[5,1]),
+                         k75=c(summary(res[[1]])[7,1],
+                               summary(res[[2]])[7,1],
+                               summary(res[[3]])[7,1]))
+  
+
+  #combining results
+  cost_function2<-function(pars, data, cinit){
+    
+    Obs_dat2<-data[, c(2,12)]
+    colnames(Obs_dat2)<-c("time", "r")
+    
+    
+    out<-as.data.frame(ode(y=c(C=cinit), parms = pars, t=seq(0,130), func = deriv))
+    cost<-modCost(model = out, obs = Obs_dat2)
+    
+    return(cost)
+    
+  }
+  
+  
+  obs<-numeric()
+  mod<-numeric()
+  
+  for(i in 1:3){
+    
+    obs<-append(obs, cost_function2(pars = c(k=parameters[i,2]), data=dat[dat$id==i,], cinit=cinit[i])$residuals$obs)
+    mod<-append(mod, cost_function2(pars = c(k=parameters[i,2]), data=dat[dat$id==i,], cinit=cinit[i])$residuals$mod)
+  }
+  
+  OvP<-data.frame(obs, mod, Substrate=c(rep("Glucose", 91),
+                                        rep("Cellobiose", 96),
+                                        rep("Mix", 95)))
+  
+  #logLik calculation
+  mu<-mean(obs)
+  variance<-sd(obs)^2
+  
+  
+  ll<--1*sum((obs-mod)^2)/2/variance
+  
+  
+  SSmodel<-sum((obs-mod)^2)
+  SSdata<-sum((obs-mean(obs))^2)
+  
+  rsq=1-(SSmodel/SSdata)
+  
+  likelihood<-c(logLik=ll, npar=3, rsq=rsq)
+  
+  al<-list()
+  al$parameters<-parameters
+  al$OvP<-OvP
+  al$likelihood<-likelihood
+  
+  
+  
+  return(al)
+  
+  }
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+decay_substrates_results<-decay_substrates(dat)
+
+stopImplicitCluster()
+
+
+#showing results
+decay_substrates_results$likelihood
+decay_substrates_results$parameters
+
+#storing results
+decay_substrates_ll<-decay_substrates_results$likelihood
+
+
+#Figure
+plot_decay_sbustrates<-decay_substrates_results$OvP
+ggplot(plot_decay_sbustrates, aes(obs, mod))+theme_min+geom_point(cex=6, pch=1)+
+  geom_abline(intercept = 0, slope=1, lwd=1.2)+
+  scale_x_continuous(limits = c(0,1))+
+  scale_y_continuous(limits = c(0,1))+
+  ylab(expression(paste("Predicted respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Observed respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  labs(title="First order decay function \n for different substrates")+
+  theme(plot.title=element_text(size=14, face="bold.italic", hjust=0.5))
+
+#Models comparison???
+#I am not sure if it is correct
+pchisq(-2*(as.numeric(decay_all_ll[1])-as.numeric(decay_substrates_ll[1])), df=2)
+
+
+
+#########################################################################################
+##First order decay for each structure separately
+
+decay_structures<-function(data){
+  
+  #define 3 different data sets
+  dat<-setDT(data)[, id := .GRP, by = .(Structure)]
+  
+  #function I need
+  first_order<-function(X, pars, t){
+    
+    #first order decay function
+    deriv<-function(time, state, pars){
+      
+      with(as.list(c(state, pars)),{
+        
+        dC<--k*C
+        
+        return(list(c(dC), r=k*C))
+        
+      })
+    }
+    
+    #function to apply acros 3 different initial substrate concentrations
+    base_function<-function(Ci){
+      
+      
+      out<-ode(y=c(C=Ci), parms=pars, times=t, func=deriv)
+      return(as.data.frame(out))}
+    
+    #results
+    res<-lapply(X=X, FUN = "base_function") %>% bind_cols()
+    
+    return(res)
+    
+  }
+  
+  
+  #parameter estimation function
+  estim<-function(data){
+    
+  Obs_decay<-data[,c(2, 5, 12)]
+  
+  m1<-merge(Obs_decay[Obs_decay$Substrate=="Glucose", c(1,3)], 
+            Obs_decay[Obs_decay$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+  
+  m2<-merge(m1, 
+            Obs_decay[Obs_decay$Substrate=="Mix", c(1,3)],all = T, by="Time")
+  
+  #Glucose = r, Cellobiose = r1, Mix = r2 
+  colnames(m2)<-c("time", "r", "r1", "r2")
+  
+  #create cost function
+  cost_decay_structure<-function(pars){
+    
+    out<-first_order(X=c(33.3*0.75+6.98, 35.06*0.75+6.98, 22.6*0.75+6.98), pars = pars, t=seq(0,130))
+    cost<-modCost(model = out, obs = m2)
+    
+    return(cost)
+    
+  }
+  
+  mcmc<-modMCMC(f=cost_decay_structure, p=c(k=0.01), niter=10000)
+  
+  return(mcmc)
+  
+  }
+  
+  
+  #parameter estimation
+  res<-foreach(i=1:length(unique(dat$id)), .combine=list, .multicombine = TRUE,
+               .packages=c("FME", "dplyr")) %dopar% {estim(data=dat[dat$id==i,])}
+  
+  #paraneter
+  parameters<-data.frame(Substrate=c("Broth", "Glass wool", "Mixed glass"),
+                         k50=c(summary(res[[1]])[6,1],
+                               summary(res[[2]])[6,1],
+                               summary(res[[3]])[6,1]),
+                         k25=c(summary(res[[1]])[5,1],
+                               summary(res[[2]])[5,1],
+                               summary(res[[3]])[5,1]),
+                         k75=c(summary(res[[1]])[7,1],
+                               summary(res[[2]])[7,1],
+                               summary(res[[3]])[7,1]))
+  
+  #combining results
+  cost_decay_structure2<-function(pars, data){
+    
+    Obs_decay<-data[,c(2, 5, 12)]
+    
+    m1<-merge(Obs_decay[Obs_decay$Substrate=="Glucose", c(1,3)], 
+              Obs_decay[Obs_decay$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    
+    m2<-merge(m1, 
+              Obs_decay[Obs_decay$Substrate=="Mix", c(1,3)],all = T, by="Time")
+    
+    #Glucose = r, Cellobiose = r1, Mix = r2 
+    colnames(m2)<-c("time", "r", "r1", "r2")
+    
+    out<-first_order(X=c(33.3*0.75+6.98, 35.06*0.75+6.98, 22.6*0.75+6.98), pars = pars, t=seq(0,130))
+    cost<-modCost(model = out, obs = m2)
+    
+    return(cost)
+    
+  }
+  
+  obs<-numeric()
+  mod<-numeric()
+  
+  for(i in 1:3){
+    
+    obs<-append(obs, cost_decay_structure2(pars = c(k=parameters[i,2]), data=dat[dat$id==i,])$residuals$obs)
+    mod<-append(mod, cost_decay_structure2(pars = c(k=parameters[i,2]), data=dat[dat$id==i,])$residuals$mod)
+  }
+  
+  OvP<-data.frame(obs, mod)
+  
+  #logLik calculation
+  mu<-mean(obs)
+  variance<-sd(obs)^2
+  
+  
+  ll<--1*sum((obs-mod)^2)/2/variance
+  
+  
+  SSmodel<-sum((obs-mod)^2)
+  SSdata<-sum((obs-mean(obs))^2)
+  
+  rsq=1-(SSmodel/SSdata)
+  
+  likelihood<-c(logLik=ll, npar=3, rsq=rsq)
+  
+  al<-list()
+  al$parameters<-parameters
+  al$OvP<-OvP
+  al$likelihood<-likelihood
+  
+  
+  
+  return(al)
+  
+  
+}
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+decay_structures_results<-decay_structures(dat)
+
+stopImplicitCluster()
+
+#showing results
+decay_structures_results$likelihood
+decay_structures_results$parameters
+
+#storing results
+decay_structures_ll<-decay_structures_results$likelihood
+
+
+#Figure
+plot_decay_structures<-decay_structures_results$OvP
+ggplot(plot_decay_structures, aes(obs, mod))+theme_min+geom_point(cex=6, pch=1)+
+  geom_abline(intercept = 0, slope=1, lwd=1.2)+
+  scale_x_continuous(limits = c(0,1))+
+  scale_y_continuous(limits = c(0,1))+
+  ylab(expression(paste("Predicted respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Observed respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  labs(title="First order decay function \n for different structures")+
+  theme(plot.title=element_text(size=14, face="bold.italic", hjust=0.5))
+
+#Models comparison???
+#I am not sure if it is correct
+pchisq(-2*(as.numeric(decay_all_ll[1])-as.numeric(decay_substrates_ll[1])), df=2)
