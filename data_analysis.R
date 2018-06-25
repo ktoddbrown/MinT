@@ -518,3 +518,1123 @@ ggplot(plot_decay_structures, aes(obs, mod))+theme_min+geom_point(cex=6, pch=1)+
 #Models comparison???
 #I am not sure if it is correct
 pchisq(-2*(as.numeric(decay_all_ll[1])-as.numeric(decay_substrates_ll[1])), df=2)
+
+#########################################################################################
+#First order decay for all combinations of Substrate and Structure 
+
+decay_unique<-function(data){
+  
+  #define 3*3 different data sets
+  dat<-setDT(data)[, id := .GRP, by = .(Substrate, Structure)]
+  
+  #first order decay function
+  deriv<-function(time, state, pars){
+    
+    with(as.list(c(state, pars)),{
+      
+      dC<--k*C
+      
+      return(list(c(dC), r=k*C))
+      
+    })
+  }
+  
+  #parameter estimation function
+  estim<-function(data){
+    
+    Obs_dat<-data[, c(2,12)]
+    colnames(Obs_dat)<-c("time", "r")
+    cinit<-as.numeric(data[1,"DOCinit"])*0.75+6.98
+    
+    
+    #cost function
+    cost_function<-function(pars){
+      
+      out<-as.data.frame(ode(y=c(C=cinit), parms = pars, t=seq(0,130), func = deriv))
+      cost<-modCost(model = out, obs = Obs_dat)
+      
+      return(cost)
+      
+    }
+  
+    res<-modMCMC(f=cost_function, p=c(k=0.01), niter=10000)
+    res$Substrate<-data[1,"Substrate"]
+    res$Structure<-data[1,"Structure"]
+    
+    
+    return(res)
+    
+  }
+  
+  #parameter estimation
+  res<-foreach(i=1:length(unique(dat$id)), .combine=list, .multicombine = TRUE,
+               .packages=c("FME")) %dopar% {
+                 
+                 estim(data=dat[dat$id==i,])
+                 
+               }
+  
+  
+  #extract parameters
+  k50<-numeric()
+  k25<-numeric()
+  k75<-numeric()
+  Substrate<-character()
+  Structure<-character()
+  
+  for(i in 1:9){
+    
+    k50<-append(k50, summary(res[[i]])[6,1])
+    k25<-append(k25, summary(res[[i]])[5,1])
+    k75<-append(k75, summary(res[[i]])[7,1])
+    
+    Substrate<-append(Substrate, res[[i]]$Substrate)
+    Structure<-append(Structure, res[[i]]$Structure)
+  }
+  
+  parameters<-data.frame(Substrate, Structure, k50, k25, k75)
+  
+  
+  #OvP
+  
+  obs<-numeric()
+  mod<-numeric()
+  
+  cost_function2<-function(pars, data){
+    
+    Obs_dat<-data[, c(2,12)]
+    colnames(Obs_dat)<-c("time", "r")
+    cinit<-as.numeric(data[1,"DOCinit"])*0.75+6.98
+    
+    out<-as.data.frame(ode(y=c(C=cinit), parms = pars, t=seq(0,130), func = deriv))
+    cost<-modCost(model = out, obs = Obs_dat)
+    
+    return(cost)
+    
+  }
+  
+  for(i in 1:9){
+    
+    obs<-append(obs, cost_function2(pars = c(k=as.numeric(parameters[i,3])), data=dat[dat$id==i,])$residuals$obs)
+    mod<-append(mod, cost_function2(pars = c(k=as.numeric(parameters[i,3])), data=dat[dat$id==i,])$residuals$mod)
+  }
+  
+  
+  OvP<-data.frame(obs, mod)
+  
+  #logLik calculation
+  mu<-mean(obs)
+  variance<-sd(obs)^2
+  
+  
+  ll<--1*sum((obs-mod)^2)/2/variance
+  
+  
+  SSmodel<-sum((obs-mod)^2)
+  SSdata<-sum((obs-mean(obs))^2)
+  
+  rsq=1-(SSmodel/SSdata)
+  
+  likelihood<-c(logLik=ll, npar=9, rsq=rsq)
+  
+  al<-list()
+  al$parameters<-parameters
+  al$OvP<-OvP
+  al$likelihood<-likelihood
+  
+  
+  
+  return(al)
+  
+}
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+decay_unique_results<-decay_unique(dat)
+
+stopImplicitCluster()
+
+#showing results
+decay_unique_results$likelihood
+decay_unique_results$parameters
+
+#storing results
+decay_unique_ll<-decay_unique_results$likelihood
+
+
+#Figure
+plot_decay_unique<-decay_unique_results$OvP
+ggplot(plot_decay_unique, aes(obs, mod))+theme_min+geom_point(cex=6, pch=1)+
+  geom_abline(intercept = 0, slope=1, lwd=1.2)+
+  scale_x_continuous(limits = c(0,1))+
+  scale_y_continuous(limits = c(0,1))+
+  ylab(expression(paste("Predicted respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Observed respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  labs(title="First order decay function \n for different combinations of substrates and structures")+
+  theme(plot.title=element_text(size=14, face="bold.italic", hjust=0.5))
+
+#Models comparison???
+#I am not sure if it is correct
+pchisq(-2*(as.numeric(decay_all_ll[1])-as.numeric(decay_substrates_ll[1])), df=2)
+
+decay_all_ll
+decay_substrates_ll
+decay_structures_ll
+decay_unique_ll
+
+###############################################################################################
+#####################################Monod growth##############################################
+###############################################################################################
+
+#across all substrates and structures
+monod_all<-function(data){
+  
+  #this is the monod growth function fitted across different substrates 
+  #with different initial carbon concentrations
+  monod<-function(X, pars, t){
+    
+    #monod growth function
+    deriv<-function(time, state, pars){
+      
+      with(as.list(c(state, pars)),{
+        
+        dCmic<--k*Cmic+CUE*Vmax*Cmic*C/(Km+C)
+        dC<-k*Cmic-Vmax*Cmic*C/(Km+C)
+        
+        return(list(c(dCmic, dC), r=(1-CUE)*Vmax*Cmic*C/(Km+C)))
+        
+      })
+    }
+    
+    #function to apply acros 3 different initial substrate concentrations
+    base_function<-function(Ci){
+      
+      
+      out<-ode(y=c(Cmic=6.98, C=Ci), parms=pars, times=t, func=deriv)
+      return(as.data.frame(out))}
+    
+    #results
+    res<-lapply(X=X, FUN = "base_function") %>% bind_cols()
+    
+    return(res)
+    
+  }
+  
+  #create cost function
+  estim<-function(data){
+    
+    Obs_dat<-data[,c(2, 5, 8, 12)]
+    
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3,4)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3,4)],all = T, by="Time")
+    
+    m2<-merge(m1, 
+              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3,4)],all = T, by="Time")
+    
+    colnames(m2)<-c("time", "Cmic", "r", "Cmic1", "r1", "Cmic2", "r2")
+    
+  
+  cost_function<-function(pars){
+    
+    
+    out<-monod(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+    cost<-modCost(model = out, obs = m2, weight = "mean")
+    
+    return(cost)
+    
+  }
+  
+  res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, CUE=0.8, k=0.01),
+               lower=c(Vmax=1e-4, Km=1e-4, CUE=1e-2, k=1e-5),
+               upper=c(Vmax=1e4, Km=1e4, CUE=0.999, k=1e5),niter=10000)
+  
+  return(res)
+  
+  }
+  
+  res<-estim(data)
+  
+  parameters<-summary(res)[6,]
+  
+  
+  
+  
+  #OvP for respiration
+  obs_r<-numeric()
+  mod_r<-numeric()
+  
+  cost_r<-function(pars, data){
+    
+    Obs_dat<-data[,c(2, 5, 12)]
+    
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    
+    m2<-merge(m1, 
+              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+    
+    colnames(m2)<-c("time", "r", "r1", "r2")
+    
+    out<-monod(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+    cost<-modCost(model = out, obs = m2)
+    
+    return(cost)
+    
+  }
+  
+  obs_r<-append(obs_r, cost_r(pars=summary(res)[6,], data=dat)$residuals$obs)
+  mod_r<-append(mod_r, cost_r(pars=summary(res)[6,], data=dat)$residuals$mod)
+  
+  OvP_r<-data.frame(obs_r, mod_r)
+  
+  #logLik calculation
+  mu_r<-mean(obs_r)
+  variance_r<-sd(obs_r)^2
+  
+  
+  ll_r<--1*sum((obs_r-mod_r)^2)/2/variance_r
+  
+  
+  SSmodel_r<-sum((obs_r-mod_r)^2)
+  SSdata_r<-sum((obs_r-mean(obs_r))^2)
+  
+  rsq_r=1-(SSmodel_r/SSdata_r)
+  
+  likelihood_r<-c(logLik=ll_r, npar=4, rsq=rsq_r)
+  
+  #OvP for biomass
+  obs_Cmic<-numeric()
+  mod_Cmic<-numeric()
+  
+  cost_Cmic<-function(pars, data){
+    
+    Obs_dat<-data[,c(2, 5, 8)]
+    
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    
+    m2<-merge(m1, 
+              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+    
+    colnames(m2)<-c("time", "Cmic", "Cmic1", "Cmic2")
+    
+    out<-monod(X=c(33.3*0.75, 35.06*0.7, 22.6*0.75), pars = pars, t=seq(0,130))
+    cost<-modCost(model = out, obs = m2)
+    
+    return(cost)
+    
+  }
+  
+  obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=summary(res)[6,], data=dat)$residuals$obs)
+  mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=summary(res)[6,], data=dat)$residuals$mod)
+  
+  OvP_Cmic<-data.frame(obs_Cmic, mod_Cmic)
+  
+  #logLik calculation
+  mu_Cmic<-mean(obs_Cmic)
+  variance_Cmic<-sd(obs_Cmic)^2
+  
+  
+  ll_Cmic<--1*sum((obs_Cmic-mod_Cmic)^2)/2/variance_Cmic
+  
+  
+  SSmodel_Cmic<-sum((obs_Cmic-mod_Cmic)^2)
+  SSdata_Cmic<-sum((obs_Cmic-mean(obs_Cmic))^2)
+  
+  rsq_Cmic=1-(SSmodel_Cmic/SSdata_Cmic)
+  
+  likelihood_Cmic<-c(logLik=ll_Cmic, npar=4, rsq=rsq_Cmic)
+  
+  al<-list()
+  
+  al$parameters<-parameters
+  al$OvP_r<-OvP_r
+  al$ll_r<-likelihood_r
+  al$OvP_Cmic<-OvP_Cmic
+  al$ll_Cmic<-likelihood_Cmic
+  
+  return(al)
+}
+
+
+monod_all_results<-monod_all(dat)
+
+#showing results
+monod_all_results$ll_r
+monod_all_results$ll_Cmic
+monod_all_results$parameters
+
+#storing results
+monod_all_ll<-monod_all_results$ll_r
+
+
+#Figures
+plot_monod_all<-monod_all_results$OvP_r
+ggplot(plot_monod_all, aes(obs_r, mod_r))+theme_min+geom_point(cex=6, pch=1)+
+  geom_abline(intercept = 0, slope=1, lwd=1.2)+
+  scale_x_continuous(limits = c(0,1))+
+  scale_y_continuous(limits = c(0,1))+
+  ylab(expression(paste("Predicted respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Observed respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  labs(title="Monod growth function")+
+  theme(plot.title=element_text(size=14, face="bold.italic", hjust=0.5))
+
+monod_all_Cmic<-monod_all_results$OvP_Cmic
+ggplot(monod_all_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=1)+
+  geom_abline(intercept = 0, slope=1, lwd=1.2)+
+  scale_x_continuous(limits = c(0,30))+
+  scale_y_continuous(limits = c(0,30))+
+  ylab(expression(paste("Predicted ", C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
+  xlab(expression(paste("Observed ",  C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
+  labs(title="Monod growth function")+
+  theme(plot.title=element_text(size=14, face="bold.italic", hjust=0.5))
+
+#Models comparison???
+#I am not sure if it is correct
+pchisq(-2*(as.numeric(decay_all_ll[1])-as.numeric(decay_substrates_ll[1])), df=2)
+
+decay_all_ll
+decay_substrates_ll
+decay_structures_ll
+decay_unique_ll
+monod_all_ll
+
+
+##########################################################################################
+#for each structure separately
+
+monod_structures<-function(data){
+  
+  #define 3 different data sets
+  dat<-setDT(data)[, id := .GRP, by = .(Structure)]
+  
+  #this is the monod growth function fitted across different substrates 
+  #with different initial carbon concentrations
+  monod<-function(X, pars, t){
+    
+    #monod growth function
+    deriv<-function(time, state, pars){
+      
+      with(as.list(c(state, pars)),{
+        
+        dCmic<--k*Cmic+CUE*Vmax*Cmic*C/(Km+C)
+        dC<-k*Cmic-Vmax*Cmic*C/(Km+C)
+        
+        return(list(c(dCmic, dC), r=(1-CUE)*Vmax*Cmic*C/(Km+C)))
+        
+      })
+    }
+    
+    #function to apply acros 3 different initial substrate concentrations
+    base_function<-function(Ci){
+      
+      
+      out<-ode(y=c(Cmic=6.98, C=Ci), parms=pars, times=t, func=deriv)
+      return(as.data.frame(out))}
+    
+    #results
+    res<-lapply(X=X, FUN = "base_function") %>% bind_cols()
+    
+    return(res)
+    
+  }
+  
+  #create cost function
+  estim<-function(data){
+    
+    Obs_dat<-data[,c(2, 5, 8, 12)]
+    
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3,4)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3,4)],all = T, by="Time")
+    
+    m2<-merge(m1, 
+              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3,4)],all = T, by="Time")
+    
+    colnames(m2)<-c("time", "Cmic", "r", "Cmic1", "r1", "Cmic2", "r2")
+    
+    
+    cost_function<-function(pars){
+      
+      
+      out<-monod(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+      cost<-modCost(model = out, obs = m2, weight = "mean")
+      
+      return(cost)
+      
+    }
+    
+    res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, CUE=0.8, k=0.01),
+                 lower=c(Vmax=1e-4, Km=1e-4, CUE=1e-2, k=1e-5),
+                 upper=c(Vmax=1e4, Km=1e4, CUE=0.999, k=1e5),niter=10000)
+    
+    res$Structure<-data[1, "Structure"]
+    
+    return(res)
+    
+  }
+  
+  #parameter estimation
+  res<-foreach(i=1:length(unique(dat$id)), .combine=list, .multicombine = TRUE,
+               .packages=c("FME", "dplyr")) %dopar% {
+                 
+                 estim(data=dat[dat$id==i,])
+                 
+               }
+  
+  
+  
+  
+  parameters<-rbind(as.data.frame(summary(res[[1]])[6,]), 
+                    as.data.frame(summary(res[[2]])[6,]),
+                    as.data.frame(summary(res[[3]])[6,]))
+  parameters$Structure<-c(res[[1]]$Structure,
+                          res[[2]]$Structure,
+                          res[[3]]$Structure)
+  
+  parameters.l<-rbind(as.data.frame(summary(res[[1]])[5,]), 
+                      as.data.frame(summary(res[[2]])[5,]),
+                      as.data.frame(summary(res[[3]])[5,]))
+  colnames(parameters.l)<-c("Vmax.l", "Km.l", "CUE.l", "k.l")
+  
+  parameters.u<-rbind(as.data.frame(summary(res[[1]])[7,]), 
+                      as.data.frame(summary(res[[2]])[7,]),
+                      as.data.frame(summary(res[[3]])[7,]))
+  colnames(parameters.u)<-c("Vmax.u", "Km.u", "CUE.u", "k.u")
+  
+  
+  parameters.all<-cbind(parameters, parameters.l, parameters.u)
+  
+  
+  #OvP for respiration
+  obs_r<-numeric()
+  mod_r<-numeric()
+  
+  cost_r<-function(pars, data){
+    
+    Obs_dat<-data[,c(2, 5, 12)]
+    
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    
+    m2<-merge(m1, 
+              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+    
+    colnames(m2)<-c("time", "r", "r1", "r2")
+    
+    out<-monod(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+    cost<-modCost(model = out, obs = m2)
+    
+    return(cost)
+    
+  }
+  
+  for(i in 1:3){
+  
+  obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
+  mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+  
+  }
+  
+  OvP_r<-data.frame(obs_r, mod_r)
+  
+  #logLik calculation
+  mu_r<-mean(obs_r)
+  variance_r<-sd(obs_r)^2
+  
+  
+  ll_r<--1*sum((obs_r-mod_r)^2)/2/variance_r
+  
+  
+  SSmodel_r<-sum((obs_r-mod_r)^2)
+  SSdata_r<-sum((obs_r-mean(obs_r))^2)
+  
+  rsq_r=1-(SSmodel_r/SSdata_r)
+  
+  likelihood_r<-c(logLik=ll_r, npar=12, rsq=rsq_r)
+  
+  #OvP for biomass
+  obs_Cmic<-numeric()
+  mod_Cmic<-numeric()
+  
+  cost_Cmic<-function(pars, data){
+    
+    Obs_dat<-data[,c(2, 5, 8)]
+    
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    
+    m2<-merge(m1, 
+              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+    
+    colnames(m2)<-c("time", "Cmic", "Cmic1", "Cmic2")
+    
+    out<-monod(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+    cost<-modCost(model = out, obs = m2)
+    
+    return(cost)
+    
+  }
+  
+  for(i in 1:3){
+  obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
+  mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+  }
+  
+  OvP_Cmic<-data.frame(obs_Cmic, mod_Cmic)
+  
+  #logLik calculation
+  mu_Cmic<-mean(obs_Cmic)
+  variance_Cmic<-sd(obs_Cmic)^2
+  
+  
+  ll_Cmic<--1*sum((obs_Cmic-mod_Cmic)^2)/2/variance_Cmic
+  
+  
+  SSmodel_Cmic<-sum((obs_Cmic-mod_Cmic)^2)
+  SSdata_Cmic<-sum((obs_Cmic-mean(obs_Cmic))^2)
+  
+  rsq_Cmic=1-(SSmodel_Cmic/SSdata_Cmic)
+  
+  likelihood_Cmic<-c(logLik=ll_Cmic, npar=12, rsq=rsq_Cmic)
+  
+  al<-list()
+  
+  al$parameters<-parameters.all
+  al$OvP_r<-OvP_r
+  al$ll_r<-likelihood_r
+  al$OvP_Cmic<-OvP_Cmic
+  al$ll_Cmic<-likelihood_Cmic
+  
+  return(al)
+}
+
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+monod_structures_results<-monod_structures(dat)
+
+stopImplicitCluster()
+
+#showing results
+monod_structures_results$ll_r
+monod_structures_results$ll_Cmic
+monod_structures_results$parameters
+
+#storing results
+monod_structures_ll<-monod_structures_results$ll_r
+
+
+#Figures
+plot_monod_structures<-monod_structures_results$OvP_r
+ggplot(plot_monod_structures, aes(obs_r, mod_r))+theme_min+geom_point(cex=6, pch=1)+
+  geom_abline(intercept = 0, slope=1, lwd=1.2)+
+  scale_x_continuous(limits = c(0,1))+
+  scale_y_continuous(limits = c(0,1))+
+  ylab(expression(paste("Predicted respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Observed respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  labs(title="Monod growth function \n for different structures")+
+  theme(plot.title=element_text(size=14, face="bold.italic", hjust=0.5))
+
+monod_structures_Cmic<-monod_structures_results$OvP_Cmic
+ggplot(monod_structures_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=1)+
+  geom_abline(intercept = 0, slope=1, lwd=1.2)+
+  scale_x_continuous(limits = c(0,30))+
+  scale_y_continuous(limits = c(0,30))+
+  ylab(expression(paste("Predicted ", C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
+  xlab(expression(paste("Observed ",  C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
+  labs(title="Monod growth function /n for different structures")+
+  theme(plot.title=element_text(size=14, face="bold.italic", hjust=0.5))
+
+#Models comparison???
+#I am not sure if it is correct
+pchisq(-2*(as.numeric(decay_all_ll[1])-as.numeric(decay_substrates_ll[1])), df=2)
+
+decay_all_ll
+decay_substrates_ll
+decay_structures_ll
+decay_unique_ll
+monod_all_ll
+monod_structures_ll
+
+###########################################################################################
+#for each substrate separately
+
+monod_substrates<-function(data){
+  
+  #define 3 different data sets
+  dat<-setDT(data)[, id := .GRP, by = .(Substrate)]
+  
+    #monod growth function
+    deriv<-function(time, state, pars){
+      
+      with(as.list(c(state, pars)),{
+        
+        dCmic<--k*Cmic+CUE*Vmax*Cmic*C/(Km+C)
+        dC<-k*Cmic-Vmax*Cmic*C/(Km+C)
+        
+        return(list(c(dCmic, dC), r=(1-CUE)*Vmax*Cmic*C/(Km+C)))
+        
+      })
+    }
+    
+    
+  #create cost function
+  estim<-function(data){
+    
+    Obs_dat<-data[,c(2, 8, 12)]
+    colnames(Obs_dat)<-c("time", "Cmic", "r")
+    
+    cinit<-as.numeric(data[1, "DOCinit"])*0.75
+    
+    cost_function<-function(pars){
+      
+      
+      out<-as.data.frame(ode(y=c(Cmic=6.98, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+      cost<-modCost(model = out, obs = Obs_dat, weight = "mean")
+      
+      return(cost)
+      
+    }
+    
+    res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, CUE=0.8, k=0.01),
+                 lower=c(Vmax=1e-4, Km=1e-4, CUE=1e-2, k=1e-5),
+                 upper=c(Vmax=1e4, Km=1e4, CUE=0.999, k=1e5),niter=10000)
+    
+    res$Substrate<-data[1, "Substrate"]
+    
+    return(res)
+    
+  }
+  
+  #parameter estimation
+  res<-foreach(i=1:length(unique(dat$id)), .combine=list, .multicombine = TRUE,
+               .packages=c("FME", "dplyr")) %dopar% {
+                 
+                 estim(data=dat[dat$id==i,])
+                 
+               }
+  
+  
+  
+  
+  parameters<-rbind(as.data.frame(summary(res[[1]])[6,]), 
+                    as.data.frame(summary(res[[2]])[6,]),
+                    as.data.frame(summary(res[[3]])[6,]))
+  parameters$Substrate<-c(res[[1]]$Substrate,
+                          res[[2]]$Substrate,
+                          res[[3]]$Substrate)
+  
+  parameters.l<-rbind(as.data.frame(summary(res[[1]])[5,]), 
+                      as.data.frame(summary(res[[2]])[5,]),
+                      as.data.frame(summary(res[[3]])[5,]))
+  colnames(parameters.l)<-c("Vmax.l", "Km.l", "CUE.l", "k.l")
+  
+  parameters.u<-rbind(as.data.frame(summary(res[[1]])[7,]), 
+                      as.data.frame(summary(res[[2]])[7,]),
+                      as.data.frame(summary(res[[3]])[7,]))
+  colnames(parameters.u)<-c("Vmax.u", "Km.u", "CUE.u", "k.u")
+  
+  
+  parameters.all<-cbind(parameters, parameters.l, parameters.u)
+  
+  
+  #OvP for respiration
+  obs_r<-numeric()
+  mod_r<-numeric()
+  
+  cost_r<-function(pars, data){
+    
+    Obs_dat<-data[,c(2, 12)]
+    
+    colnames(Obs_dat)<-c("time", "r")
+    
+    cinit<-as.numeric(data[1,"DOCinit"])*0.75
+    
+    out<-out<-as.data.frame(ode(y=c(Cmic=6.98, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+    cost<-modCost(model = out, obs = Obs_dat)
+    
+    return(cost)
+    
+  }
+  
+  for(i in 1:3){
+    
+    obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
+    mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+    
+  }
+  
+  OvP_r<-data.frame(obs_r, mod_r)
+  
+  #logLik calculation
+  mu_r<-mean(obs_r)
+  variance_r<-sd(obs_r)^2
+  
+  
+  ll_r<--1*sum((obs_r-mod_r)^2)/2/variance_r
+  
+  
+  SSmodel_r<-sum((obs_r-mod_r)^2)
+  SSdata_r<-sum((obs_r-mean(obs_r))^2)
+  
+  rsq_r=1-(SSmodel_r/SSdata_r)
+  
+  likelihood_r<-c(logLik=ll_r, npar=12, rsq=rsq_r)
+  
+  #OvP for biomass
+  obs_Cmic<-numeric()
+  mod_Cmic<-numeric()
+  
+  cost_Cmic<-function(pars, data){
+    
+    Obs_dat<-data[,c(2, 8)]
+    
+    colnames(Obs_dat)<-c("time", "Cmic")
+    cinit<-as.numeric(data[1, "DOCinit"])*0.75
+    
+    out<-as.data.frame(ode(y=c(Cmic=6.98, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+    cost<-modCost(model = out, obs = Obs_dat)
+    
+    return(cost)
+    
+  }
+  
+  for(i in 1:3){
+    obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
+    mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+  }
+  
+  OvP_Cmic<-data.frame(obs_Cmic, mod_Cmic)
+  
+  #logLik calculation
+  mu_Cmic<-mean(obs_Cmic)
+  variance_Cmic<-sd(obs_Cmic)^2
+  
+  
+  ll_Cmic<--1*sum((obs_Cmic-mod_Cmic)^2)/2/variance_Cmic
+  
+  
+  SSmodel_Cmic<-sum((obs_Cmic-mod_Cmic)^2)
+  SSdata_Cmic<-sum((obs_Cmic-mean(obs_Cmic))^2)
+  
+  rsq_Cmic=1-(SSmodel_Cmic/SSdata_Cmic)
+  
+  likelihood_Cmic<-c(logLik=ll_Cmic, npar=12, rsq=rsq_Cmic)
+  
+  al<-list()
+  
+  al$parameters<-parameters.all
+  al$OvP_r<-OvP_r
+  al$ll_r<-likelihood_r
+  al$OvP_Cmic<-OvP_Cmic
+  al$ll_Cmic<-likelihood_Cmic
+  
+  return(al)
+}
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+monod_substrates_results<-monod_substrates(dat)
+
+stopImplicitCluster()
+
+#showing results
+monod_substrates_results$ll_r
+monod_substrates_results$ll_Cmic
+monod_substrates_results$parameters
+
+#storing results
+monod_substrates_ll<-monod_substrates_results$ll_r
+
+
+#Figures
+plot_monod_substrates<-monod_substrates_results$OvP_r
+ggplot(plot_monod_substrates, aes(obs_r, mod_r))+theme_min+geom_point(cex=6, pch=1)+
+  geom_abline(intercept = 0, slope=1, lwd=1.2)+
+  scale_x_continuous(limits = c(0,1))+
+  scale_y_continuous(limits = c(0,1))+
+  ylab(expression(paste("Predicted respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Observed respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  labs(title="Monod growth function \n for different substrates")+
+  theme(plot.title=element_text(size=14, face="bold.italic", hjust=0.5))
+
+monod_substrates_Cmic<-monod_substrates_results$OvP_Cmic
+ggplot(monod_substrates_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=1)+
+  geom_abline(intercept = 0, slope=1, lwd=1.2)+
+  scale_x_continuous(limits = c(0,30))+
+  scale_y_continuous(limits = c(0,30))+
+  ylab(expression(paste("Predicted ", C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
+  xlab(expression(paste("Observed ",  C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
+  labs(title="Monod growth function \n for different substrates")+
+  theme(plot.title=element_text(size=14, face="bold.italic", hjust=0.5))
+
+#Models comparison???
+#I am not sure if it is correct
+pchisq(-2*(as.numeric(decay_all_ll[1])-as.numeric(decay_substrates_ll[1])), df=2)
+
+decay_all_ll
+decay_substrates_ll
+decay_structures_ll
+decay_unique_ll
+monod_all_ll
+monod_structures_ll
+monod_substrates_ll
+
+
+###########################################################################################
+#for all combinations of substrate and structure
+
+monod_unique<-function(data){
+  
+  #define 3 different data sets
+  dat<-setDT(data)[, id := .GRP, by = .(Substrate, Structure)]
+  
+  #monod growth function
+  deriv<-function(time, state, pars){
+    
+    with(as.list(c(state, pars)),{
+      
+      dCmic<--k*Cmic+CUE*Vmax*Cmic*C/(Km+C)
+      dC<-k*Cmic-Vmax*Cmic*C/(Km+C)
+      
+      return(list(c(dCmic, dC), r=(1-CUE)*Vmax*Cmic*C/(Km+C)))
+      
+    })
+  }
+  
+  
+  #create cost function
+  estim<-function(data){
+    
+    Obs_dat<-data[,c(2, 8, 12)]
+    colnames(Obs_dat)<-c("time", "Cmic", "r")
+    
+    cinit<-as.numeric(data[1, "DOCinit"])*0.75
+    
+    cost_function<-function(pars){
+      
+      
+      out<-as.data.frame(ode(y=c(Cmic=6.98, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+      cost<-modCost(model = out, obs = Obs_dat, weight = "mean")
+      
+      return(cost)
+      
+    }
+    
+    res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, CUE=0.8, k=0.01),
+                 lower=c(Vmax=1e-4, Km=1e-4, CUE=1e-2, k=1e-5),
+                 upper=c(Vmax=1e4, Km=1e4, CUE=0.999, k=1e5),niter=10000)
+    
+    res$Substrate<-data[1, "Substrate"]
+    res$Structure<-data[1, "Structure"]
+    
+    return(res)
+    
+  }
+  
+  #parameter estimation
+  res<-foreach(i=1:length(unique(dat$id)), .combine=list, .multicombine = TRUE,
+               .packages=c("FME", "dplyr")) %dopar% {
+                 
+                 estim(data=dat[dat$id==i,])
+                 
+               }
+  
+  
+  parameters<-rbind(as.data.frame(summary(res[[1]])[6,]), 
+                    as.data.frame(summary(res[[2]])[6,]),
+                    as.data.frame(summary(res[[3]])[6,]),
+                    as.data.frame(summary(res[[4]])[6,]), 
+                    as.data.frame(summary(res[[5]])[6,]),
+                    as.data.frame(summary(res[[6]])[6,]),
+                    as.data.frame(summary(res[[7]])[6,]), 
+                    as.data.frame(summary(res[[8]])[6,]),
+                    as.data.frame(summary(res[[9]])[6,]))
+  
+  parameters$Substrate<-c(res[[1]]$Substrate,
+                          res[[2]]$Substrate,
+                          res[[3]]$Substrate,
+                          res[[4]]$Substrate,
+                          res[[5]]$Substrate,
+                          res[[6]]$Substrate,
+                          res[[7]]$Substrate,
+                          res[[8]]$Substrate,
+                          res[[9]]$Substrate)
+  
+  parameters.l<-rbind(as.data.frame(summary(res[[1]])[5,]), 
+                      as.data.frame(summary(res[[2]])[5,]),
+                      as.data.frame(summary(res[[3]])[5,]),
+                      as.data.frame(summary(res[[4]])[5,]), 
+                      as.data.frame(summary(res[[5]])[5,]),
+                      as.data.frame(summary(res[[6]])[5,]),
+                      as.data.frame(summary(res[[7]])[5,]), 
+                      as.data.frame(summary(res[[8]])[5,]),
+                      as.data.frame(summary(res[[9]])[5,]))
+  
+  colnames(parameters.l)<-c("Vmax.l", "Km.l", "CUE.l", "k.l")
+  
+  parameters.u<-rbind(as.data.frame(summary(res[[1]])[7,]), 
+                      as.data.frame(summary(res[[2]])[7,]),
+                      as.data.frame(summary(res[[3]])[7,]),
+                      as.data.frame(summary(res[[4]])[7,]), 
+                      as.data.frame(summary(res[[5]])[7,]),
+                      as.data.frame(summary(res[[6]])[7,]),
+                      as.data.frame(summary(res[[7]])[7,]), 
+                      as.data.frame(summary(res[[8]])[7,]),
+                      as.data.frame(summary(res[[9]])[7,]))
+  colnames(parameters.u)<-c("Vmax.u", "Km.u", "CUE.u", "k.u")
+  
+  
+  parameters.all<-cbind(parameters, parameters.l, parameters.u)
+  
+  
+  #OvP for respiration
+  obs_r<-numeric()
+  mod_r<-numeric()
+  
+  cost_r<-function(pars, data){
+    
+    Obs_dat<-data[,c(2, 12)]
+    
+    colnames(Obs_dat)<-c("time", "r")
+    
+    cinit<-as.numeric(data[1,"DOCinit"])*0.75
+    
+    out<-out<-as.data.frame(ode(y=c(Cmic=6.98, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+    cost<-modCost(model = out, obs = Obs_dat)
+    
+    return(cost)
+    
+  }
+  
+  for(i in 1:9){
+    
+    obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
+    mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+    
+  }
+  
+  OvP_r<-data.frame(obs_r, mod_r)
+  
+  #logLik calculation
+  mu_r<-mean(obs_r)
+  variance_r<-sd(obs_r)^2
+  
+  
+  ll_r<--1*sum((obs_r-mod_r)^2)/2/variance_r
+  
+  
+  SSmodel_r<-sum((obs_r-mod_r)^2)
+  SSdata_r<-sum((obs_r-mean(obs_r))^2)
+  
+  rsq_r=1-(SSmodel_r/SSdata_r)
+  
+  likelihood_r<-c(logLik=ll_r, npar=36, rsq=rsq_r)
+  
+  #OvP for biomass
+  obs_Cmic<-numeric()
+  mod_Cmic<-numeric()
+  
+  cost_Cmic<-function(pars, data){
+    
+    Obs_dat<-data[,c(2, 8)]
+    
+    colnames(Obs_dat)<-c("time", "Cmic")
+    cinit<-as.numeric(data[1, "DOCinit"])*0.75
+    
+    out<-as.data.frame(ode(y=c(Cmic=6.98, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+    cost<-modCost(model = out, obs = Obs_dat)
+    
+    return(cost)
+    
+  }
+  
+  for(i in 1:9){
+    obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
+    mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+  }
+  
+  OvP_Cmic<-data.frame(obs_Cmic, mod_Cmic)
+  
+  #logLik calculation
+  mu_Cmic<-mean(obs_Cmic)
+  variance_Cmic<-sd(obs_Cmic)^2
+  
+  
+  ll_Cmic<--1*sum((obs_Cmic-mod_Cmic)^2)/2/variance_Cmic
+  
+  
+  SSmodel_Cmic<-sum((obs_Cmic-mod_Cmic)^2)
+  SSdata_Cmic<-sum((obs_Cmic-mean(obs_Cmic))^2)
+  
+  rsq_Cmic=1-(SSmodel_Cmic/SSdata_Cmic)
+  
+  likelihood_Cmic<-c(logLik=ll_Cmic, npar=36, rsq=rsq_Cmic)
+  
+  al<-list()
+  
+  al$parameters<-parameters.all
+  al$OvP_r<-OvP_r
+  al$ll_r<-likelihood_r
+  al$OvP_Cmic<-OvP_Cmic
+  al$ll_Cmic<-likelihood_Cmic
+  
+  return(al)
+}
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+monod_unique_results<-monod_unique(dat)
+
+stopImplicitCluster()
+
+#showing results
+monod_unique_results$ll_r
+monod_unique_results$ll_Cmic
+monod_unique_results$parameters
+
+#storing results
+monod_unique_ll<-monod_unique_results$ll_r
+
+
+#Figures
+plot_monod_unique<-monod_unique_results$OvP_r
+ggplot(plot_monod_unique, aes(obs_r, mod_r))+theme_min+geom_point(cex=6, pch=1)+
+  geom_abline(intercept = 0, slope=1, lwd=1.2)+
+  scale_x_continuous(limits = c(0,1))+
+  scale_y_continuous(limits = c(0,1))+
+  ylab(expression(paste("Predicted respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Observed respiration rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  labs(title="Monod growth function \n for all combinations of substrates and structures")+
+  theme(plot.title=element_text(size=14, face="bold.italic", hjust=0.5))
+
+monod_unique_Cmic<-monod_unique_results$OvP_Cmic
+ggplot(monod_unique_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=1)+
+  geom_abline(intercept = 0, slope=1, lwd=1.2)+
+  scale_x_continuous(limits = c(0,30))+
+  scale_y_continuous(limits = c(0,30))+
+  ylab(expression(paste("Predicted ", C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
+  xlab(expression(paste("Observed ",  C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
+  labs(title="Monod growth function \n for all combinations of substrates and structures")+
+  theme(plot.title=element_text(size=14, face="bold.italic", hjust=0.5))
+
+#Models comparison???
+#I am not sure if it is correct
+pchisq(-2*(as.numeric(decay_all_ll[1])-as.numeric(decay_substrates_ll[1])), df=2)
+
+decay_all_ll
+decay_substrates_ll
+decay_structures_ll
+decay_unique_ll
+monod_all_ll
+monod_structures_ll
+monod_substrates_ll
+monod_unique_ll
