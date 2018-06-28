@@ -38,4 +38,4 @@ rsconnect/
 #figures
 *.pdf
 [FIGURES]/
-[R]/
+R/
