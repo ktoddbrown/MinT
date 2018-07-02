@@ -1,5 +1,5 @@
 ---
-title: "Title"
+title: "**Title**"
 author: "$^{1}$Petr Capek*, $^{1}$Katherine Todd-Brown, $^{1}$Natalie Sadler, $^{1}$Nancy Hess, $^{1}$Kirsten Hofmockel"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 fontfamily: mathpazo
@@ -12,6 +12,14 @@ header-includes:
     - \doublespacing
     - \usepackage{lineno}
     - \linenumbers
+    - \usepackage{titling}
+    - \pretitle{\begin{flushleft}}
+    - \posttitle{\end{flushleft}}
+    - \preauthor{\begin{flushleft}\large}
+    - \postauthor{\par\end{flushleft}}
+    - \predate{\begin{flushleft}}
+    - \postdate{\par\end{flushleft}\vskip 0.5em}
+
   
   
 ---
@@ -20,13 +28,21 @@ header-includes:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-$^{1}$Pacific Northwest National Laboratory, Environmental Molecular Sciences Laboratory, Richland, WA USA 
+_$^{1}$Pacific Northwest National Laboratory, Environmental Molecular Sciences Laboratory, Richland, WA USA_
 
 ## Abstract
 
 ## Introduction
 
 ## Material and Methods
+###Experimental design
+Microbial culture obtained from the soil (see later) was incubated in liquid batch culture microcosms at **_??24$^{\circ}C$??_** in the dark for five days under nine different experimental treatments. These treatments include three different organic substrates as a sole source of carbon for microbial culture and three different levels of microcosm structural complexity in fully factorial design. The three organic substrates were glucose, cellobiose and mixture of glucose, cellobiose and cellulose. The three levels of structural complexity were represented by **_??34 ml??_** incubation vials with liquid medium only (denoted as **"BROTH"** further in the text), with liquid medium and mixture of 2.7, 0.1 and 0.1 mm glass beads (5g of 2.7mm Biospec glass beads, 2g of 1.0mm Biospec glass beads and 1g of 0.1mm Next-Advanced glass beads; denoted as **"GLASS"** further in the text) and with liquid medium and glass wool (0.2g of Pyrex fiber glass wool cutted to $\sim0.25cm$ pieces; denoted as **"WOOL"** further in the text). All experimental treatments were replicated four times.
+
+###Microbial culture
+Microbial culture used in the experiment was obtained from the **_??prosser soil?? (is it correct)_**, _short characteristic of soil_ ... .One gram of air dried soil was supplemented by the 10 ml of sterile Cellulose Degrader M9 Media with 6.25 ml of LB media (see later). The soil with medium was incubated seven days at 24$^{\circ}C$ in dark. 
+
+###Microcosm
+
 
 ## Results
 
