@@ -3774,8 +3774,8 @@ mmem_substrates<-function(data){
   }
   
   for(i in 1:3){
-    obs_E<-append(obs_E, cost_E(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-    mod_E<-append(mod_E, cost_E(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+    obs_E<-append(obs_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
+    mod_E<-append(mod_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
   }
   
   OvP_E<-data.frame(obs_E, mod_E)
@@ -3808,7 +3808,7 @@ mmem_substrates<-function(data){
   return(al)
 }
 
-#no_cors<-detectCores()
+#no_cors<-detectCores()-1
 #cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
@@ -4357,7 +4357,7 @@ monod_substrates_fixed<-function(data){
     
     res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, CUE=0.8),
                  lower=c(Vmax=1e-4, Km=1e-4, CUE=1e-2),
-                 upper=c(Vmax=1e4, Km=1e4, CUE=0.999),niter=10000)
+                 upper=c(Vmax=1e4, Km=1e4, CUE=0.999),niter=100000)
     
     res$Substrate<-data[1, "Substrate"]
     
@@ -4596,7 +4596,7 @@ mem_substrates_fixed<-function(data){
     
     res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, CUE=0.8),
                  lower=c(Vmax=1e-4, Km=1e-4, CUE=1e-2),
-                 upper=c(Vmax=1e4, Km=1e4, CUE=0.999),niter=10000)
+                 upper=c(Vmax=1e4, Km=1e4, CUE=0.999),niter=100000)
     res$Structure<-data[1, "Substrate"]
     
     return(res)
@@ -4913,7 +4913,7 @@ mmem_substrates_fixed<-function(data){
     
     res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, Yatp=1),
                  lower=c(Vmax=1e-4, Km=1e-4, Yatp=0.01),
-                 upper=c(Vmax=1e4, Km=1e4, Yatp=30),niter=10000)
+                 upper=c(Vmax=1e4, Km=1e4, Yatp=30),niter=100000)
     
     res$Substrate<-data[1, "Substrate"]
     

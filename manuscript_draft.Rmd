@@ -1,0 +1,34 @@
+---
+title: "Title"
+author: "$^{1}$Petr Capek*, $^{1}$Katherine Todd-Brown, $^{1}$Natalie Sadler, $^{1}$Nancy Hess, $^{1}$Kirsten Hofmockel"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+fontfamily: mathpazo
+fontsize: 11pt
+#bibliography: mint.bib
+output: 
+  pdf_document
+header-includes:
+    - \usepackage{setspace}
+    - \doublespacing
+    - \usepackage{lineno}
+    - \linenumbers
+  
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+$^{1}$Pacific Northwest National Laboratory, Environmental Molecular Sciences Laboratory, Richland, WA USA 
+
+## Abstract
+
+## Introduction
+
+## Material and Methods
+
+## Results
+
+## Discussion
+
