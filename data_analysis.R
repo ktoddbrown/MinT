@@ -1,7 +1,178 @@
 ##################################MinT#################################################
 ##data 
+#respiration rates in umol/ml/h
+resp<-read.xlsx(xlsxFile = c("C:/Users/cape159/Documents/pracovni/data_statistika/minT/data_checked_respiration.xlsx"),
+                sheet = 1)
 
-dat<-subset(mint, Substrate!="Carbon Free" & Substrate!="Avicel")[,c(1:6,9:12, 18)]
+#arrange the data
+resp.ordered<-resp[order(resp$Sample, resp$Day), ]
+
+#biological data
+biology<-read.xlsx(xlsxFile = c("C:/Users/cape159/Documents/pracovni/data_statistika/minT/data_checked_biology.xlsx"),
+                   sheet = 1)
+
+#arrange the data in the same way
+biology.ordered<-biology[order(biology$Sample, biology$Day), -c(2,3)]
+biology.ordered$Sample<-paste0("CSub3_", biology.ordered$Sample)
+
+#merging both data sets
+m0<-merge(resp.ordered, biology.ordered, by.x=c("Sample", "Day"), by.y = c("Sample", "Day"), all=T)
+
+####################################proxy based Biomass calculations##################################
+#There are plenty of possible conversions
+#I will create a new data frame to store them all at one place for later use
+
+conversions<-data.frame(Sample=m0[,1])
+
+#1. protein based conversions
+#Henriksen et al., 1996
+conversions$Cmic<-m0$Prot.in/12.01/4
+conversions$Proxy<-c("Cellular protein")
+conversions$Reference<-c("Henriksen et al., 1996")
+conversions$Organism<-c("Penicillium chrysogenum")
+
+#Hanegraaf and Muller 2001 presented different data
+#Paracoccus denitrificans
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$Prot.in/0.57*0.45/12.01/4,
+                                           Proxy=rep("Cellular protein"),
+                                           Reference=rep("Hanegraaf and Muller, 2001"),
+                                           Organism=rep("Paracoccus denitrificans")))
+
+#E. Coli
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$Prot.in/0.82*0.45/12.01/4,
+                                           Proxy=rep("Cellular protein"),
+                                           Reference=rep("Hanegraaf and Muller, 2001"),
+                                           Organism=rep("Escherichia coli")))
+#van Duuren et al., 2013
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$Prot.in/0.553*0.45/12.01/4,
+                                           Proxy=rep("Cellular protein"),
+                                           Reference=rep("van Duuren et al., 2013"),
+                                           Organism=rep("Pseudomonas putida")))
+#Baart et al., 2008
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$Prot.in/0.688*0.45/12.01/4,
+                                           Proxy=rep("Cellular protein"),
+                                           Reference=rep("Baart et al., 2008"),
+                                           Organism=rep("Neisseria meningitidis")))
+#Beck at al., 2018
+#Alicyclobacillus acidocaldarius
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$Prot.in/0.385*0.45/12.01/4,
+                                           Proxy=rep("Cellular protein"),
+                                           Reference=rep("Beck at al., 2018"),
+                                           Organism=rep("Alicyclobacillus acidocaldarius")))
+#Synechococcus 7002
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$Prot.in/0.272*0.45/12.01/4,
+                                           Proxy=rep("Cellular protein"),
+                                           Reference=rep("Beck at al., 2018"),
+                                           Organism=rep("Synechococcus 7002")))
+
+
+#2. DNA based conversions
+#Christensen et al., 1993 and 1995
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$DNA/0.0264*0.45/12.01/4,
+                                           Proxy=rep("DNA"),
+                                           Reference=rep("Christensen et al., 1993 and 1995"),
+                                           Organism=rep("Soil community")))
+
+
+#Yokoyama et al., 2017
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$DNA/0.098/12.01/4,
+                                           Proxy=rep("DNA"),
+                                           Reference=rep("Yokoyama et al., 2017"),
+                                           Organism=rep("Soil community")))
+
+
+
+#Marstrop et al., 2000
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$DNA*2.1458/12.01/4/0.45,
+                                           Proxy=rep("DNA"),
+                                           Reference=rep("Marstrop et al., 2000"),
+                                           Organism=rep("Soil community")))
+
+#Makino et al., 2003
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$DNA/0.0214*0.45/12.01/4,
+                                           Proxy=rep("DNA"),
+                                           Reference=rep("Makino et al., 2003"),
+                                           Organism=rep("Escherichia coli")))
+#Van Putten et al., 1995
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=(m0$DNA*0.2503+15)*0.45/12.01/4,
+                                           Proxy=rep("DNA"),
+                                           Reference=rep("Van Putten et al., 1995"),
+                                           Organism=rep("Bacillus licheniformis")))
+
+
+#Henriksen et al., 1996
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$DNA/0.0096*0.45/12.01/4,
+                                           Proxy=rep("DNA"),
+                                           Reference=rep("Henriksen et al., 1996"),
+                                           Organism=rep("Penicillium chrysogenum")))
+
+#Hanegraaf and Muller, 2001 present data from several bacterial strains
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$DNA/0.045*0.45/12.01/4,
+                                           Proxy=rep("DNA"),
+                                           Reference=rep("Hanegraaf and Muller, 2001"),
+                                           Organism=rep("Three different species")))
+
+#van Duuren et al., 2013
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$DNA/0.027*0.45/12.01/4,
+                                           Proxy=rep("DNA"),
+                                           Reference=rep("van Duuren et al., 2013"),
+                                           Organism=rep("Pseudomonas putida")))
+
+#Baart et al., 2008
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$DNA/0.012*0.45/12.01/4,
+                                           Proxy=rep("DNA"),
+                                           Reference=rep("Baart et al., 2008"),
+                                           Organism=rep("Neisseria meningitidis")))
+
+
+#Beck at al., 2018
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$DNA/0.01*0.45/12.01/4,
+                                           Proxy=rep("DNA"),
+                                           Reference=rep("Beck at al., 2018"),
+                                           Organism=rep("Escherichia coli")))
+
+conversions<-rbind(conversions, data.frame(Sample=m0[,1],
+                                           Cmic=m0$DNA/0.004*0.45/12.01/4,
+                                           Proxy=rep("DNA"),
+                                           Reference=rep("Beck at al., 2018"),
+                                           Organism=rep("Synechococcus 7002")))
+
+#Make a graph
+ggplot(conversions, aes(Reference, Cmic))+geom_boxplot(cex=0.8, aes(colour=Organism), show.legend = F)+
+  facet_grid(.~Proxy)+coord_flip()+theme_min+theme(axis.title.y = element_blank())+
+  ylab(expression(paste("Microbial biomass carbon (", mu, "mol ", ml^{-1},")")))
+
+######################################################################################################
+#carefull here, there is slightly different recalculation
+m0$Cmic.dna.init<-m0$DNA.init/0.0494*0.44/12.01/3*0.25
+
+
+#extracellular protein to extracellular protein carbon (46% of carbon in protein - Vrede et al., 2004)
+m0$E<-m0$Prot.out*0.46/12.01/4
+
+
+#extracting only the columns of interest
+mint<-m0[,c("Structure", "Substrate", "r", "Time", "DOCinit", "Cmic.dna", "Cmic.dna.init", "E", "Cmic.prot.filled")]
+mint<-mint[!is.na(mint$Substrate), ]
+
+
+dat<-subset(mint, Substrate!="Free" & Substrate!="Celluloze")
 summary(dat)
 
 ##libraries
@@ -14,6 +185,7 @@ library(ggplot2)
 library(foreach)
 library(doParallel)
 library(data.table)
+library(openxlsx)
 
 ##ggplot theme
 theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=14, colour="black"),
@@ -122,13 +294,13 @@ summary(mcmc)#the output shows k to be 0.0104, which is not bad
 
 #let's hope it will work with real data
 ############################################################################################
-Obs_decay<-dat[,c(2, 5, 6)]
+Obs_decay<-dat[,c(2, 3, 4)]
 
-m1<-merge(Obs_decay[Obs_decay$Substrate=="Glucose", c(1,3)], 
-      Obs_decay[Obs_decay$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+m1<-merge(Obs_decay[Obs_decay$Substrate=="Glucose", c(2,3)], 
+      Obs_decay[Obs_decay$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
 
 m2<-merge(m1, 
-          Obs_decay[Obs_decay$Substrate=="Mix", c(1,3)],all = T, by="Time")
+          Obs_decay[Obs_decay$Substrate=="Mix", c(2,3)],all = T, by="Time")
 
 #Glucose = r, Cellobiose = r1, Mix = r2 
 colnames(m2)<-c("time", "r", "r1", "r2")
@@ -136,7 +308,7 @@ colnames(m2)<-c("time", "r", "r1", "r2")
 #create cost function
 cost_decay_all<-function(pars){
   
-  out<-first_order(X=c(33.3*0.75+6.98, 35.06*0.75+6.98, 22.6*0.75+6.98), pars = pars, t=seq(0,130))
+  out<-first_order(X=c(25+0.1244, 25+0.1244, 16.5+0.1244), pars = pars, t=seq(0,130))
   cost<-modCost(model = out, obs = m2)
   
   return(cost)
@@ -208,13 +380,13 @@ decay_substrates<-function(data){
   }
   
   #initial carbon concentration
-  cinit=c(33.3*0.75+6.98, 35.06*0.75+6.98, 22.6*0.75+6.98)
+  cinit=c(25+0.1244, 25+0.1244, 16.5+0.1244)
   
   
   #parameter estimation function
   estim<-function(data, cinit){
     
-    Obs_dat<-data[, c(2,6)]
+    Obs_dat<-data[, c(4,3)]
     colnames(Obs_dat)<-c("time", "r")
     
   
@@ -244,8 +416,7 @@ decay_substrates<-function(data){
                  }
   
   #paraneter
-  parameters<-data.frame(Substrate=c("Glucose", "Cellobiose", "Mix"),
-                         k50=c(summary(res[[1]])[6,1],
+  parameters<-data.frame(k50=c(summary(res[[1]])[6,1],
                                summary(res[[2]])[6,1],
                                summary(res[[3]])[6,1]),
                          k25=c(summary(res[[1]])[5,1],
@@ -259,7 +430,7 @@ decay_substrates<-function(data){
   #combining results
   cost_function2<-function(pars, data, cinit){
     
-    Obs_dat2<-data[, c(2,6)]
+    Obs_dat2<-data[, c(4,3)]
     colnames(Obs_dat2)<-c("time", "r")
     
     
@@ -280,9 +451,7 @@ decay_substrates<-function(data){
     mod<-append(mod, cost_function2(pars = c(k=parameters[i,2]), data=dat[dat$id==i,], cinit=cinit[i])$residuals$mod)
   }
   
-  OvP<-data.frame(obs, mod, Substrate=c(rep("Glucose", 91),
-                                        rep("Cellobiose", 96),
-                                        rep("Mix", 95)))
+  OvP<-data.frame(obs, mod)
   
   #logLik calculation
   mu<-mean(obs)
@@ -340,7 +509,7 @@ ggplot(plot_decay_sbustrates, aes(obs, mod))+theme_min+geom_point(cex=6, pch=1)+
 
 #Models comparison absed on Likelihood ratio test
 #this should be correct
-1-pchisq(-2*(-decay_all_ll[1]--decay_substrates_ll[1]), df=2)
+1-pchisq(-2*(-decay_substrates_ll[1]--decay_all_ll[1]), df=2)
 
 
 
@@ -385,13 +554,13 @@ decay_structures<-function(data){
   #parameter estimation function
   estim<-function(data){
     
-  Obs_decay<-data[,c(2, 5, 6)]
+  Obs_decay<-data[,c(2, 3, 4)]
   
-  m1<-merge(Obs_decay[Obs_decay$Substrate=="Glucose", c(1,3)], 
-            Obs_decay[Obs_decay$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+  m1<-merge(Obs_decay[Obs_decay$Substrate=="Glucose", c(2,3)], 
+            Obs_decay[Obs_decay$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
   
   m2<-merge(m1, 
-            Obs_decay[Obs_decay$Substrate=="Mix", c(1,3)],all = T, by="Time")
+            Obs_decay[Obs_decay$Substrate=="Mix", c(2,3)],all = T, by="Time")
   
   #Glucose = r, Cellobiose = r1, Mix = r2 
   colnames(m2)<-c("time", "r", "r1", "r2")
@@ -399,7 +568,7 @@ decay_structures<-function(data){
   #create cost function
   cost_decay_structure<-function(pars){
     
-    out<-first_order(X=c(33.3*0.75+6.98, 35.06*0.75+6.98, 22.6*0.75+6.98), pars = pars, t=seq(0,130))
+    out<-first_order(X=c(25+0.1244, 25+0.1244, 16.5+0.1244), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -418,8 +587,7 @@ decay_structures<-function(data){
                .packages=c("FME", "dplyr")) %dopar% {estim(data=dat[dat$id==i,])}
   
   #paraneter
-  parameters<-data.frame(Substrate=c("Broth", "Glass wool", "Mixed glass"),
-                         k50=c(summary(res[[1]])[6,1],
+  parameters<-data.frame(k50=c(summary(res[[1]])[6,1],
                                summary(res[[2]])[6,1],
                                summary(res[[3]])[6,1]),
                          k25=c(summary(res[[1]])[5,1],
@@ -432,18 +600,18 @@ decay_structures<-function(data){
   #combining results
   cost_decay_structure2<-function(pars, data){
     
-    Obs_decay<-data[,c(2, 5, 6)]
+    Obs_decay<-data[,c(2, 3, 4)]
     
-    m1<-merge(Obs_decay[Obs_decay$Substrate=="Glucose", c(1,3)], 
-              Obs_decay[Obs_decay$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_decay[Obs_decay$Substrate=="Glucose", c(2,3)], 
+              Obs_decay[Obs_decay$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_decay[Obs_decay$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_decay[Obs_decay$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     #Glucose = r, Cellobiose = r1, Mix = r2 
     colnames(m2)<-c("time", "r", "r1", "r2")
     
-    out<-first_order(X=c(33.3*0.75+6.98, 35.06*0.75+6.98, 22.6*0.75+6.98), pars = pars, t=seq(0,130))
+    out<-first_order(X=c(25+0.1244, 25+0.1244, 16.5+0.1244), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -517,7 +685,7 @@ ggplot(plot_decay_structures, aes(obs, mod))+theme_min+geom_point(cex=6, pch=1)+
 
 #Models comparison absed on Likelihood ratio test
 #this should be correct
-1-pchisq(-2*(-decay_all_ll[1]--decay_substrates_ll[1]), df=2)
+1-pchisq(-2*(-decay_substrates_ll[1]--decay_all_ll[1]), df=2)
 1-pchisq(-2*(-decay_all_ll[1]--decay_structures_ll[1]), df=2)
 
 #########################################################################################
@@ -543,9 +711,9 @@ decay_unique<-function(data){
   #parameter estimation function
   estim<-function(data){
     
-    Obs_dat<-data[, c(2,6)]
+    Obs_dat<-data[, c("Time","r")]
     colnames(Obs_dat)<-c("time", "r")
-    cinit<-as.numeric(data[1,"DOCinit"])*0.75+6.98
+    cinit<-as.numeric(dat[1,"DOCinit"])+0.1244
     
     
     #cost function
@@ -603,9 +771,9 @@ decay_unique<-function(data){
   
   cost_function2<-function(pars, data){
     
-    Obs_dat<-data[, c(2,6)]
+    Obs_dat<-data[, c("Time","r")]
     colnames(Obs_dat)<-c("time", "r")
-    cinit<-as.numeric(data[1,"DOCinit"])*0.75+6.98
+    cinit<-as.numeric(data[1,"DOCinit"])+0.1244
     
     out<-as.data.frame(ode(y=c(C=cinit), parms = pars, t=seq(0,130), func = deriv))
     cost<-modCost(model = out, obs = Obs_dat)
@@ -678,9 +846,7 @@ ggplot(plot_decay_unique, aes(obs, mod))+theme_min+geom_point(cex=6, pch=1)+
 
 #Models comparison absed on Likelihood ratio test
 #this should be correct
-1-pchisq(-2*(-decay_all_ll[1]--decay_substrates_ll[1]), df=2)
-1-pchisq(-2*(-decay_all_ll[1]--decay_structures_ll[1]), df=2)
-1-pchisq(-2*(-decay_all_ll[1]--decay_unique_ll[1]), df=8)
+1-pchisq(-2*(-decay_substrates_ll[1]--decay_all_ll[1]), df=2)
 
 decay_all_ll
 decay_substrates_ll
@@ -715,7 +881,7 @@ monod_all<-function(data){
     base_function<-function(Ci){
       
       
-      out<-ode(y=c(Cmic=6.98, C=Ci), parms=pars, times=t, func=deriv)
+      out<-ode(y=c(Cmic=0.1244, C=Ci), parms=pars, times=t, func=deriv)
       return(as.data.frame(out))}
     
     #results
@@ -728,21 +894,21 @@ monod_all<-function(data){
   #create cost function
   estim<-function(data){
     
-    Obs_dat<-data[,c(2, 5, 9, 6)]
+    Obs_dat<-data[,c(2, 3, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3,4)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3,4)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3,4)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
-    colnames(m2)<-c("time", "Cmic", "r", "Cmic1", "r1", "Cmic2", "r2")
+    colnames(m2)<-c("time",  "r", "r1", "r2")
     
   
   cost_function<-function(pars){
     
     
-    out<-monod(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-monod(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2, weight = "mean")
     
     return(cost)
@@ -750,7 +916,7 @@ monod_all<-function(data){
   }
   
   res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, CUE=0.8, k=0.01),
-               lower=c(Vmax=1e-4, Km=1e-4, CUE=1e-2, k=1e-5),
+               lower=c(Vmax=1e-4, Km=1e-4, CUE=1e-3, k=1e-5),
                upper=c(Vmax=1e4, Km=1e4, CUE=0.999, k=1e5),niter=10000)
   
   return(res)
@@ -770,17 +936,17 @@ monod_all<-function(data){
   
   cost_r<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 6)]
+    Obs_dat<-data[,c(2, 3, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "r", "r1", "r2")
     
-    out<-monod(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-monod(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -813,17 +979,17 @@ monod_all<-function(data){
   
   cost_Cmic<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 9)]
+    Obs_dat<-data[,c(2, 6, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "Cmic", "Cmic1", "Cmic2")
     
-    out<-monod(X=c(33.3*0.75, 35.06*0.7, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-monod(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -887,8 +1053,8 @@ ggplot(plot_monod_all, aes(obs_r, mod_r))+theme_min+geom_point(cex=6, pch=1)+
 monod_all_Cmic<-monod_all_results$OvP_Cmic
 ggplot(monod_all_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=1)+
   geom_abline(intercept = 0, slope=1, lwd=1.2)+
-  scale_x_continuous(limits = c(0,30))+
-  scale_y_continuous(limits = c(0,30))+
+  #scale_x_continuous(limits = c(0,3))+
+  #scale_y_continuous(limits = c(0,3))+
   ylab(expression(paste("Predicted ", C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   xlab(expression(paste("Observed ",  C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   labs(title="Monod growth function")+
@@ -896,7 +1062,7 @@ ggplot(monod_all_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=
 
 #Models comparison absed on Likelihood ratio test
 #this should be correct
-1-pchisq(-2*(-monod_all_ll[1]--decay_all_ll[1]), df=monod_all_ll[2]-decay_all_ll[2])
+1-pchisq(-2*(-monod_all_ll[1]--decay_substrates_ll[1]), df=monod_all_ll[2]-decay_substrates_ll[2])
 
 
 decay_all_ll
@@ -937,7 +1103,7 @@ monod_structures<-function(data){
     base_function<-function(Ci){
       
       
-      out<-ode(y=c(Cmic=6.98, C=Ci), parms=pars, times=t, func=deriv)
+      out<-ode(y=c(Cmic=0.1244277, C=Ci), parms=pars, times=t, func=deriv)
       return(as.data.frame(out))}
     
     #results
@@ -950,21 +1116,21 @@ monod_structures<-function(data){
   #create cost function
   estim<-function(data){
     
-    Obs_dat<-data[,c(2, 5, 9, 6)]
+    Obs_dat<-data[,c(2, 3, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3,4)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3,4)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3,4)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
-    colnames(m2)<-c("time", "Cmic", "r", "Cmic1", "r1", "Cmic2", "r2")
+    colnames(m2)<-c("time", "r", "r1", "r2")
     
     
     cost_function<-function(pars){
       
       
-      out<-monod(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+      out<-monod(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
       cost<-modCost(model = out, obs = m2, weight = "mean")
       
       return(cost)
@@ -1019,17 +1185,17 @@ monod_structures<-function(data){
   
   cost_r<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 6)]
+    Obs_dat<-data[,c(2, 3, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "r", "r1", "r2")
     
-    out<-monod(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-monod(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -1066,17 +1232,17 @@ monod_structures<-function(data){
   
   cost_Cmic<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 9)]
+    Obs_dat<-dat[,c(2, 6, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "Cmic", "Cmic1", "Cmic2")
     
-    out<-monod(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-monod(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -1148,8 +1314,8 @@ ggplot(plot_monod_structures, aes(obs_r, mod_r))+theme_min+geom_point(cex=6, pch
 monod_structures_Cmic<-monod_structures_results$OvP_Cmic
 ggplot(monod_structures_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=1)+
   geom_abline(intercept = 0, slope=1, lwd=1.2)+
-  scale_x_continuous(limits = c(0,30))+
-  scale_y_continuous(limits = c(0,30))+
+  #scale_x_continuous(limits = c(0,3))+
+  #scale_y_continuous(limits = c(0,3))+
   ylab(expression(paste("Predicted ", C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   xlab(expression(paste("Observed ",  C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   labs(title="Monod growth function /n for different structures")+
@@ -1194,15 +1360,15 @@ monod_substrates<-function(data){
   #create cost function
   estim<-function(data){
     
-    Obs_dat<-data[,c(2, 9, 6)]
-    colnames(Obs_dat)<-c("time", "Cmic", "r")
+    Obs_dat<-data[,c("Time", "r")]
+    colnames(Obs_dat)<-c("time", "r")
     
-    cinit<-as.numeric(data[1, "DOCinit"])*0.75
+    cinit<-as.numeric(data[1, "DOCinit"])
     
     cost_function<-function(pars){
       
       
-      out<-as.data.frame(ode(y=c(Cmic=6.98, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+      out<-as.data.frame(ode(y=c(Cmic=0.1244277, C=cinit), parms=pars, times=seq(0,130), func=deriv))
       cost<-modCost(model = out, obs = Obs_dat, weight = "mean")
       
       return(cost)
@@ -1210,7 +1376,7 @@ monod_substrates<-function(data){
     }
     
     res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, CUE=0.8, k=0.01),
-                 lower=c(Vmax=1e-4, Km=1e-4, CUE=1e-2, k=1e-5),
+                 lower=c(Vmax=1e-4, Km=1e-4, CUE=1e-3, k=1e-5),
                  upper=c(Vmax=1e4, Km=1e4, CUE=0.999, k=1e5),niter=10000)
     
     res$Substrate<-data[1, "Substrate"]
@@ -1257,13 +1423,13 @@ monod_substrates<-function(data){
   
   cost_r<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 6)]
+    Obs_dat<-data[,c("Time", "r")]
     
     colnames(Obs_dat)<-c("time", "r")
     
-    cinit<-as.numeric(data[1,"DOCinit"])*0.75
+    cinit<-as.numeric(data[1,"DOCinit"])
     
-    out<-out<-as.data.frame(ode(y=c(Cmic=6.98, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+    out<-out<-as.data.frame(ode(y=c(Cmic=0.1244277, C=cinit), parms=pars, times=seq(0,130), func=deriv))
     cost<-modCost(model = out, obs = Obs_dat)
     
     return(cost)
@@ -1300,12 +1466,12 @@ monod_substrates<-function(data){
   
   cost_Cmic<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 9)]
+    Obs_dat<-data[,c("Time", "Cmic.dna")]
     
     colnames(Obs_dat)<-c("time", "Cmic")
-    cinit<-as.numeric(data[1, "DOCinit"])*0.75
+    cinit<-as.numeric(data[1, "DOCinit"])
     
-    out<-as.data.frame(ode(y=c(Cmic=6.98, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+    out<-as.data.frame(ode(y=c(Cmic=0.1244277, C=cinit), parms=pars, times=seq(0,130), func=deriv))
     cost<-modCost(model = out, obs = Obs_dat)
     
     return(cost)
@@ -1376,8 +1542,8 @@ ggplot(plot_monod_substrates, aes(obs_r, mod_r))+theme_min+geom_point(cex=6, pch
 monod_substrates_Cmic<-monod_substrates_results$OvP_Cmic
 ggplot(monod_substrates_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=1)+
   geom_abline(intercept = 0, slope=1, lwd=1.2)+
-  scale_x_continuous(limits = c(0,30))+
-  scale_y_continuous(limits = c(0,30))+
+  #scale_x_continuous(limits = c(0,3))+
+  #scale_y_continuous(limits = c(0,3))+
   ylab(expression(paste("Predicted ", C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   xlab(expression(paste("Observed ",  C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   labs(title="Monod growth function \n for different substrates")+
@@ -1427,15 +1593,15 @@ monod_unique<-function(data){
   #create cost function
   estim<-function(data){
     
-    Obs_dat<-data[,c(2, 9, 6)]
-    colnames(Obs_dat)<-c("time", "Cmic", "r")
+    Obs_dat<-data[,c("Time", "r")]
+    colnames(Obs_dat)<-c("time", "r")
     
-    cinit<-as.numeric(data[1, "DOCinit"])*0.75
+    cinit<-as.numeric(data[1, "DOCinit"])
     
     cost_function<-function(pars){
       
       
-      out<-as.data.frame(ode(y=c(Cmic=6.98, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+      out<-as.data.frame(ode(y=c(Cmic=0.1244277, C=cinit), parms=pars, times=seq(0,130), func=deriv))
       cost<-modCost(model = out, obs = Obs_dat, weight = "mean")
       
       return(cost)
@@ -1515,13 +1681,13 @@ monod_unique<-function(data){
   
   cost_r<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 6)]
+    Obs_dat<-data[,c("Time", "r")]
     
     colnames(Obs_dat)<-c("time", "r")
     
-    cinit<-as.numeric(data[1,"DOCinit"])*0.75
+    cinit<-as.numeric(data[1,"DOCinit"])
     
-    out<-out<-as.data.frame(ode(y=c(Cmic=6.98, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+    out<-out<-as.data.frame(ode(y=c(Cmic=0.1244277, C=cinit), parms=pars, times=seq(0,130), func=deriv))
     cost<-modCost(model = out, obs = Obs_dat)
     
     return(cost)
@@ -1558,12 +1724,12 @@ monod_unique<-function(data){
   
   cost_Cmic<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 9)]
+    Obs_dat<-data[,c("Time", "Cmic.dna")]
     
     colnames(Obs_dat)<-c("time", "Cmic")
-    cinit<-as.numeric(data[1, "DOCinit"])*0.75
+    cinit<-as.numeric(data[1, "DOCinit"])
     
-    out<-as.data.frame(ode(y=c(Cmic=6.98, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+    out<-as.data.frame(ode(y=c(Cmic=0.1244277, C=cinit), parms=pars, times=seq(0,130), func=deriv))
     cost<-modCost(model = out, obs = Obs_dat)
     
     return(cost)
@@ -1634,8 +1800,8 @@ ggplot(plot_monod_unique, aes(obs_r, mod_r))+theme_min+geom_point(cex=6, pch=1)+
 monod_unique_Cmic<-monod_unique_results$OvP_Cmic
 ggplot(monod_unique_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=1)+
   geom_abline(intercept = 0, slope=1, lwd=1.2)+
-  scale_x_continuous(limits = c(0,30))+
-  scale_y_continuous(limits = c(0,30))+
+  #scale_x_continuous(limits = c(0,30))+
+  #scale_y_continuous(limits = c(0,30))+
   ylab(expression(paste("Predicted ", C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   xlab(expression(paste("Observed ",  C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   labs(title="Monod growth function \n for all combinations of substrates and structures")+
@@ -1689,7 +1855,7 @@ mem_all<-function(data){
     base_function<-function(Ci){
       
       
-      out<-ode(y=c(Cmic=6.98, C=Ci, E=0), parms=pars, times=t, func=deriv)
+      out<-ode(y=c(Cmic=0.1244277, C=Ci, E=0), parms=pars, times=t, func=deriv)
       return(as.data.frame(out))}
     
     #results
@@ -1702,21 +1868,21 @@ mem_all<-function(data){
   #create cost function
   estim<-function(data){
     
-    Obs_dat<-data[,c(2, 5, 9, 6, 10)]
+    Obs_dat<-data[,c("Substrate", "r", "Time")]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3,4, 5)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3,4, 5)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3,4, 5)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
-    colnames(m2)<-c("time", "Cmic", "r","E", "Cmic1", "r1", "E1", "Cmic2", "r2", "E2")
+    colnames(m2)<-c("time", "r","r1", "r2")
     
     
     cost_function<-function(pars){
       
       
-      out<-mem(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+      out<-mem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
       cost<-modCost(model = out, obs = m2, weight = "mean")
       
       return(cost)
@@ -1744,17 +1910,17 @@ mem_all<-function(data){
   
   cost_r<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 9)]
+    Obs_dat<-data[,c(2, 3, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "r", "r1", "r2")
     
-    out<-mem(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-mem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -1787,17 +1953,17 @@ mem_all<-function(data){
   
   cost_Cmic<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 9)]
+    Obs_dat<-data[,c(2, 6, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "Cmic", "Cmic1", "Cmic2")
     
-    out<-mem(X=c(33.3*0.75, 35.06*0.7, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-mem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -1830,17 +1996,17 @@ mem_all<-function(data){
   
   cost_E<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 10)]
+    Obs_dat<-data[,c(2, 8, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "E", "E1", "E2")
     
-    out<-mem(X=c(33.3*0.75, 35.06*0.7, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-mem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -1881,7 +2047,13 @@ mem_all<-function(data){
 }
 
 
+#no_cors<-detectCores()
+#cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
 mem_all_results<-mem_all(dat)
+
+stopImplicitCluster()
 
 #showing results
 mem_all_results$ll_r
@@ -1907,8 +2079,8 @@ ggplot(plot_mem_all, aes(obs_r, mod_r))+theme_min+geom_point(cex=6, pch=1)+
 mem_all_Cmic<-mem_all_results$OvP_Cmic
 ggplot(mem_all_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=1)+
   geom_abline(intercept = 0, slope=1, lwd=1.2)+
-  scale_x_continuous(limits = c(0,30))+
-  scale_y_continuous(limits = c(0,30))+
+  #scale_x_continuous(limits = c(0,30))+
+  #scale_y_continuous(limits = c(0,30))+
   ylab(expression(paste("Predicted ", C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   xlab(expression(paste("Observed ",  C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   labs(title="Microbial - Enzyme model")+
@@ -1917,8 +2089,8 @@ ggplot(mem_all_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=1)
 mem_all_E<-mem_all_results$OvP_E
 ggplot(mem_all_E, aes(obs_E, mod_E))+theme_min+geom_point(cex=6, pch=1)+
   geom_abline(intercept = 0, slope=1, lwd=1.2)+
-  scale_x_continuous(limits = c(0,8))+
-  scale_y_continuous(limits = c(0,8))+
+  #scale_x_continuous(limits = c(0,8))+
+  #scale_y_continuous(limits = c(0,8))+
   ylab(expression(paste("Predicted ", E, " (", mu, "mol ", ml^{-1}, ")")))+
   xlab(expression(paste("Observed ",  E, " (", mu, "mol ", ml^{-1}, ")")))+
   labs(title="Microbial - Enzyme model")+
@@ -1972,7 +2144,7 @@ mem_structures<-function(data){
     base_function<-function(Ci){
       
       
-      out<-ode(y=c(Cmic=6.98, C=Ci, E=0), parms=pars, times=t, func=deriv)
+      out<-ode(y=c(Cmic=0.1244277, C=Ci, E=0), parms=pars, times=t, func=deriv)
       return(as.data.frame(out))}
     
     #results
@@ -1985,22 +2157,22 @@ mem_structures<-function(data){
   #create cost function
   estim<-function(data){
     
-    Obs_dat<-data[,c(2, 5, 9, 6, 10)]
+    Obs_dat<-data[,c(2, 3,4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3,4, 5)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3,4, 5)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3,4, 5)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
-    colnames(m2)<-c("time", "Cmic", "r","E", "Cmic1", "r1", "E1", "Cmic2", "r2", "E2")
+    colnames(m2)<-c("time", "r","r1", "r2")
     
     
     cost_function<-function(pars){
       
       
-      out<-mem(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
-      cost<-modCost(model = out, obs = m2, weight = "mean")
+      out<-mem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
+      cost<-modCost(model = out, obs = m2, weight="mean")
       
       return(cost)
       
@@ -2056,17 +2228,17 @@ mem_structures<-function(data){
   
   cost_r<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 6)]
+    Obs_dat<-data[,c(2, 3, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "r", "r1", "r2")
     
-    out<-mem(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-mem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -2103,17 +2275,17 @@ mem_structures<-function(data){
   
   cost_Cmic<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 9)]
+    Obs_dat<-data[,c(2, 6, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "Cmic", "Cmic1", "Cmic2")
     
-    out<-mem(X=c(33.3*0.75, 35.06*0.7, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-mem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -2148,17 +2320,17 @@ mem_structures<-function(data){
   
   cost_E<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 10)]
+    Obs_dat<-data[,c(2, 8, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "E", "E1", "E2")
     
-    out<-mem(X=c(33.3*0.75, 35.06*0.7, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-mem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -2232,8 +2404,8 @@ ggplot(plot_mem_structures, aes(obs_r, mod_r))+theme_min+geom_point(cex=6, pch=1
 mem_structures_Cmic<-mem_structures_results$OvP_Cmic
 ggplot(mem_structures_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=1)+
   geom_abline(intercept = 0, slope=1, lwd=1.2)+
-  scale_x_continuous(limits = c(0,30))+
-  scale_y_continuous(limits = c(0,30))+
+  #scale_x_continuous(limits = c(0,30))+
+  #scale_y_continuous(limits = c(0,30))+
   ylab(expression(paste("Predicted ", C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   xlab(expression(paste("Observed ",  C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   labs(title="Microbial - Enzyme model \n for different structures")+
@@ -2242,8 +2414,8 @@ ggplot(mem_structures_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6,
 mem_structures_E<-mem_structures_results$OvP_E
 ggplot(mem_structures_E, aes(obs_E, mod_E))+theme_min+geom_point(cex=6, pch=1)+
   geom_abline(intercept = 0, slope=1, lwd=1.2)+
-  scale_x_continuous(limits = c(0,8))+
-  scale_y_continuous(limits = c(0,8))+
+  #scale_x_continuous(limits = c(0,8))+
+  #scale_y_continuous(limits = c(0,8))+
   ylab(expression(paste("Predicted ", E, " (", mu, "mol ", ml^{-1}, ")")))+
   xlab(expression(paste("Observed ",  E, " (", mu, "mol ", ml^{-1}, ")")))+
   labs(title="Microbial - Enzyme model \n for different structures")+
@@ -2303,16 +2475,16 @@ mem_substrates<-function(data){
   #create cost function
   estim<-function(data){
     
-    Obs_dat<-data[,c(2, 9, 6, 10)]
+    Obs_dat<-data[,c("Time", "r")]
     
-    colnames(Obs_dat)<-c("time", "Cmic", "r","E")
-    Ci<-as.numeric(data[1, "DOCinit"])*0.75
+    colnames(Obs_dat)<-c("time", "r")
+    Ci<-as.numeric(data[1, "DOCinit"])
     
     cost_function<-function(pars){
       
       
-      out<-ode(y=c(Cmic=6.98, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
-      cost<-modCost(model = out, obs = Obs_dat, weight = "mean")
+      out<-ode(y=c(Cmic=0.1244277, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
+      cost<-modCost(model = out, obs = Obs_dat)
       
       return(cost)
       
@@ -2368,12 +2540,12 @@ mem_substrates<-function(data){
   
   cost_r<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 6)]
+    Obs_dat<-data[,c("Time", "r")]
     
     colnames(Obs_dat)<-c("time", "r")
-    Ci<-as.numeric(data[1, "DOCinit"])*0.75
+    Ci<-as.numeric(data[1, "DOCinit"])
     
-    out<-ode(y=c(Cmic=6.98, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
+    out<-ode(y=c(Cmic=0.1244277, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
     cost<-modCost(model = out, obs = Obs_dat)
     
     return(cost)
@@ -2410,12 +2582,12 @@ mem_substrates<-function(data){
   
   cost_Cmic<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 9)]
+    Obs_dat<-data[,c("Time", "Cmic.dna")]
     
     colnames(Obs_dat)<-c("time", "Cmic")
-    Ci<-as.numeric(data[1, "DOCinit"])*0.75
+    Ci<-as.numeric(data[1, "DOCinit"])
     
-    out<-ode(y=c(Cmic=6.98, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
+    out<-ode(y=c(Cmic=0.1244277, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
     cost<-modCost(model = out, obs = Obs_dat)
     
     return(cost)
@@ -2452,12 +2624,12 @@ mem_substrates<-function(data){
   
   cost_E<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 10)]
+    Obs_dat<-data[,c("Time", "E")]
     
     colnames(Obs_dat)<-c("time", "E")
-    Ci<-as.numeric(data[1, "DOCinit"])*0.75
+    Ci<-as.numeric(data[1, "DOCinit"])
     
-    out<-ode(y=c(Cmic=6.98, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
+    out<-ode(y=c(Cmic=0.1244277, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
     cost<-modCost(model = out, obs = Obs_dat)
     
     return(cost)
@@ -2531,8 +2703,8 @@ ggplot(plot_mem_substrates, aes(obs_r, mod_r))+theme_min+geom_point(cex=6, pch=1
 mem_substrates_Cmic<-mem_substrates_results$OvP_Cmic
 ggplot(mem_substrates_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6, pch=1)+
   geom_abline(intercept = 0, slope=1, lwd=1.2)+
-  scale_x_continuous(limits = c(0,30))+
-  scale_y_continuous(limits = c(0,30))+
+  #scale_x_continuous(limits = c(0,30))+
+  #scale_y_continuous(limits = c(0,30))+
   ylab(expression(paste("Predicted ", C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   xlab(expression(paste("Observed ",  C[MIC], " (", mu, "mol ", ml^{-1}, ")")))+
   labs(title="Microbial - Enzyme model \n for different substrates")+
@@ -2541,8 +2713,8 @@ ggplot(mem_substrates_Cmic, aes(obs_Cmic, mod_Cmic))+theme_min+geom_point(cex=6,
 mem_substrates_E<-mem_substrates_results$OvP_E
 ggplot(mem_substrates_E, aes(obs_E, mod_E))+theme_min+geom_point(cex=6, pch=1)+
   geom_abline(intercept = 0, slope=1, lwd=1.2)+
-  scale_x_continuous(limits = c(0,8))+
-  scale_y_continuous(limits = c(0,8))+
+  #scale_x_continuous(limits = c(0,8))+
+  #scale_y_continuous(limits = c(0,8))+
   ylab(expression(paste("Predicted ", E, " (", mu, "mol ", ml^{-1}, ")")))+
   xlab(expression(paste("Observed ",  E, " (", mu, "mol ", ml^{-1}, ")")))+
   labs(title="Microbial - Enzyme model \n for different substrates")+
@@ -2603,15 +2775,15 @@ mem_unique<-function(data){
   #create cost function
   estim<-function(data){
     
-    Obs_dat<-data[,c(2, 9, 6, 10)]
+    Obs_dat<-data[,c("Time", "r")]
     
-    colnames(Obs_dat)<-c("time", "Cmic", "r","E")
-    Ci<-as.numeric(data[1, "DOCinit"])*0.75
+    colnames(Obs_dat)<-c("time", "r")
+    Ci<-as.numeric(data[1, "DOCinit"])
     
     cost_function<-function(pars){
       
       
-      out<-ode(y=c(Cmic=6.98, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
+      out<-ode(y=c(Cmic=0.1244277, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
       cost<-modCost(model = out, obs = Obs_dat, weight = "mean")
       
       return(cost)
@@ -2702,12 +2874,12 @@ mem_unique<-function(data){
   
   cost_r<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 6)]
+    Obs_dat<-data[,c("Time", "r")]
     
     colnames(Obs_dat)<-c("time", "r")
-    Ci<-as.numeric(data[1, "DOCinit"])*0.75
+    Ci<-as.numeric(data[1, "DOCinit"])
     
-    out<-ode(y=c(Cmic=6.98, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
+    out<-ode(y=c(Cmic=0.1244277, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
     cost<-modCost(model = out, obs = Obs_dat)
     
     return(cost)
@@ -2744,12 +2916,12 @@ mem_unique<-function(data){
   
   cost_Cmic<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 9)]
+    Obs_dat<-data[,c("Time", "Cmic.dna")]
     
     colnames(Obs_dat)<-c("time", "Cmic")
-    Ci<-as.numeric(data[1, "DOCinit"])*0.75
+    Ci<-as.numeric(data[1, "DOCinit"])
     
-    out<-ode(y=c(Cmic=6.98, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
+    out<-ode(y=c(Cmic=0.1244277, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
     cost<-modCost(model = out, obs = Obs_dat)
     
     return(cost)
@@ -2786,12 +2958,12 @@ mem_unique<-function(data){
   
   cost_E<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 10)]
+    Obs_dat<-data[,c("Time", "E")]
     
     colnames(Obs_dat)<-c("time", "E")
-    Ci<-as.numeric(data[1, "DOCinit"])*0.75
+    Ci<-as.numeric(data[1, "DOCinit"])
     
-    out<-ode(y=c(Cmic=6.98, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
+    out<-ode(y=c(Cmic=0.1244277, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
     cost<-modCost(model = out, obs = Obs_dat)
     
     return(cost)
@@ -2929,15 +3101,15 @@ mmem_all<-function(data){
         #defining stochiometric coefficients
         #PO ratio
         #PO=1.5*(1-((Cu/Cmic)/((Cu/Cmic)+Sover)))
-        y=2*1.5*Yatp
+        y=2*PO*Yatp
         
         #x
         #x=(Cu/Cmic)/((Cu/Cmic)+Sprod)
         
         #coefficients
-        psi.r=1/((y*x)+(y*0.64*(1-x))+1)
-        psi.g=y*x/((y*x)+(y*0.64*(1-x))+1)
-        psi.e=0.64*y*(1-x)/((y*x)+(y*0.64*(1-x))+1)
+        psi.r=1/((y*x)+(y*w*(1-x))+1)
+        psi.g=y*x/((y*x)+(y*w*(1-x))+1)
+        psi.e=w*y*(1-x)/((y*x)+(y*w*(1-x))+1)
         
         
         dCmic<--kmic*Cmic+Cu*psi.g
@@ -2953,7 +3125,7 @@ mmem_all<-function(data){
     base_function<-function(Ci){
       
       
-      out<-ode(y=c(Cmic=6.98, C=Ci, E=0), parms=pars, times=t, func=deriv)
+      out<-ode(y=c(Cmic=0.1244277, C=Ci, E=0), parms=pars, times=t, func=deriv)
       return(as.data.frame(out))}
     
     #results
@@ -2966,30 +3138,36 @@ mmem_all<-function(data){
   #create cost function
   estim<-function(data){
     
-    Obs_dat<-data[,c(2, 5, 9, 6, 10)]
+    Obs_dat<-data[,c(2, 3, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3,4, 5)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3,4, 5)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3,4, 5)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
-    colnames(m2)<-c("time", "Cmic", "r","E", "Cmic1", "r1", "E1", "Cmic2", "r2", "E2")
+    colnames(m2)<-c("time", "r", "r1", "r2")
     
     
     cost_function<-function(pars){
       
       
-      out<-mmem(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+      out<-mmem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
       cost<-modCost(model = out, obs = m2, weight = "mean")
       
       return(cost)
       
     }
     
-    res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, kmic=0.01, ke=0.01, x=0.7, Yatp=1),
-                 lower=c(Vmax=1e-4, Km=1e-4, kmic=1e-5, ke=1e-6, x=0, Yatp=0.01),
-                 upper=c(Vmax=1e4, Km=1e4, kmic=1e5, ke=1e6, x=1, Yatp=30),niter=10000)
+    #according to Russel and Cook 1995, Yatp across various growth rates vary between 0.46 and 0.94
+    #Henriksen et al., 1996 expects Yatp to be 0.96
+    #Baart et al., estimated Yatp between 0.06 - 0.1
+    #w is expected to be around 0.7 
+    #P/O ratio could be 0.6 - 1.7 (Postmus et al., 2011)
+    
+    res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, kmic=0.01, ke=0.01, x=0.5, PO=2, w=0.7, Yatp=1),
+                 lower=c(Vmax=1e-4, Km=1e-4, kmic=1e-5, ke=1e-6, x=0, PO=0.001, w=0.001, Yatp=0.01),
+                 upper=c(Vmax=1e4, Km=1e4, kmic=1e5, ke=1e6, x=1, PO=2.5, w=10, Yatp=30),niter=10000)
     
     return(res)
     
@@ -3008,17 +3186,17 @@ mmem_all<-function(data){
   
   cost_r<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 6)]
+    Obs_dat<-data[,c(2, 3, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "r", "r1", "r2")
     
-    out<-mmem(X=c(33.3*0.75, 35.06*0.75, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-mmem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -3051,17 +3229,17 @@ mmem_all<-function(data){
   
   cost_Cmic<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 9)]
+    Obs_dat<-data[,c(2, 6, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "Cmic", "Cmic1", "Cmic2")
     
-    out<-mmem(X=c(33.3*0.75, 35.06*0.7, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-mmem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
@@ -3094,17 +3272,17 @@ mmem_all<-function(data){
   
   cost_E<-function(pars, data){
     
-    Obs_dat<-data[,c(2, 5, 10)]
+    Obs_dat<-data[,c(2, 8, 4)]
     
-    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(1,3)], 
-              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(1,3)],all = T, by="Time")
+    m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c(2,3)], 
+              Obs_dat[Obs_dat$Substrate=="Cellobiose", c(2,3)],all = T, by="Time")
     
     m2<-merge(m1, 
-              Obs_dat[Obs_dat$Substrate=="Mix", c(1,3)],all = T, by="Time")
+              Obs_dat[Obs_dat$Substrate=="Mix", c(2,3)],all = T, by="Time")
     
     colnames(m2)<-c("time", "E", "E1", "E2")
     
-    out<-mmem(X=c(33.3*0.75, 35.06*0.7, 22.6*0.75), pars = pars, t=seq(0,130))
+    out<-mmem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
     cost<-modCost(model = out, obs = m2)
     
     return(cost)
