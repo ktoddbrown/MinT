@@ -163,6 +163,7 @@ ggplot(conversions, aes(Reference, Cmic))+geom_boxplot(cex=0.8, aes(colour=Organ
 m0$Cmic.dna.init<-m0$DNA.init/0.0494*0.44/12.01/3*0.25
 ######################################################################################################
 
+
 #extracellular protein to extracellular protein carbon (46% of carbon in protein - Vrede et al., 2004)
 m0$E<-m0$Prot.out*0.46/12.01/4
 
@@ -216,7 +217,7 @@ source("../first_order_decay_function.R")
 #across all
 decay_all_results<-first_order_function(data = dat, SUB = TRUE, FACT = 4, Niter = 10000, Vars = c("Substrate", "r", "Time"))
 
-#no_cors<-detectCores()-1
+#no_cors<-detectCores()
 #cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
@@ -452,34 +453,97 @@ mmem_structures_results$ll_r
 mmem_substrates_results$ll_r
 mmem_unique_results$ll_r
 
+plot(obs_E~mod_E, mmem_unique_results$OvP_E)
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
+#Monod, MEM, MEND and MMEM are further calibrated against respiration and microbial biomass as well
+#since several conversion factors between DNA or protein content and micrbial biomass C exist, models
+#are calibrated against 4 different datasets with 4 different conversion factors used:
+#highest and lowest DNA based microbial biomass and highest and lowest protein based microbial biomass
 
+#1. Highest DNA
+#measured microbial biomass
+dat$Cmic.dna_H<-m0[(m0$Substrate!="Free" & m0$Substrate!="Celluloze" & !is.na(m0$Substrate)), "DNA"]/0.004*0.45/12.01/4
+#measured initial microbial biomass
+Cmic.dna.init_H<-mean(m0$DNA.init/0.004*0.45/12.01/3*0.25, na.rm=T)
 
-##############Do again
-#comparing model fits based on AIC and log likelihood
-#monod growth for different substrates vs mem for different substrates 
-exp((monod_substrates_ll[4]-mem_substrates_ll[4])/2)
-1-pchisq(-2*(-monod_substrates_ll[1]--mem_substrates_ll[1]),mem_substrates_ll[2]-monod_substrates_ll[2])
+##################modeling
+#monod growth
+monod_all_results2<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H","Time"),
+                                         ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_H,
+                                         VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
 
-#monod growth for different substrates vs mmem for different substrates 
-exp((monod_substrates_ll[4]-mmem_substrates_ll[4])/2)
-1-pchisq(-2*(-monod_substrates_ll[1]--mmem_substrates_ll[1]),mmem_substrates_ll[2]-monod_substrates_ll[2])
+#mem
+mem_all_results2<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H","Time"),
+                              ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_H,
+                              VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
 
+#mend
+mend_all_results2<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H","Time"),
+                                ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_H,
+                                VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
 
-#Biomass AIC
-#monod growth for different substrates vs mem for different substrates 
-exp((monod_substrates_results$ll_Cmic[4]-mem_substrates_results$ll_Cmic[4])/2)
-1-pchisq(-2*(-monod_substrates_results$ll_Cmic[1]--mem_substrates_results$ll_Cmic[1]),mem_substrates_results$ll_Cmic[2]-monod_substrates_results$ll_Cmic[2])
+#mmem
+mmem_all_results2<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H","Time"),
+                                ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_H,
+                                VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
 
+#results
+monod_all_results2$ll_r
+mem_all_results2$ll_r
+mend_all_results2$ll_r
+mmem_all_results2$ll_r
 
-#monod growth for different substrates vs mmem for different substrates 
-exp((monod_substrates_results$ll_Cmic[4]-mmem_substrates_results$ll_Cmic[4])/2)
-1-pchisq(-2*(-monod_substrates_results$ll_Cmic[1]--mmem_substrates_results$ll_Cmic[1]),mmem_substrates_results$ll_Cmic[2]-monod_substrates_results$ll_Cmic[2])
+monod_all_results2$ll_Cmic
+mem_all_results2$ll_Cmic
+mend_all_results2$ll_Cmic
+mmem_all_results2$ll_Cmic
 
+#2. Lowest DNA
+#measured microbial biomass
+dat$Cmic.dna_L<-(m0[(m0$Substrate!="Free" & m0$Substrate!="Celluloze" & !is.na(m0$Substrate)), "DNA"]*0.2503+15)*0.45/12.01/4
+#measured initial microbial biomass
+Cmic.dna.init_L<-mean((m0$DNA.init*0.2503+15)*0.45/12.01/3*0.25, na.rm=T)
 
-#Enzyme AIC
-#mem for different substrates vs mmem for different substrates 
-exp((mem_substrates_results$ll_E[4]-mmem_substrates_results$ll_E[4])/2)
+##################modeling
+#monod growth
+monod_all_results3<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_L","Time"),
+                                          ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_L,
+                                          VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 10000)
 
+#mem
+mem_all_results3<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_L","Time"),
+                               ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_L,
+                               VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 10000)
+
+#mend
+mend_all_results3<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_L","Time"),
+                                 ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_L,
+                                 VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 10000)
+
+#mmem
+mmem_all_results3<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_L","Time"),
+                                 ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_L,
+                                 VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 10000)
+
+#results
+monod_all_results2$ll_r
+mem_all_results2$ll_r
+mend_all_results2$ll_r
+mmem_all_results2$ll_r
+
+monod_all_results2$ll_Cmic
+mem_all_results2$ll_Cmic
+mend_all_results2$ll_Cmic
+mmem_all_results2$ll_Cmic
+
+monod_all_results3$ll_r
+mem_all_results3$ll_r
+mend_all_results3$ll_r
+mmem_all_results3$ll_r
+
+monod_all_results3$ll_Cmic
+mem_all_results3$ll_Cmic
+mend_all_results3$ll_Cmic
+mmem_all_results3$ll_Cmic

@@ -40,3 +40,6 @@ rsconnect/
 *.pdf
 [FIGURES]/
 R/
+
+#for now, data files
+*.csv
