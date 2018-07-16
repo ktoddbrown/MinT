@@ -6,7 +6,9 @@ fontfamily: mathpazo
 fontsize: 11pt
 bibliography: mint.bib
 output: 
-  pdf_document
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
 header-includes:
     - \usepackage{setspace}
     - \doublespacing
@@ -19,16 +21,23 @@ header-includes:
     - \postauthor{\par\end{flushleft}}
     - \predate{\begin{flushleft}}
     - \postdate{\par\end{flushleft}\vskip 0.5em}
+    - \usepackage{float}
+    - \floatplacement{figure}{H}
+    
 
   
   
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, tidy.opts=list(width.cutoff=40),tidy=TRUE)
+
 library(knitr)
 library(ggplot2)
 library(grid)
+library(DiagrammeR)
+library(DiagrammeRsvg)
+library(rsvg)
 
 theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=14, colour="black"),
                  axis.text.y=element_text(hjust=0.2, size=14, colour="black"),
@@ -80,7 +89,7 @@ Cell pelet was bead beated in ethanol solution for 5 minutes to lyse the cells. 
 ## Discussion
 
 ##Tables
-```{r Tab. 1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis'}
+```{r Tab. 1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE, results='asis'}
 #tab1<-rbind(decay_all_results$likelihood, monod_all_results$ll_r, mem_all_results$ll_r,
             #mend_all_results$ll_r, mmem_all_results$ll_r)
 #colnames(tab1)<-c("_Log Likelihood_", "_N_", "_R^{2}_", "_AIC_")
@@ -90,43 +99,98 @@ Cell pelet was bead beated in ethanol solution for 5 minutes to lyse the cells. 
 tab1<-read.csv("tab1.csv")
 colnames(tab1)<-c(" ", "_Log Likelihood_", "_N_", "_R\\textsuperscript{2}_", "_AIC_")
 
-kable(tab1, align='c', digits=c(0, 1, 0, 2, 1), caption = "_**Table 1:** Correspondence between measured resiration rate and respiration rate modeled by five different models (First order decay, Monod growth, two different Microbial Enzyme Models (MEM and MEND) and Metabolic Microbial Enzyme Model (MMEM)). Log Likelihood, coefficient of determination ($R^{2}$), Akaike Information Criterion (AIC) and the number of estimated parameters are reported. All models are calibrated against measured respiration rate only._")
+kable(tab1, align='c', digits=c(0, 1, 0, 2, 1), caption = "_Correspondence between measured resiration rate and respiration rate modeled by five different models (First order decay, Monod growth, two different Microbial Enzyme Models (MEM and MEND) and Metabolic Microbial Enzyme Model (MMEM)). Log Likelihood, coefficient of determination ($R^{2}$), Akaike Information Criterion (AIC) and the number of estimated parameters are reported. All models are calibrated against measured respiration rate only._")
 ```
 
+
 ##Figures
-```{r Scheme 1, eval=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 
-ggplot(data.frame(a=0, b=0), aes(a,b))+geom_blank()+
-  theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
-        axis.text.y = element_blank(), axis.title.y = element_blank(),
-        panel.background = element_blank(),
-        axis.line.x = element_blank(), axis.line.y = element_blank(),
-        axis.ticks.x = element_blank(), axis.ticks.y = element_blank())+
-  geom_rect(aes(xmin=0.8, xmax=1.2, ymin=0.65, ymax=0.95), fill="white", colour="black", lwd=1.2)+
-  geom_text(aes(x=1, y=0.8, label="DOC"), size=14)+ylim(0.5,1.5)+xlim(0.5,1.5)+
-  geom_text(aes(x=1, y=1.3, label="CO[2]"), size=14, parse = T)+
-  geom_text(aes(x=1, y=1.5, label=c("First order decay")), size=11, parse = F, fontface="italic")+
-  geom_segment(aes(x=1, y=0.95, xend=1, yend=1.25), lwd=1.2, arrow = arrow(length = unit(0.5, "cm")))
+```{r Scheme 1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
-ggplot(data.frame(a=0, b=0), aes(a,b))+geom_blank()+
-  theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
-        axis.text.y = element_blank(), axis.title.y = element_blank(),
-        panel.background = element_blank(),
-        axis.line.x = element_blank(), axis.line.y = element_blank(),
-        axis.ticks.x = element_blank(), axis.ticks.y = element_blank())+
-  geom_rect(aes(xmin=1.1, xmax=1.5, ymin=0.65, ymax=0.95), fill="white", colour="black", lwd=1.2)+
-  geom_text(aes(x=1.3, y=0.8, label="DOC"), size=14)+ylim(0.5,1.5)+xlim(0.5,1.5)+
-  geom_text(aes(x=1.3, y=1.3, label="CO[2]"), size=14, parse = T)+
-  geom_text(aes(x=1, y=1.5, label=c("Monod growth")), size=11, parse = F, fontface="italic")+
-  geom_segment(aes(x=1.3, y=0.95, xend=1.3, yend=1.25), lwd=1.2, arrow = arrow(length = unit(0.5, "cm")))+
-  geom_rect(aes(xmin=0.6, xmax=0.8, ymin=0.65, ymax=0.95), fill="white", colour="black", lwd=1.2)
+scheme<-"digraph all{
+
+graph [overlap = false, fontsize = 10, layout = dot, rankdir = LR, penwidth = 0.001, root = cluster1];
+
+subgraph cluster0{
+
+graph [overlap = false, fontsize = 10, layout = dot, rankdir = LR];
+
+#nodes
+
+node [shape = circle];
+f [label = 'C@_{S}'] ;
+g [label = 'C@_{MB}'];
+h [label = 'C@_{Enz}'];
+
+
+node [shape = plaintext];
+i [label = 'CO@_{2}'];
+
+
+#edges
+f -> g   [label = 'uptake', fontsize = 10];
+g -> f [label = 'death', fontsize = 10];
+g -> h [label = 'enzyme production', fontsize = 10];
+h -> f  [label = 'enzyme decay', fontsize = 10];
+g -> i [label = 'respiration', fontsize = 10];
+
+label='Microbial-enzyme model';
+
+}
+
+subgraph cluster1 {
+
+graph [overlap = false, fontsize = 10, layout = dot, rankdir = LR];
+
+#nodes
+
+node [shape = circle];
+c [label = 'C@_{S}'] ;
+d [label = 'C@_{MB}'];
+
+
+node [shape = plaintext];
+e [label = 'CO@_{2}'];
+
+
+#edges
+c -> d [label = 'uptake', fontsize = 10];
+d -> c [label = 'death', fontsize = 10];
+d -> e [label = 'respiration', fontsize = 10];
+
+label='Monod growth';
+}
+
+
+
+subgraph cluster2 {
+
+graph [overlap = false, fontsize = 10, layout = dot, rankdir = LR];
+
+#nodes
+node [shape = circle];
+a [label = 'C@_{S}'];
+
+node [shape = plaintext];
+b [label = 'CO@_{2}'];
+
+
+#edges
+a -> b [label = 'decay', fontsize = 10];
+label = 'First order decay' ;
+
+}
+}"
+
+grViz(scheme) %>% export_svg() %>% charToRaw %>% rsvg_pdf("scheme.pdf")
+
+include_graphics("scheme.pdf")
 
   
 ```
 
 
-
-```{r Fig. 1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.height=16, fig.width=9, fig.cap="_**Fig. 1:** Distribution of microbial biomass carbon data as directly measured by the DNA or cellular protein concentration and calculated by different conversion factors published in the literature [@Baart2008; @Beck2018; @VanDuuren2013; @Marstorp2000, @Christensen1993; Christensen1993; @Yokoyama2017; @VanPutten1995; @Henriksen1996; @Hanegraaf2001]. Middle line corresonds to the median, lower and upper hinges to first and third quartile respectively, lower and upper whisker extends from lower and upper hinge to 1.5 time the interquartile range. Note that the x axis of both plots have different scales._"}
+```{r Fig. 1, echo=FALSE, resultsw = 'asis', message=FALSE, warning=FALSE, fig.height=14, fig.width=9, fig.cap="_Distribution of microbial biomass carbon data as directly measured by the DNA or cellular protein concentration and calculated by different conversion factors published in the literature [@Baart2008; @Beck2018; @VanDuuren2013; @Marstorp2000, @Christensen1993; Christensen1993; @Yokoyama2017; @VanPutten1995; @Henriksen1996; @Hanegraaf2001]. Middle line corresonds to the median, lower and upper hinges to first and third quartile respectively, lower and upper whisker extends from lower and upper hinge to 1.5 time the interquartile range. Note that the x axis of both plots have different scales._"}
 
 #write.csv(conversions, "./fig1.csv")
 fig1<-read.csv("fig1.csv")
@@ -136,7 +200,11 @@ ggplot(fig1, aes(Reference, Cmic))+geom_boxplot(cex=0.8, aes(colour=Organism), s
   ylab(expression(paste("Microbial biomass carbon (", mu, "mol ", ml^{-1},")")))
 ```
 
+\
+
+
 
 
 
 ##References
+

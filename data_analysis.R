@@ -1,4 +1,38 @@
-##################################MinT#################################################
+#################################################MinT#################################################
+##libraries
+library(deSolve)
+library(dplyr)
+library(FME)
+library(reshape)
+library(reshape2)
+library(ggplot2)
+library(foreach)
+library(doParallel)
+library(data.table)
+library(openxlsx)
+library(plyr)
+
+##ggplot theme
+theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=14, colour="black"),
+                 axis.text.y=element_text(hjust=0.2, size=14, colour="black"),
+                 axis.title=element_text(size=14, colour="black"),
+                 axis.line=element_line(size=0.5, colour="black"),
+                 strip.text=element_text(size=16, face="bold"),
+                 axis.ticks=element_line(size=1, colour="black"),
+                 axis.ticks.length=unit(-0.05, "cm"),
+                 panel.background=element_rect(colour="black", fill="white"),
+                 panel.grid=element_line(linetype=0),
+                 legend.text=element_text(size=14, colour="black"),
+                 legend.title=element_text(size=14, colour="black"),
+                 legend.position=c("right"),
+                 legend.key.size=unit(1, "cm"),
+                 strip.background=element_rect(fill="grey98", colour="black"),
+                 legend.key=element_rect(fill="white", size=1.2),
+                 legend.spacing=unit(0.5, "cm"),
+                 plot.title=element_text(size=28, face="bold", hjust=-0.05))
+
+#######################################################################################################
+
 ##data 
 #respiration rates in umol/ml/h
 resp<-read.xlsx(xlsxFile = c("C:/Users/cape159/Documents/pracovni/data_statistika/minT/data_checked_respiration.xlsx"),
@@ -175,39 +209,6 @@ mint<-mint[!is.na(mint$Substrate), ]
 
 dat<-subset(mint, Substrate!="Free" & Substrate!="Celluloze")
 summary(dat)
-
-##libraries
-library(deSolve)
-library(dplyr)
-library(FME)
-library(reshape)
-library(reshape2)
-library(ggplot2)
-library(foreach)
-library(doParallel)
-library(data.table)
-library(openxlsx)
-library(plyr)
-
-##ggplot theme
-theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=14, colour="black"),
-                 axis.text.y=element_text(hjust=0.2, size=14, colour="black"),
-                 axis.title=element_text(size=14, colour="black"),
-                 axis.line=element_line(size=0.5, colour="black"),
-                 strip.text=element_text(size=16, face="bold"),
-                 axis.ticks=element_line(size=1, colour="black"),
-                 axis.ticks.length=unit(-0.05, "cm"),
-                 panel.background=element_rect(colour="black", fill="white"),
-                 panel.grid=element_line(linetype=0),
-                 legend.text=element_text(size=14, colour="black"),
-                 legend.title=element_text(size=14, colour="black"),
-                 legend.position=c("right"),
-                 legend.key.size=unit(1, "cm"),
-                 strip.background=element_rect(fill="grey98", colour="black"),
-                 legend.key=element_rect(fill="white", size=1.2),
-                 legend.spacing=unit(0.5, "cm"),
-                 plot.title=element_text(size=28, face="bold", hjust=-0.05))
-
 
 #######################################################################################
 ##############################First order decay########################################
@@ -547,3 +548,453 @@ monod_all_results3$ll_Cmic
 mem_all_results3$ll_Cmic
 mend_all_results3$ll_Cmic
 mmem_all_results3$ll_Cmic
+
+#3. Median DNA - this is 2.39% of biomass - the best choice of a modeller
+#measured microbial biomass
+dat$Cmic.dna_M<-(m0[(m0$Substrate!="Free" & m0$Substrate!="Celluloze" & !is.na(m0$Substrate)), "DNA"]/0.0239)*0.45/12.01/4
+#measured initial microbial biomass
+Cmic.dna.init_M<-mean((m0$DNA.init/0.0239)*0.45/12.01/3*0.25, na.rm=T)
+
+##################modeling
+#monod growth
+monod_all_results4<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M","Time"),
+                                          ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_M,
+                                          VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+
+#mem
+mem_all_results4<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M","Time"),
+                               ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_M,
+                               VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+
+#mend
+mend_all_results4<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M","Time"),
+                                 ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_M,
+                                 VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+
+#mmem
+mmem_all_results4<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M","Time"),
+                                 ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_M,
+                                 VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+
+#results
+monod_all_results2$ll_r
+mem_all_results2$ll_r
+mend_all_results2$ll_r
+mmem_all_results2$ll_r
+
+monod_all_results2$ll_Cmic
+mem_all_results2$ll_Cmic
+mend_all_results2$ll_Cmic
+mmem_all_results2$ll_Cmic
+
+monod_all_results3$ll_r
+mem_all_results3$ll_r
+mend_all_results3$ll_r
+mmem_all_results3$ll_r
+
+monod_all_results3$ll_Cmic
+mem_all_results3$ll_Cmic
+mend_all_results3$ll_Cmic
+mmem_all_results3$ll_Cmic
+
+monod_all_results4$ll_r
+mem_all_results4$ll_r
+mend_all_results4$ll_r
+mmem_all_results4$ll_r
+
+monod_all_results4$ll_Cmic
+mem_all_results4$ll_Cmic
+mend_all_results4$ll_Cmic
+mmem_all_results4$ll_Cmic
+
+#5. Lowest protein 
+#gap filling
+ggplot(m0, aes(DNA, Prot.in))+geom_point()+geom_smooth(method=lm)
+summary(lm(Prot.in~DNA, m0))
+fill_coefs<-coef(lm(Prot.in~DNA, m0))
+
+m0[is.na(m0$Prot.in), "Prot.in"]<-m0[is.na(m0$Prot.in), "DNA"]*fill_coefs[2]+fill_coefs[1]
+
+
+#measured microbial biomass
+dat$Cmic.prot_L<-m0[(m0$Substrate!="Free" & m0$Substrate!="Celluloze" & !is.na(m0$Substrate)), "Prot.in"]/0.272*0.45/12.01/4
+#measured initial microbial biomass
+Cmic.prot.init_L<-mean((m0$DNA.init*fill_coefs[2]+fill_coefs[1])/0.272*0.45/12.01/3*0.25, na.rm=T)
+
+##################modeling
+#monod growth
+monod_all_results5<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L","Time"),
+                                          ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_L,
+                                          VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+
+#mem
+mem_all_results5<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L","Time"),
+                               ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_L,
+                               VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+
+#mend
+mend_all_results5<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L","Time"),
+                                 ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_L,
+                                 VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+
+#mmem
+mmem_all_results5<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L","Time"),
+                                 ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_L,
+                                 VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+
+#results
+monod_all_results2$ll_r
+mem_all_results2$ll_r
+mend_all_results2$ll_r
+mmem_all_results2$ll_r
+
+monod_all_results2$ll_Cmic
+mem_all_results2$ll_Cmic
+mend_all_results2$ll_Cmic
+mmem_all_results2$ll_Cmic
+
+monod_all_results3$ll_r
+mem_all_results3$ll_r
+mend_all_results3$ll_r
+mmem_all_results3$ll_r
+
+monod_all_results3$ll_Cmic
+mem_all_results3$ll_Cmic
+mend_all_results3$ll_Cmic
+mmem_all_results3$ll_Cmic
+
+monod_all_results4$ll_r
+mem_all_results4$ll_r
+mend_all_results4$ll_r
+mmem_all_results4$ll_r
+
+monod_all_results4$ll_Cmic
+mem_all_results4$ll_Cmic
+mend_all_results4$ll_Cmic
+mmem_all_results4$ll_Cmic
+
+monod_all_results5$ll_r
+mem_all_results5$ll_r
+mend_all_results5$ll_r
+mmem_all_results5$ll_r
+
+monod_all_results5$ll_Cmic
+mem_all_results5$ll_Cmic
+mend_all_results5$ll_Cmic
+mmem_all_results5$ll_Cmic
+
+#6. Highest protein 
+#gap filling
+#measured microbial biomass
+dat$Cmic.prot_H<-m0[(m0$Substrate!="Free" & m0$Substrate!="Celluloze" & !is.na(m0$Substrate)), "Prot.in"]/0.82*0.45/12.01/4
+#measured initial microbial biomass
+Cmic.prot.init_H<-mean((m0$DNA.init*fill_coefs[2]+fill_coefs[1])/0.82*0.45/12.01/3*0.25, na.rm=T)
+
+##################modeling
+#monod growth
+monod_all_results6<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H","Time"),
+                                          ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_H,
+                                          VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+
+#mem
+mem_all_results6<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H","Time"),
+                               ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_H,
+                               VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+
+#mend
+mend_all_results6<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H","Time"),
+                                 ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_H,
+                                 VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+
+#mmem
+mmem_all_results6<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H","Time"),
+                                 ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_H,
+                                 VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+
+#results
+monod_all_results2$ll_r
+mem_all_results2$ll_r
+mend_all_results2$ll_r
+mmem_all_results2$ll_r
+
+monod_all_results2$ll_Cmic
+mem_all_results2$ll_Cmic
+mend_all_results2$ll_Cmic
+mmem_all_results2$ll_Cmic
+
+monod_all_results3$ll_r
+mem_all_results3$ll_r
+mend_all_results3$ll_r
+mmem_all_results3$ll_r
+
+monod_all_results3$ll_Cmic
+mem_all_results3$ll_Cmic
+mend_all_results3$ll_Cmic
+mmem_all_results3$ll_Cmic
+
+monod_all_results4$ll_r
+mem_all_results4$ll_r
+mend_all_results4$ll_r
+mmem_all_results4$ll_r
+
+monod_all_results4$ll_Cmic
+mem_all_results4$ll_Cmic
+mend_all_results4$ll_Cmic
+mmem_all_results4$ll_Cmic
+
+monod_all_results5$ll_r
+mem_all_results5$ll_r
+mend_all_results5$ll_r
+mmem_all_results5$ll_r
+
+monod_all_results5$ll_Cmic
+mem_all_results5$ll_Cmic
+mend_all_results5$ll_Cmic
+mmem_all_results5$ll_Cmic
+
+monod_all_results6$ll_r
+mem_all_results6$ll_r
+mend_all_results6$ll_r
+mmem_all_results6$ll_r
+
+monod_all_results6$ll_Cmic
+mem_all_results6$ll_Cmic
+mend_all_results6$ll_Cmic
+mmem_all_results6$ll_Cmic
+
+
+######################################################################################################
+############################################Enzymes###################################################
+######################################################################################################
+
+#MEM, MEND and MMEM predicts the enzyme concentration as well
+#Model calibration is thus further constrained by the enzyme concentration
+#I use 4 different microbial biomass data sets
+
+#1. Highest DNA
+#measured microbial biomass
+dat$Cmic.dna_H<-m0[(m0$Substrate!="Free" & m0$Substrate!="Celluloze" & !is.na(m0$Substrate)), "DNA"]/0.004*0.45/12.01/4
+#measured initial microbial biomass
+Cmic.dna.init_H<-mean(m0$DNA.init/0.004*0.45/12.01/3*0.25, na.rm=T)
+
+##################modeling
+#mem
+mem_all_results7<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H", "E", "Time"),
+                               ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_H,
+                               VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
+
+#mend
+mend_all_results7<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H", "E", "Time"),
+                                 ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_H,
+                                 VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
+
+#mmem
+mmem_all_results7<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H", "E", "Time"),
+                                 ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_H,
+                                 VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
+
+
+mem_all_results7$ll_r
+mend_all_results7$ll_r
+mmem_all_results7$ll_r
+
+
+mem_all_results7$ll_Cmic
+mend_all_results7$ll_Cmic
+mmem_all_results7$ll_Cmic
+
+
+mem_all_results7$ll_E
+mend_all_results7$ll_E
+mmem_all_results7$ll_E
+
+#2. Median DNA
+#measured microbial biomass
+dat$Cmic.dna_M<-(m0[(m0$Substrate!="Free" & m0$Substrate!="Celluloze" & !is.na(m0$Substrate)), "DNA"]/0.0239)*0.45/12.01/4
+#measured initial microbial biomass
+Cmic.dna.init_M<-mean((m0$DNA.init/0.0239)*0.45/12.01/3*0.25, na.rm=T)
+
+
+##################modeling
+#mem
+mem_all_results8<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M", "E", "Time"),
+                               ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_M,
+                               VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+
+#mend
+mend_all_results8<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M", "E", "Time"),
+                                 ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_M,
+                                 VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+
+#mmem
+mmem_all_results8<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M", "E", "Time"),
+                                 ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_M,
+                                 VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+
+
+mem_all_results7$ll_r
+mend_all_results7$ll_r
+mmem_all_results7$ll_r
+
+
+mem_all_results7$ll_Cmic
+mend_all_results7$ll_Cmic
+mmem_all_results7$ll_Cmic
+
+
+mem_all_results7$ll_E
+mend_all_results7$ll_E
+mmem_all_results7$ll_E
+
+
+mem_all_results8$ll_r
+mend_all_results8$ll_r
+mmem_all_results8$ll_r
+
+
+mem_all_results8$ll_Cmic
+mend_all_results8$ll_Cmic
+mmem_all_results8$ll_Cmic
+
+
+mem_all_results8$ll_E
+mend_all_results8$ll_E
+mmem_all_results8$ll_E
+
+#3. Lowest protein
+##################modeling
+#mem
+mem_all_results9<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L", "E", "Time"),
+                               ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.prot.init_L,
+                               VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+
+#mend
+mend_all_results9<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L", "E", "Time"),
+                                 ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.prot.init_L,
+                                 VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+
+#mmem
+mmem_all_results9<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L", "E", "Time"),
+                                 ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.prot.init_L,
+                                 VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+
+
+mem_all_results7$ll_r
+mend_all_results7$ll_r
+mmem_all_results7$ll_r
+
+
+mem_all_results7$ll_Cmic
+mend_all_results7$ll_Cmic
+mmem_all_results7$ll_Cmic
+
+
+mem_all_results7$ll_E
+mend_all_results7$ll_E
+mmem_all_results7$ll_E
+
+
+mem_all_results8$ll_r
+mend_all_results8$ll_r
+mmem_all_results8$ll_r
+
+
+mem_all_results8$ll_Cmic
+mend_all_results8$ll_Cmic
+mmem_all_results8$ll_Cmic
+
+
+mem_all_results8$ll_E
+mend_all_results8$ll_E
+mmem_all_results8$ll_E
+
+
+mem_all_results9$ll_r
+mend_all_results9$ll_r
+mmem_all_results9$ll_r
+
+
+mem_all_results9$ll_Cmic
+mend_all_results9$ll_Cmic
+mmem_all_results9$ll_Cmic
+
+
+mem_all_results9$ll_E
+mend_all_results9$ll_E
+mmem_all_results9$ll_E
+
+#4. Highest protein
+##################modeling
+#mem
+mem_all_results10<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H", "E", "Time"),
+                               ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.prot.init_H,
+                               VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+
+#mend
+mend_all_results10<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H", "E", "Time"),
+                                 ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.prot.init_H,
+                                 VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+
+#mmem
+mmem_all_results10<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H", "E", "Time"),
+                                 ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.prot.init_H,
+                                 VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+
+
+mem_all_results7$ll_r
+mend_all_results7$ll_r
+mmem_all_results7$ll_r
+
+
+mem_all_results7$ll_Cmic
+mend_all_results7$ll_Cmic
+mmem_all_results7$ll_Cmic
+
+
+mem_all_results7$ll_E
+mend_all_results7$ll_E
+mmem_all_results7$ll_E
+
+
+mem_all_results8$ll_r
+mend_all_results8$ll_r
+mmem_all_results8$ll_r
+
+
+mem_all_results8$ll_Cmic
+mend_all_results8$ll_Cmic
+mmem_all_results8$ll_Cmic
+
+
+mem_all_results8$ll_E
+mend_all_results8$ll_E
+mmem_all_results8$ll_E
+
+
+mem_all_results9$ll_r
+mend_all_results9$ll_r
+mmem_all_results9$ll_r
+
+
+mem_all_results9$ll_Cmic
+mend_all_results9$ll_Cmic
+mmem_all_results9$ll_Cmic
+
+
+mem_all_results9$ll_E
+mend_all_results9$ll_E
+mmem_all_results9$ll_E
+
+mem_all_results10$ll_r
+mend_all_results10$ll_r
+mmem_all_results10$ll_r
+
+
+mem_all_results10$ll_Cmic
+mend_all_results10$ll_Cmic
+mmem_all_results10$ll_Cmic
+
+
+mem_all_results10$ll_E
+mend_all_results10$ll_E
+mmem_all_results10$ll_E
