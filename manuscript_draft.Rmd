@@ -6,23 +6,9 @@ fontfamily: mathpazo
 fontsize: 11pt
 bibliography: mint.bib
 output: 
-  pdf_document:
-    fig_caption: yes
-    keep_tex: yes
-header-includes:
-    - \usepackage{setspace}
-    - \doublespacing
-    - \usepackage{lineno}
-    - \linenumbers
-    - \usepackage{titling}
-    - \pretitle{\begin{flushleft}}
-    - \posttitle{\end{flushleft}}
-    - \preauthor{\begin{flushleft}\large}
-    - \postauthor{\par\end{flushleft}}
-    - \predate{\begin{flushleft}}
-    - \postdate{\par\end{flushleft}\vskip 0.5em}
-    - \usepackage{float}
-    - \floatplacement{figure}{H}
+  word_document:
+    fig_caption: true
+
     
 
   
@@ -38,6 +24,9 @@ library(grid)
 library(DiagrammeR)
 library(DiagrammeRsvg)
 library(rsvg)
+library(kableExtra)
+library(magick)
+
 
 theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=14, colour="black"),
                  axis.text.y=element_text(hjust=0.2, size=14, colour="black"),
@@ -89,7 +78,7 @@ Cell pelet was bead beated in ethanol solution for 5 minutes to lyse the cells. 
 ## Discussion
 
 ##Tables
-```{r Tab. 1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE, results='asis'}
+```{r Tab. 1, echo=FALSE, fig.width=130, message=FALSE, warning=FALSE, results='asis'}
 #tab1<-rbind(decay_all_results$likelihood, monod_all_results$ll_r, mem_all_results$ll_r,
             #mend_all_results$ll_r, mmem_all_results$ll_r)
 #colnames(tab1)<-c("_Log Likelihood_", "_N_", "_R^{2}_", "_AIC_")
@@ -97,15 +86,21 @@ Cell pelet was bead beated in ethanol solution for 5 minutes to lyse the cells. 
 #write.csv(tab1, "./tab1.csv")
 
 tab1<-read.csv("tab1.csv")
-colnames(tab1)<-c(" ", "_Log Likelihood_", "_N_", "_R\\textsuperscript{2}_", "_AIC_")
 
-kable(tab1, align='c', digits=c(0, 1, 0, 2, 1), caption = "_Correspondence between measured resiration rate and respiration rate modeled by five different models (First order decay, Monod growth, two different Microbial Enzyme Models (MEM and MEND) and Metabolic Microbial Enzyme Model (MMEM)). Log Likelihood, coefficient of determination ($R^{2}$), Akaike Information Criterion (AIC) and the number of estimated parameters are reported. All models are calibrated against measured respiration rate only._")
+
+#colnames(tab1)<-c(" ", "Log Likelihood", "N", "$R^{2}$", "AIC")
+
+
+
+kable(tab1, align='c', digits=c(0, 1, 0, 2, 1), "latex", booktabs=T, col.names = c(" ", "Log Likelihood", "N", "R^2^", "AIC"), caption = "Correspondence between measured resiration rate and respiration rate modeled by five different models (First order decay, Monod growth, two different Microbial Enzyme Models (MEM and MEND) and Metabolic Microbial Enzyme Model (MMEM)). Log Likelihood, coefficient of determination ($R^{2}$), Akaike Information Criterion (AIC) and the number of estimated parameters are reported. All models are calibrated against measured respiration rate only.") %>%
+  kable_as_image()
+
 ```
 
 
 ##Figures
 
-```{r Scheme 1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r Scheme 1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width = 20, fig.cap="_Schematic representation of three mathematical models, which are commonly used to predict the respiration rate. $C_{S}$ - carbon substrate, $C_{MB}$ - microbial biomass carbon, $C_{Enz}$ - enzymes carbon._"}
 
 scheme<-"digraph all{
 
@@ -119,8 +114,8 @@ graph [overlap = false, fontsize = 10, layout = dot, rankdir = LR];
 
 node [shape = circle];
 f [label = 'C@_{S}'] ;
-g [label = 'C@_{MB}'];
 h [label = 'C@_{Enz}'];
+g [label = 'C@_{MB}'];
 
 
 node [shape = plaintext];
@@ -182,12 +177,12 @@ label = 'First order decay' ;
 }
 }"
 
-grViz(scheme) %>% export_svg() %>% charToRaw %>% rsvg_pdf("scheme.pdf")
+grViz(scheme) %>% export_svg() %>% charToRaw %>% rsvg_png("scheme.png")
 
-include_graphics("scheme.pdf")
+include_graphics("scheme.png")
 
-  
 ```
+
 
 
 ```{r Fig. 1, echo=FALSE, resultsw = 'asis', message=FALSE, warning=FALSE, fig.height=14, fig.width=9, fig.cap="_Distribution of microbial biomass carbon data as directly measured by the DNA or cellular protein concentration and calculated by different conversion factors published in the literature [@Baart2008; @Beck2018; @VanDuuren2013; @Marstorp2000, @Christensen1993; Christensen1993; @Yokoyama2017; @VanPutten1995; @Henriksen1996; @Hanegraaf2001]. Middle line corresonds to the median, lower and upper hinges to first and third quartile respectively, lower and upper whisker extends from lower and upper hinge to 1.5 time the interquartile range. Note that the x axis of both plots have different scales._"}
