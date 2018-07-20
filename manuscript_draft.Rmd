@@ -1,6 +1,6 @@
 ---
 title: "**Title**"
-author: "$^{1}$Petr Capek*, $^{1}$Katherine Todd-Brown, $^{1}$Natalie Sadler, $^{1}$Nancy Hess, $^{1}$Kirsten Hofmockel"
+author: "^1^Petr Capek*, ^1^Katherine Todd-Brown, ^1^Natalie Sadler, ^1^Nancy Hess, ^1^Kirsten Hofmockel"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 fontfamily: mathpazo
 fontsize: 11pt
@@ -49,7 +49,7 @@ theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=14, colour="black"),
 
 ```
 
-_$^{1}$Pacific Northwest National Laboratory, Environmental Molecular Sciences Laboratory, Richland, WA USA_
+_^1^Pacific Northwest National Laboratory, Environmental Molecular Sciences Laboratory, Richland, WA USA_
 
 ## Abstract
 
@@ -57,10 +57,10 @@ _$^{1}$Pacific Northwest National Laboratory, Environmental Molecular Sciences L
 
 ## Material and Methods
 ###Experimental design
-Microbial culture obtained from the soil (see later) was incubated in liquid batch culture microcosms at 24$^{\circ}C$ in the dark for five days under nine different experimental treatments. These treatments include three different organic substrates as a sole source of carbon for microbial culture and three different levels of microcosm structural complexity in fully factorial design. The three organic substrates were glucose, cellobiose and mixture of glucose, cellobiose and cellulose. The three levels of structural complexity were represented by **_??34 ml??_** incubation vials with liquid medium only (denoted as **"BROTH"** further in the text), with liquid medium and mixture of 2.7, 0.1 and 0.1 mm glass beads (5 g of 2.7 mm Biospec glass beads, 2 g of 1.0 mm Biospec glass beads and 1 g of 0.1 mm Next-Advanced glass beads; denoted as **"GLASS"** further in the text) and with liquid medium and glass wool (0.2 g of Pyrex fiber glass wool cutted to ~0.25 cm pieces; denoted as **"WOOL"** further in the text). All experimental treatments were replicated four times **_but this is probably not true since the sampling was destructive_**.
+Microbial culture obtained from the soil (see later) was incubated in liquid batch culture microcosms at 24&deg;C in the dark for five days under nine different experimental treatments. These treatments include three different organic substrates as a sole source of carbon for microbial culture and three different levels of microcosm structural complexity in fully factorial design. The three organic substrates were glucose, cellobiose and mixture of glucose, cellobiose and cellulose. The three levels of structural complexity were represented by **_??34 ml??_** incubation vials with liquid medium only (denoted as **"BROTH"** further in the text), with liquid medium and mixture of 2.7, 0.1 and 0.1 mm glass beads (5 g of 2.7 mm Biospec glass beads, 2 g of 1.0 mm Biospec glass beads and 1 g of 0.1 mm Next-Advanced glass beads; denoted as **"GLASS"** further in the text) and with liquid medium and glass wool (0.2 g of Pyrex fiber glass wool cutted to ~0.25 cm pieces; denoted as **"WOOL"** further in the text). All experimental treatments were replicated four times **_but this is probably not true since the sampling was destructive_**.
 
 ###Microbial culture
-Microbial culture used in the experiment was obtained by imbibement of the **_??prosser soil?? (is it correct)_**, _short characteristic of soil_ ... with the growth medium. One gram of air dried soil was supplemented by the 10 ml of sterile Cellulose Degrader M9 Media (see later) with 6.25 ml of lysogeny broth. The final organic carbon concentration of added medium was ~40 mmol $l^{-1}$ (0.4 mmol $g(DW)^{-1}$). The soil with medium was incubated seven days at 24$^{\circ}C$ in dark. At the end of incubation, soil-medium suspension was shaken with ~ten 2.7 mm glass beats for ten minutes. The suspension was transferred to sterile flask and soil particles were allowed to settle down. The liquid phase was further transferred to new sterile flask and used to inoculate a microcosms.   
+Microbial culture used in the experiment was obtained by imbibement of the **_??prosser soil?? (is it correct)_**, _short characteristic of soil_ ... with the growth medium. One gram of air dried soil was supplemented by the 10 ml of sterile Cellulose Degrader M9 Media (see later) with 6.25 ml of lysogeny broth. The final organic carbon concentration of added medium was ~40 mmol l^-1^ (0.4 mmol g(DW)^-1^). The soil with medium was incubated seven days at 24&deg;C in dark. At the end of incubation, soil-medium suspension was shaken with ~ten 2.7 mm glass beats for ten minutes. The suspension was transferred to sterile flask and soil particles were allowed to settle down. The liquid phase was further transferred to new sterile flask and used to inoculate a microcosms.   
 
 ###Microcosm
 **_??34 ml??_** incubation vials with glass beads, glass wool or empty were filled with 3 ml of sterile medium and 1 ml of microbial culture. The medium was composed of Cellulose Degrader M9 Media and organic substrate (the final concentration 1 g of organic substrate per one liter of medium). Cellulose Degrader M9 Media was prepared by mixing 300 ml of M9 Minimal Media 10X stock solution (59.623 g anhydrous $NaH_{2}PO_{4}$, 29.938 g $KH_{2}PO_{4}$, 4.967 g NaCl, 10.003 g $NH_{4}Cl$, 1.204 g anhydrous $MgSO_{4}$ and 0.140 g $CaCl_{2}\cdot2H_{2}0$ in 1 l of ultra pure water), 10 ml of Hutner's Trace Element Solution (10 g $C_{6}H_{9}NO_{6}$, 7.3 g KOH, 14.45 g $MgSO_{4}$, 3.335 g $CaCl_{2}\cdot2H_{2}0$, 0.00925 g $(NH_{4})_{6}Mo_{7}O_{24}\cdot4H_{2}0$, 0.099 g $FeSO_{4}\cdot7H_{2}0$ and 50 mL of Hutner's Stock Salt Solution in 1 l of ultra pure water), 1 ml of Biotin (1 g $l^{-1}$), 1 ml of Thiamin (1 g $l^{-1}$) and ultra pure water to 1 l. Accounting for the dilution by the inoculum with assumed organic carbon concentration nearly zero, initial organic carbon concentration of the microcosms was 25 mmol $l^{-1}$. Initial microbial biomass concentration of the microocosm was measured (see later) to be 7 mmol of microbial carbon per liter. Incubation vials were kept covered by Breathe-Easy sealing membrane secured with the aluminium cap at all times the respiration rate was not measured. **_(short decription of the incubator)_**.
@@ -69,8 +69,17 @@ Microbial culture used in the experiment was obtained by imbibement of the **_??
 Microbial respiration rate was measured at the beginning of the experiment and each following day (six times in total). Approximately two hours before the headspace $CO_{2}$ concentration measurement, Breathe-Easy sealing membranes were removed from the incubation vials and replaced by the ruber septa secured with the alluminium cap. Vials headspace was exhcanged for the $CO_{2}$-free air and incubated. Headspace was sampled using 5 ml gas tight syringe. 1.5 ml of well mixed headspace air was sampled and directly injected to Li-Cor Li 7000 (LI-COR, Inc., Lincoln, Nebraska, USA). $CO_{2}$ concentration was calculated against the calibartion standard gas of the $CO_{2}$ concentration 2000 ppm. $CO_{2}$ concentration was corrected for the $CO_{2}$ dissolution in liquid media according to Sparling and West [-@Sparling1990]. Respiration rate was further calculated as corrected $CO_{2}$ concentration divided by the time since the vials were closed. 
 
 ###DNA isolation and quantification
-DNA was isolated before the start of the experiment, first, second and last day of incubation to quantify microbial biomass in the microcosms. Two ml of well mixed liquid solution was sampled and thorougly mixed with two ml of phosphate buffer. The final solution was centrifuged at 4,700 g for ten minutes at 4$^{\circ}C$ and pelet was separated from supernatant. Supernatant was anaylzed for protein concentration (see later). Pellet was resuspended in 0.5 ml and kept deep frozen (-80$^{\circ}C$) until the assay was conducted. 
+To quantify microbial biomass in the microcosms, DNA was isolated from samples before the start of the experiment, first, second and last day of incubation. The sampling was destructive. The whole volume of microcosm containing microbial cells was quantitatively transfered to 15 ml falcon tubes. Cell scraper was used to detach microbial cells from surface of microcosm or from glass beads/wool. Two ml of phosphate buffer was added and the final solution thoroughly mixed. The final solution was centrifuged at 4,700 g for ten minutes at 4&deg;C and pelet was separated from supernatant. Supernatant was anaylzed for protein concentration (see later). Pellet was resuspended in 0.5 ml and kept deep frozen (-80&deg;C) until the assay was conducted. 
 Cell pelet was bead beated in ethanol solution for 5 minutes to lyse the cells. To isolate DNA from the cell lysate, DNeasy PowerSoil Kit (QIAGEN, Venlo, Netherland) was used. DNA concentration was measured by a Nanodrop meter **_(specification)_**. DNA concentration was conversed to microbial biomass carbon using several conversion factors published in literature (see Fig. 1)  
+
+###Cellular protein quantification
+As a complementary method for microbial biomass quantification, protein concentration was assesed in cell lysate by bicinchoninic acid assay. **_(specification of spectrophotometer)_** was used to measure protein concentration. Alike DNA, protein concentration was conversed to microbial biomass carbon using several conversion factors published in literature (see Fig. 1)  
+
+###Extracellular protein concentration
+Protein concentration was further assesed in the supernatant (see above). Before the analysis, supernatant was filtered through 10 kDa Supor membrane. Protein concentration was measured in >10 kDa fraction. This fraction is assumed to be dominated be extracellular enzymes produced by microbial cells. Extracellular enzymes are assumed to contain 46% of carbon [@Vrede2004].
+
+###Mathematical description
+
 
 
 ## Results
@@ -87,16 +96,53 @@ Cell pelet was bead beated in ethanol solution for 5 minutes to lyse the cells. 
 
 tab1<-read.csv("tab1.csv")
 
-
-#colnames(tab1)<-c(" ", "Log Likelihood", "N", "$R^{2}$", "AIC")
-
-
-
-kable(tab1, align='c', digits=c(0, 1, 0, 2, 1), "latex", booktabs=T, col.names = c(" ", "Log Likelihood", "N", "R^2^", "AIC"), caption = "Correspondence between measured resiration rate and respiration rate modeled by five different models (First order decay, Monod growth, two different Microbial Enzyme Models (MEM and MEND) and Metabolic Microbial Enzyme Model (MMEM)). Log Likelihood, coefficient of determination ($R^{2}$), Akaike Information Criterion (AIC) and the number of estimated parameters are reported. All models are calibrated against measured respiration rate only.") %>%
+kable(tab1, align='c', digits=c(0, 1, 0, 2, 1), "latex", booktabs=T, escape=F, col.names = c(" ", "Log Likelihood", "N", "R^2^", "AIC"), caption = "Correspondence between measured resiration rate and respiration rate modeled by five different models (First order decay, Monod growth, two different Microbial Enzyme Models (MEM and MEND) and Metabolic Microbial Enzyme Model (MMEM)). Log Likelihood, coefficient of determination ($R^{2}$), Akaike Information Criterion (AIC) and the number of estimated parameters are reported. All models are calibrated against measured respiration rate only.") %>%
   kable_as_image()
 
 ```
 
+```{r Tab. 2, echo=FALSE, fig.width=130, message=FALSE, warning=FALSE, results='asis'}
+# tab2a<-rbind(monod_all_results2$ll_r, mem_all_results2$ll_r,
+#              mend_all_results2$ll_r, mmem_all_results2$ll_r,
+#              monod_all_results4$ll_r, mem_all_results4$ll_r,
+#              mend_all_results4$ll_r, mmem_all_results4$ll_r,
+#              monod_all_results5$ll_r, mem_all_results5$ll_r,
+#              mend_all_results5$ll_r, mmem_all_results5$ll_r,
+#              monod_all_results6$ll_r, mem_all_results6$ll_r,
+#              mend_all_results6$ll_r, mmem_all_results6$ll_r)
+# tab2a[tab2a[,3]<0,"rsq"]<-c(0)
+#  
+# tab2b<-rbind(monod_all_results2$ll_Cmic, mem_all_results2$ll_Cmic,
+#              mend_all_results2$ll_Cmic, mmem_all_results2$ll_Cmic,
+#              monod_all_results4$ll_Cmic, mem_all_results4$ll_Cmic,
+#              mend_all_results4$ll_Cmic, mmem_all_results4$ll_Cmic,
+#              monod_all_results5$ll_Cmic, mem_all_results5$ll_Cmic,
+#              mend_all_results5$ll_Cmic, mmem_all_results5$ll_Cmic,
+#              monod_all_results6$ll_Cmic, mem_all_results6$ll_Cmic,
+#              mend_all_results6$ll_Cmic, mmem_all_results6$ll_Cmic)
+# tab2b[tab2b[,3]<0,"rsq"]<-c(0)
+#  
+# tab2<-cbind(tab2a, tab2b)
+#  
+# write.csv(tab2, "./tab2.csv")
+
+tab2<-read.csv("tab2.csv")
+
+
+#colnames(tab1)<-c("_Log Likelihood_", "_N_", "_R^{2}_", "_AIC_")
+# rownames(tab2)<-c("Monod growth", "MEM", "MEND", "MMEM","Monod growth", "MEM", "MEND", "MMEM","Monod growth", "MEM", "MEND", "MMEM","Monod growth", "MEM", "MEND", "MMEM")
+#write.csv(tab1, "./tab1.csv")
+
+kable(tab2, align='c', digits=c(0, 1, 0, 2, 1, 1, 0, 2, 1), "latex", escape=F, booktabs=T, col.names = c(" ", "Log Likelihood", "N", "R^2^", "AIC","Log Likelihood", "N", "R^2^", "AIC"), caption = "Correspondence between measured resiration rate and respiration rate modeled by five different models (First order decay, Monod growth, two different Microbial Enzyme Models (MEM and MEND) and Metabolic Microbial Enzyme Model (MMEM)). Log Likelihood, coefficient of determination ($R^{2}$), Akaike Information Criterion (AIC) and the number of estimated parameters are reported. All models are calibrated against measured respiration rate only.") %>%
+  add_header_above(c(" " = 1 ,"Respiration rate" = 4, "Microbial biomass" = 4))  %>%
+  group_rows("Beck et al., 2018 (DNA ~ 0.9% $C_{MB}$)", 1 , 4) %>%
+  group_rows("Median of DNA abundance across studies (DNA ~ 2.39% $C_{MB}$)", 5 , 8) %>%
+  group_rows("Beck et al., 2018 (Protein ~ 60%% $C_{MB}$)", 9 , 12) %>%
+  group_rows("Hanegraaf and Muller, 2001 (Protein ~ 182%% $C_{MB}$)", 13 , 16) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F, font_size = 7) %>%
+  kable_as_image()
+
+```
 
 ##Figures
 
@@ -128,6 +174,7 @@ g -> f [label = 'death', fontsize = 10];
 g -> h [label = 'enzyme production', fontsize = 10];
 h -> f  [label = 'enzyme decay', fontsize = 10];
 g -> i [label = 'respiration', fontsize = 10];
+
 
 label='Microbial-enzyme model';
 
@@ -185,7 +232,7 @@ include_graphics("scheme.png")
 
 
 
-```{r Fig. 1, echo=FALSE, resultsw = 'asis', message=FALSE, warning=FALSE, fig.height=14, fig.width=9, fig.cap="_Distribution of microbial biomass carbon data as directly measured by the DNA or cellular protein concentration and calculated by different conversion factors published in the literature [@Baart2008; @Beck2018; @VanDuuren2013; @Marstorp2000, @Christensen1993; Christensen1993; @Yokoyama2017; @VanPutten1995; @Henriksen1996; @Hanegraaf2001]. Middle line corresonds to the median, lower and upper hinges to first and third quartile respectively, lower and upper whisker extends from lower and upper hinge to 1.5 time the interquartile range. Note that the x axis of both plots have different scales._"}
+```{r Fig. 1, echo=FALSE, resultsw = 'asis', message=FALSE, warning=FALSE, fig.height=10, fig.width=7, fig.cap="_Distribution of microbial biomass carbon data as directly measured by the DNA or cellular protein concentration and calculated by different conversion factors published in the literature [@Baart2008; @Beck2018; @VanDuuren2013; @Marstorp2000, @Christensen1993; Christensen1993; @Yokoyama2017; @VanPutten1995; @Henriksen1996; @Hanegraaf2001]. Middle line corresonds to the median, lower and upper hinges to first and third quartile respectively, lower and upper whisker extends from lower and upper hinge to 1.5 time the interquartile range. Note that the x axis of both plots have different scales._"}
 
 #write.csv(conversions, "./fig1.csv")
 fig1<-read.csv("fig1.csv")
