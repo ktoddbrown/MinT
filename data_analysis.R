@@ -399,10 +399,12 @@ mend_unique_results$ll_r
 ###############################################################################################
 source("../mmem_function.R")
 
+
 #across all treatments
 mmem_all_results<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Time"),
                                 ColM = c("time", "r", "r1", "r2"),Cmic=mean(dat$Cmic.dna.init, na.rm = T),
                                 VarsCmic = c("Substrate", "Cmic.dna", "Time"), Niter = 10000)
+
 
 #no_cors<-detectCores()-1
 #cl<-makeCluster(no_cors)
@@ -454,6 +456,8 @@ mmem_structures_results$ll_r
 mmem_substrates_results$ll_r
 mmem_unique_results$ll_r
 
+mmem_all_results_m$ll_r
+
 plot(obs_E~mod_E, mmem_unique_results$OvP_E)
 ####################################################################################################
 ####################################################################################################
@@ -473,22 +477,22 @@ Cmic.dna.init_H<-mean(m0$DNA.init/0.004*0.45/12.01/3*0.25, na.rm=T)
 #monod growth
 monod_all_results2<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H","Time"),
                                          ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_H,
-                                         VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
+                                         VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 100000)
 
 #mem
 mem_all_results2<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H","Time"),
                               ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_H,
-                              VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
+                              VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 100000)
 
 #mend
 mend_all_results2<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H","Time"),
                                 ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_H,
-                                VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
+                                VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 100000)
 
 #mmem
 mmem_all_results2<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H","Time"),
                                 ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_H,
-                                VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
+                                VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 100000)
 
 #results
 monod_all_results2$ll_r
@@ -511,22 +515,22 @@ Cmic.dna.init_L<-mean((m0$DNA.init*0.2503+15)*0.45/12.01/3*0.25, na.rm=T)
 #monod growth
 monod_all_results3<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_L","Time"),
                                           ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_L,
-                                          VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 10000)
+                                          VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 100000)
 
 #mem
 mem_all_results3<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_L","Time"),
                                ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_L,
-                               VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 10000)
+                               VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 100000)
 
 #mend
 mend_all_results3<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_L","Time"),
                                  ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_L,
-                                 VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 100000)
 
 #mmem
 mmem_all_results3<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_L","Time"),
                                  ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_L,
-                                 VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 100000)
 
 #results
 monod_all_results2$ll_r
@@ -559,22 +563,22 @@ Cmic.dna.init_M<-mean((m0$DNA.init/0.0239)*0.45/12.01/3*0.25, na.rm=T)
 #monod growth
 monod_all_results4<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M","Time"),
                                           ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_M,
-                                          VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+                                          VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 100000)
 
 #mem
 mem_all_results4<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M","Time"),
                                ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_M,
-                               VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+                               VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 100000)
 
 #mend
 mend_all_results4<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M","Time"),
                                  ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_M,
-                                 VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 100000)
 
 #mmem
 mmem_all_results4<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M","Time"),
                                  ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.dna.init_M,
-                                 VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 100000)
 
 #results
 monod_all_results2$ll_r
@@ -625,22 +629,22 @@ Cmic.prot.init_L<-mean((m0$DNA.init*fill_coefs[2]+fill_coefs[1])/0.272*0.45/12.0
 #monod growth
 monod_all_results5<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L","Time"),
                                           ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_L,
-                                          VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+                                          VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 100000)
 
 #mem
 mem_all_results5<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L","Time"),
                                ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_L,
-                               VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+                               VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 100000)
 
 #mend
 mend_all_results5<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L","Time"),
                                  ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_L,
-                                 VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 100000)
 
 #mmem
 mmem_all_results5<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L","Time"),
                                  ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_L,
-                                 VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 100000)
 
 #results
 monod_all_results2$ll_r
@@ -694,22 +698,22 @@ Cmic.prot.init_H<-mean((m0$DNA.init*fill_coefs[2]+fill_coefs[1])/0.82*0.45/12.01
 #monod growth
 monod_all_results6<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H","Time"),
                                           ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_H,
-                                          VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+                                          VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 100000)
 
 #mem
 mem_all_results6<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H","Time"),
                                ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_H,
-                               VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+                               VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 100000)
 
 #mend
 mend_all_results6<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H","Time"),
                                  ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_H,
-                                 VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 100000)
 
 #mmem
 mmem_all_results6<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H","Time"),
                                  ColM = c("time", "r", "Cmic","r1", "Cmic1","r2", "Cmic2"),Cmic=Cmic.prot.init_H,
-                                 VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 100000)
 
 #results
 monod_all_results2$ll_r
@@ -781,18 +785,19 @@ Cmic.dna.init_H<-mean(m0$DNA.init/0.004*0.45/12.01/3*0.25, na.rm=T)
 #mem
 mem_all_results7<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H", "E", "Time"),
                                ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_H,
-                               VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
+                               VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 100000)
 
 #mend
 mend_all_results7<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H", "E", "Time"),
                                  ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_H,
-                                 VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 100000)
 
 #mmem
 mmem_all_results7<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_H", "E", "Time"),
                                  ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_H,
-                                 VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.dna_H", "Time"), Niter = 100000)
 
+ggplot(dat, aes(Time, Cmic.dna_H))+geom_point(aes(colour=Structure))
 
 mem_all_results7$ll_r
 mend_all_results7$ll_r
@@ -819,17 +824,17 @@ Cmic.dna.init_M<-mean((m0$DNA.init/0.0239)*0.45/12.01/3*0.25, na.rm=T)
 #mem
 mem_all_results8<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M", "E", "Time"),
                                ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_M,
-                               VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+                               VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 100000)
 
 #mend
 mend_all_results8<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M", "E", "Time"),
                                  ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_M,
-                                 VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 100000)
 
 #mmem
 mmem_all_results8<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_M", "E", "Time"),
                                  ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_M,
-                                 VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.dna_M", "Time"), Niter = 100000)
 
 
 mem_all_results7$ll_r
@@ -866,18 +871,17 @@ mmem_all_results8$ll_E
 #mem
 mem_all_results9<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L", "E", "Time"),
                                ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.prot.init_L,
-                               VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+                               VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 100000)
 
 #mend
 mend_all_results9<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L", "E", "Time"),
                                  ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.prot.init_L,
-                                 VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 100000)
 
 #mmem
 mmem_all_results9<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_L", "E", "Time"),
                                  ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.prot.init_L,
-                                 VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 10000)
-
+                                 VarsCmic = c("Substrate", "Cmic.prot_L", "Time"), Niter = 100000)
 
 mem_all_results7$ll_r
 mend_all_results7$ll_r
@@ -928,17 +932,17 @@ mmem_all_results9$ll_E
 #mem
 mem_all_results10<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H", "E", "Time"),
                                ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.prot.init_H,
-                               VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+                               VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 100000)
 
 #mend
 mend_all_results10<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H", "E", "Time"),
                                  ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.prot.init_H,
-                                 VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 100000)
 
 #mmem
 mmem_all_results10<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.prot_H", "E", "Time"),
                                  ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.prot.init_H,
-                                 VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 10000)
+                                 VarsCmic = c("Substrate", "Cmic.prot_H", "Time"), Niter = 100000)
 
 
 mem_all_results7$ll_r
@@ -998,3 +1002,37 @@ mmem_all_results10$ll_Cmic
 mem_all_results10$ll_E
 mend_all_results10$ll_E
 mmem_all_results10$ll_E
+
+mem_all_results11$ll_r
+mend_all_results11$ll_r
+mmem_all_results11$ll_r
+
+
+mem_all_results11$ll_Cmic
+mend_all_results11$ll_Cmic
+mmem_all_results11$ll_Cmic
+
+
+mem_all_results11$ll_E
+mend_all_results11$ll_E
+mmem_all_results11$ll_E
+
+#Lowest DNA
+
+##################modeling
+#mem
+mem_all_results11<-mem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_L", "E", "Time"),
+                               ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_L,
+                               VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 100000)
+
+#mend
+mend_all_results11<-mend_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_L", "E", "Time"),
+                                 ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_L,
+                                 VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 100000)
+
+#mmem
+mmem_all_results11<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Vars = c("Substrate", "r", "Cmic.dna_L", "E", "Time"),
+                                 ColM = c("time", "r", "Cmic","E","r1", "Cmic1","E1","r2", "Cmic2", "E2"),Cmic=Cmic.dna.init_L,
+                                 VarsCmic = c("Substrate", "Cmic.dna_L", "Time"), Niter = 100000)
+
+

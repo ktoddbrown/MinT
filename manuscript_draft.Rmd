@@ -79,7 +79,33 @@ As a complementary method for microbial biomass quantification, protein concentr
 Protein concentration was further assesed in the supernatant (see above). Before the analysis, supernatant was filtered through 10 kDa Supor membrane. Protein concentration was measured in >10 kDa fraction. This fraction is assumed to be dominated be extracellular enzymes produced by microbial cells. Extracellular enzymes are assumed to contain 46% of carbon [@Vrede2004].
 
 ###Mathematical description
+Five models of different complexity were used to predict patterns of respiration rate, microbial biomass carbon ($C_{MB}$) or extracellular enzyme concentration ($C_{Enz}$) during the experiment. The emphasis is given to respiration rate prediction.  
 
+####First order decay (Fig. 1a)
+In this simplest model, organic carbon ($C_{S}$) decays into $CO_{2}$ at the constant rate (k):
+
+[1] $~~~~~~~~~~\frac{dC_{S}}{dt}~=~k~\times~C_{S}$,
+
+
+organic substrate (glucose, cellobiose or their mixture) and the microbial biomass are considered as $C_{S}$ in this model. $C_{MB}$ and $C_{Enz}$ cannot be predicted by the model since they are not explicitely assumed to affect the respiration rate.  
+
+
+####Monod growth (Fig. 1b)
+In this model, $C_{S}$ is consumed by microbial biomass and transformed to $CO_{2}$ or $C_{MB}$. Microbial biomass is dying at constant rate returning used organic carbon to $C_{S}$ pool:
+
+[2] $~~~~~~~~~~\frac{dC_{MB}}{dt}~=~uptake~\times~CUE~-~k_{MB}~\times~C_{MB}$,
+
+[3] $~~~~~~~~~~\frac{dC_{S}}{dt}~=~-uptake~+~k_{MB}~\times~C_{MB}$.
+
+
+In eqs. 2 and 3, CUE is carbon use efficiency and $k_{MB}$ is death rate constant of microbial biomass decay process. Microbial carbon uptake is defined as hyperbolic function of $C_{S}$ and $C_{MB}$:
+
+[4] $~~~~~~~~~~uptake~=\frac{V_{MAX}~\times~C_{S}~\times~C_{MB}}{K_{M}~+~C_{S}}$,
+
+in which $V_{MAX}$ is maximum velocity constant and $K_{M}$ is affinity constant. Respiration rate is then given by $uptake~\times~(1~-~CUE)$. Monod growth model assumes that the production of extracellular enzymes is negligible.
+
+####Microbial enzyme models (Fig. 1c)
+In microbial enzyme models, microbial biomass produce extracellular enzymes. The way the carbon is partitioned between $C_{MB}$, $CO_{2}$ and $C_{Enz}$ can follow different mechanisms.  
 
 
 ## Results
@@ -96,57 +122,106 @@ Protein concentration was further assesed in the supernatant (see above). Before
 
 tab1<-read.csv("tab1.csv")
 
-kable(tab1, align='c', digits=c(0, 1, 0, 2, 1), "latex", booktabs=T, escape=F, col.names = c(" ", "Log Likelihood", "N", "R^2^", "AIC"), caption = "Correspondence between measured resiration rate and respiration rate modeled by five different models (First order decay, Monod growth, two different Microbial Enzyme Models (MEM and MEND) and Metabolic Microbial Enzyme Model (MMEM)). Log Likelihood, coefficient of determination ($R^{2}$), Akaike Information Criterion (AIC) and the number of estimated parameters are reported. All models are calibrated against measured respiration rate only.") %>%
+kable(tab1, align='c', digits=c(0, 1, 0, 2, 1), "latex", booktabs=T, escape=F, col.names = c(" ", "Log Likelihood", "N", "R^2^", "AIC"), caption = "**Tab. 1:** Correspondence between measured resiration rate and respiration rate modeled by five different models (First order decay, Monod growth, two different Microbial Enzyme Models (MEM and MEND) and Metabolic Microbial Enzyme Model (MMEM)). Log Likelihood, coefficient of determination ($R^{2}$), Akaike Information Criterion (AIC) and the number of estimated parameters are reported. All models are calibrated against measured respiration rate only.") %>%
   kable_as_image()
 
 ```
 
 ```{r Tab. 2, echo=FALSE, fig.width=130, message=FALSE, warning=FALSE, results='asis'}
 # tab2a<-rbind(monod_all_results2$ll_r, mem_all_results2$ll_r,
-#              mend_all_results2$ll_r, mmem_all_results2$ll_r,
-#              monod_all_results4$ll_r, mem_all_results4$ll_r,
-#              mend_all_results4$ll_r, mmem_all_results4$ll_r,
-#              monod_all_results5$ll_r, mem_all_results5$ll_r,
-#              mend_all_results5$ll_r, mmem_all_results5$ll_r,
-#              monod_all_results6$ll_r, mem_all_results6$ll_r,
-#              mend_all_results6$ll_r, mmem_all_results6$ll_r)
+#             mend_all_results2$ll_r, mmem_all_results2$ll_r,
+#             monod_all_results4$ll_r, mem_all_results4$ll_r,
+#             mend_all_results4$ll_r, mmem_all_results4$ll_r,
+#             monod_all_results5$ll_r, mem_all_results5$ll_r,
+#             mend_all_results5$ll_r, mmem_all_results5$ll_r,
+#           monod_all_results6$ll_r, mem_all_results6$ll_r,
+#             mend_all_results6$ll_r, mmem_all_results6$ll_r)
 # tab2a[tab2a[,3]<0,"rsq"]<-c(0)
-#  
+# 
 # tab2b<-rbind(monod_all_results2$ll_Cmic, mem_all_results2$ll_Cmic,
-#              mend_all_results2$ll_Cmic, mmem_all_results2$ll_Cmic,
-#              monod_all_results4$ll_Cmic, mem_all_results4$ll_Cmic,
-#              mend_all_results4$ll_Cmic, mmem_all_results4$ll_Cmic,
-#              monod_all_results5$ll_Cmic, mem_all_results5$ll_Cmic,
-#              mend_all_results5$ll_Cmic, mmem_all_results5$ll_Cmic,
-#              monod_all_results6$ll_Cmic, mem_all_results6$ll_Cmic,
-#              mend_all_results6$ll_Cmic, mmem_all_results6$ll_Cmic)
+#             mend_all_results2$ll_Cmic, mmem_all_results2$ll_Cmic,
+#             monod_all_results4$ll_Cmic, mem_all_results4$ll_Cmic,
+#             mend_all_results4$ll_Cmic, mmem_all_results4$ll_Cmic,
+#             monod_all_results5$ll_Cmic, mem_all_results5$ll_Cmic,
+#             mend_all_results5$ll_Cmic, mmem_all_results5$ll_Cmic,
+#             monod_all_results6$ll_Cmic, mem_all_results6$ll_Cmic,
+#             mend_all_results6$ll_Cmic, mmem_all_results6$ll_Cmic)
 # tab2b[tab2b[,3]<0,"rsq"]<-c(0)
-#  
-# tab2<-cbind(tab2a, tab2b)
-#  
+#   
+# tab2<-as.data.frame(cbind(tab2a, tab2b))
+# tab2$Model<-c("Monod growth", "MEM", "MEND", "MMEM","Monod growth", "MEM", "MEND", "MMEM","Monod growth", "MEM", "MEND", "MMEM","Monod growth", "MEM", "MEND", "MMEM")
+# tab2<-tab2[,c(9, 1:8)]   
+# 
 # write.csv(tab2, "./tab2.csv")
 
-tab2<-read.csv("tab2.csv")
+tab2<-read.csv("tab2.csv")[,-1]
 
 
 #colnames(tab1)<-c("_Log Likelihood_", "_N_", "_R^{2}_", "_AIC_")
-# rownames(tab2)<-c("Monod growth", "MEM", "MEND", "MMEM","Monod growth", "MEM", "MEND", "MMEM","Monod growth", "MEM", "MEND", "MMEM","Monod growth", "MEM", "MEND", "MMEM")
 #write.csv(tab1, "./tab1.csv")
 
-kable(tab2, align='c', digits=c(0, 1, 0, 2, 1, 1, 0, 2, 1), "latex", escape=F, booktabs=T, col.names = c(" ", "Log Likelihood", "N", "R^2^", "AIC","Log Likelihood", "N", "R^2^", "AIC"), caption = "Correspondence between measured resiration rate and respiration rate modeled by five different models (First order decay, Monod growth, two different Microbial Enzyme Models (MEM and MEND) and Metabolic Microbial Enzyme Model (MMEM)). Log Likelihood, coefficient of determination ($R^{2}$), Akaike Information Criterion (AIC) and the number of estimated parameters are reported. All models are calibrated against measured respiration rate only.") %>%
+kable(tab2, align='c', digits=c(0, 1, 0, 2, 1, 1, 0, 2, 1), "latex", escape=F, booktabs=T, col.names = c(" ", "Log Likelihood", "N", "R^2^", "AIC","Log Likelihood", "N", "R^2^", "AIC"), caption = "**Tab. 2:** Correspondence between measured and modelled resiration rate and microbial biomass carbon ($C_{MB}$). Four different models (Monod growth, two different Microbial Enzyme Models (MEM and MEND) and Metabolic Microbial Enzyme Model (MMEM)) were tested. Log Likelihood, coefficient of determination ($R^{2}$), Akaike Information Criterion (AIC) and the number of estimated parameters are reported. All models are calibrated against measured respiration rate and $C_{MB}$, which was calculated from measured DNA or cellular protein content using four different conversion factors reported in literature.") %>%
   add_header_above(c(" " = 1 ,"Respiration rate" = 4, "Microbial biomass" = 4))  %>%
-  group_rows("Beck et al., 2018 (DNA ~ 0.9% $C_{MB}$)", 1 , 4) %>%
-  group_rows("Median of DNA abundance across studies (DNA ~ 2.39% $C_{MB}$)", 5 , 8) %>%
-  group_rows("Beck et al., 2018 (Protein ~ 60%% $C_{MB}$)", 9 , 12) %>%
-  group_rows("Hanegraaf and Muller, 2001 (Protein ~ 182%% $C_{MB}$)", 13 , 16) %>%
+  group_rows("Beck et al., 2018 (DNA ~ 0.9% Cmb)", 1 , 4) %>%
+  group_rows("Median of DNA abundance across studies (DNA ~ 2.39% Cmb)", 5 , 8) %>%
+  group_rows("Beck et al., 2018 (Protein ~ 60% Cmb)", 9 , 12) %>%
+  group_rows("Hanegraaf and Muller, 2001 (Protein ~ 182% Cmb)", 13 , 16) %>%
   kable_styling(bootstrap_options = "striped", full_width = F, font_size = 7) %>%
   kable_as_image()
 
 ```
 
+
+```{r Tab. 3, echo=FALSE, fig.width=130, message=FALSE, warning=FALSE, results='asis'}
+# tab3a<-rbind(t(rbind(mem_all_results7$ll_r, mend_all_results7$ll_r, mmem_all_results7$ll_r)),
+#              t(rbind(mem_all_results8$ll_r, mend_all_results8$ll_r, mmem_all_results8$ll_r)),
+#              t(rbind(mem_all_results9$ll_r,mend_all_results9$ll_r, mmem_all_results9$ll_r)),
+#              t(rbind(mem_all_results10$ll_r, mend_all_results10$ll_r, mmem_all_results10$ll_r)))
+# colnames(tab3a)<-c("MEM", "MEND", "MMEM")
+#  
+# tab3b<-rbind(t(rbind(mem_all_results7$ll_Cmic, mend_all_results7$ll_Cmic, mmem_all_results7$ll_Cmic)),
+#              t(rbind(mem_all_results8$ll_Cmic, mend_all_results8$ll_Cmic, mmem_all_results8$ll_Cmic)),
+#              t(rbind(mem_all_results9$ll_Cmic,mend_all_results9$ll_Cmic, mmem_all_results9$ll_Cmic)),
+#              t(rbind(mem_all_results10$ll_Cmic, mend_all_results10$ll_Cmic, mmem_all_results10$ll_Cmic)))
+# colnames(tab3b)<-c("MEM", "MEND", "MMEM")
+# tab3b[c(7,11,15),]<-c(0)
+# 
+# 
+# tab3c<-rbind(t(rbind(mem_all_results7$ll_E, mend_all_results7$ll_E, mmem_all_results7$ll_E)),
+#              t(rbind(mem_all_results8$ll_E, mend_all_results8$ll_E, mmem_all_results8$ll_E)),
+#              t(rbind(mem_all_results9$ll_E,mend_all_results9$ll_E, mmem_all_results9$ll_E)),
+#              t(rbind(mem_all_results10$ll_E, mend_all_results10$ll_E, mmem_all_results10$ll_E)))
+# colnames(tab3c)<-c("MEM", "MEND", "MMEM")
+# tab3c[c(3, 7,11,15),]<-c(0)
+# 
+# tab3<-as.data.frame(cbind(tab3a, tab3b, tab3c))
+#    
+# tab3$par<-rep(c("Log Likelihood", "N", "R^2^", "AIC"), times=4)
+# tab3<-tab3[,c(10, 1:9)]   
+#  
+# write.csv(tab3, "./tab3.csv")
+
+tab3<-read.csv("tab3.csv")[,-1]
+
+#colnames(tab1)<-c("_Log Likelihood_", "_N_", "_R^{2}_", "_AIC_")
+#write.csv(tab1, "./tab1.csv")
+
+kable(tab3, align='c', "latex", escape=F, booktabs=T, digits=2, col.names = c(" ", "MEM", "MEND", "MMEM","MEM", "MEND", "MMEM","MEM", "MEND", "MMEM"), caption = "**Tab. 3:** Correspondence between measured and modelled resiration rate, microbial biomass carbon ($C_{MB}$) and extracellular enzymes. Three different models (two different Microbial Enzyme Models (MEM and MEND) and Metabolic Microbial Enzyme Model (MMEM)) were tested. Log Likelihood, coefficient of determination ($R^{2}$), Akaike Information Criterion (AIC) and the number of estimated parameters are reported. All models are calibrated against measured respiration rate, extracellular enzyme concentration and $C_{MB}$, which was calculated from measured DNA or cellular protein content using four different conversion factors reported in literature.") %>%
+  add_header_above(c(" " = 1 ,"Respiration rate" = 3, "Microbial biomass" = 3, "Enzymes" = 3))  %>%
+  group_rows("Beck et al., 2018 (DNA ~ 0.9% Cmb)", 1 , 4) %>%
+  group_rows("Median of DNA abundance across studies (DNA ~ 2.39% Cmb)", 5 , 8) %>%
+  group_rows("Beck et al., 2018 (Protein ~ 60% Cmb)", 9 , 12) %>%
+  group_rows("Hanegraaf and Muller, 2001 (Protein ~ 182% Cmb)", 13 , 16) %>%
+  kable_styling(bootstrap_options = "condensed", full_width = F, font_size = 4.5) %>%
+  kable_as_image() 
+
+```
+
+
+
 ##Figures
 
-```{r Scheme 1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width = 20, fig.cap="_Schematic representation of three mathematical models, which are commonly used to predict the respiration rate. $C_{S}$ - carbon substrate, $C_{MB}$ - microbial biomass carbon, $C_{Enz}$ - enzymes carbon._"}
+```{r Scheme 1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width = 20, fig.cap="**Fig. 1:** _Schematic representation of three mathematical models, which are commonly used to predict the respiration rate. $C_{S}$ - carbon substrate, $C_{MB}$ - microbial biomass carbon, $C_{Enz}$ - enzymes carbon._"}
 
 scheme<-"digraph all{
 
@@ -232,7 +307,7 @@ include_graphics("scheme.png")
 
 
 
-```{r Fig. 1, echo=FALSE, resultsw = 'asis', message=FALSE, warning=FALSE, fig.height=10, fig.width=7, fig.cap="_Distribution of microbial biomass carbon data as directly measured by the DNA or cellular protein concentration and calculated by different conversion factors published in the literature [@Baart2008; @Beck2018; @VanDuuren2013; @Marstorp2000, @Christensen1993; Christensen1993; @Yokoyama2017; @VanPutten1995; @Henriksen1996; @Hanegraaf2001]. Middle line corresonds to the median, lower and upper hinges to first and third quartile respectively, lower and upper whisker extends from lower and upper hinge to 1.5 time the interquartile range. Note that the x axis of both plots have different scales._"}
+```{r Fig. 1, echo=FALSE, resultsw = 'asis', message=FALSE, warning=FALSE, fig.height=8, fig.width=7, fig.cap="**Fig. 2:** _Distribution of microbial biomass carbon data as directly measured by the DNA or cellular protein concentration and calculated by different conversion factors published in the literature [@Baart2008; @Beck2018; @VanDuuren2013; @Marstorp2000, @Christensen1993; Christensen1993; @Yokoyama2017; @VanPutten1995; @Henriksen1996; @Hanegraaf2001]. Middle line corresonds to the median, lower and upper hinges to first and third quartile respectively, lower and upper whisker extends from lower and upper hinge to 1.5 time the interquartile range. Note that the x axis of both plots have different scales._"}
 
 #write.csv(conversions, "./fig1.csv")
 fig1<-read.csv("fig1.csv")
