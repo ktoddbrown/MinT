@@ -1,5 +1,5 @@
 ###monod growth function
-monod_growth_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter){
+monod_growth_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
   
   #SUB - needs to be calibrated in matrix
   #FACT 1 = Substrate, 2=Structure, 3=Both, 4=No
@@ -72,22 +72,64 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmi
     #create cost function
     estim<-function(data){
       
-      Obs_decay<-select(data, Vars)
+      # Obs_decay<-select(data, Vars)
+      # 
+      # m1<-merge(select(filter(Obs_decay, Substrate=="Glucose"), Vars[-1]),
+      #           select(filter(Obs_decay, Substrate=="Cellobiose"), Vars[-1]),all = T, by="Time")
+      # 
+      # m2<-merge(m1, 
+      #           select(filter(Obs_decay, Substrate=="Mix"), Vars[-1]),all = T, by="Time")
+      # 
+      # colnames(m2)<-ColM
       
-      m1<-merge(select(filter(Obs_decay, Substrate=="Glucose"), Vars[-1]),
-                select(filter(Obs_decay, Substrate=="Cellobiose"), Vars[-1]),all = T, by="Time")
+      #more accurate
+      ###Glucose
+      gl<-select(filter(data, Substrate=="Glucose"), Vars)
+      colnames(gl)<-c("time", "r", "E" ,"Cmic")
+      gl2<-select(filter(data, Substrate!="Glucose" ), Vars[1])
+      colnames(gl2)<-"time"
+      gl2$r<-NA
+      gl2$E<-NA
+      gl2$Cmic<-NA
+      m1<-rbind(gl, gl2)
+      m1<-m1[order(m1$time),]
       
-      m2<-merge(m1, 
-                select(filter(Obs_decay, Substrate=="Mix"), Vars[-1]),all = T, by="Time")
+      ###Cellobiose
+      cel<-select(filter(data, Substrate=="Cellobiose"), Vars)
+      colnames(cel)<-c("time", "r1", "E1" ,"Cmic1")
+      cel2<-select(filter(data, Substrate!="Cellobiose"), Vars[1])
+      colnames(cel2)<-"time"
+      cel2$r1<-NA
+      cel2$E1<-NA
+      cel2$Cmic1<-NA
+      m2<-rbind(cel, cel2)
+      m2<-m2[order(m2$time),]
       
-      colnames(m2)<-ColM
+      ###Mix
+      mix<-select(filter(data, Substrate=="Mix"), Vars)
+      colnames(mix)<-c("time", "r2", "E2" ,"Cmic2")
+      mix2<-select(filter(data, Substrate!="Mix"), Vars[1])
+      colnames(mix2)<-"time"
+      mix2$r2<-NA
+      mix2$E2<-NA
+      mix2$Cmic2<-NA
+      m3<-rbind(mix, mix2)
+      m3<-m3[order(m3$time),]
       
+      m1[,c(5:7)]<-m2[,c(2:4)]
+      m1[,c(8:10)]<-m3[,c(2:4)]
+      
+      mtrue<-select(m1, ColM)
       
       cost_function<-function(pars){
         
         
         out<-monod(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
-        cost<-modCost(model = out, obs = m2, weight = "mean")
+        if(Mean==FALSE){
+          cost<-modCost(model = out, obs = mtrue)
+        }else{
+          cost<-modCost(model = out, obs = mtrue, weight="mean")
+        }
         
         return(cost)
         
@@ -171,18 +213,46 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmi
     
     cost_r<-function(pars, data){
       
-      Obs_dat<-data[,c("Substrate", "r", "Time")]
+      ###Glucose
+      gl<-select(filter(data, Substrate=="Glucose"), Vars)
+      colnames(gl)<-c("time", "r", "E" ,"Cmic")
+      gl2<-select(filter(data, Substrate!="Glucose"), Vars[1])
+      colnames(gl2)<-"time"
+      gl2$r<-NA
+      gl2$E<-NA
+      gl2$Cmic<-NA
+      m1<-rbind(gl, gl2)
+      m1<-m1[order(m1$time),]
       
-      m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c("r", "Time")], 
-                Obs_dat[Obs_dat$Substrate=="Cellobiose", c("r", "Time")],all = T, by="Time")
+      ###Cellobiose
+      cel<-select(filter(data, Substrate=="Cellobiose"), Vars)
+      colnames(cel)<-c("time", "r1", "E1" ,"Cmic1")
+      cel2<-select(filter(data, Substrate!="Cellobiose"), Vars[1])
+      colnames(cel2)<-"time"
+      cel2$r1<-NA
+      cel2$E1<-NA
+      cel2$Cmic1<-NA
+      m2<-rbind(cel, cel2)
+      m2<-m2[order(m2$time),]
       
-      m2<-merge(m1, 
-                Obs_dat[Obs_dat$Substrate=="Mix", c("r", "Time")],all = T, by="Time")
+      ###Mix
+      mix<-select(filter(data, Substrate=="Mix"), Vars)
+      colnames(mix)<-c("time", "r2", "E2" ,"Cmic2")
+      mix2<-select(filter(data, Substrate!="Mix"), Vars[1])
+      colnames(mix2)<-"time"
+      mix2$r2<-NA
+      mix2$E2<-NA
+      mix2$Cmic2<-NA
+      m3<-rbind(mix, mix2)
+      m3<-m3[order(m3$time),]
       
-      colnames(m2)<-c("time", "r", "r1", "r2")
+      m1[,c(5:7)]<-m2[,c(2:4)]
+      m1[,c(8:10)]<-m3[,c(2:4)]
+      
+      mtrue<-select(m1, c("time", "r", "r1", "r2"))
       
       out<-monod(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
-      cost<-modCost(model = out, obs = m2)
+      cost<-modCost(model = out, obs = mtrue)
       
       return(cost)
       
@@ -218,19 +288,46 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmi
     
     cost_Cmic<-function(pars, data){
       
-      Obs_decay<-select(data, VarsCmic)
+      ###Glucose
+      gl<-select(filter(data, Substrate=="Glucose"), Vars)
+      colnames(gl)<-c("time", "r", "E" ,"Cmic")
+      gl2<-select(filter(data, Substrate!="Glucose"), Vars[1])
+      colnames(gl2)<-"time"
+      gl2$r<-NA
+      gl2$E<-NA
+      gl2$Cmic<-NA
+      m1<-rbind(gl, gl2)
+      m1<-m1[order(m1$time),]
       
-      m1<-merge(select(filter(Obs_decay, Substrate=="Glucose"), VarsCmic[-1]),
-                select(filter(Obs_decay, Substrate=="Cellobiose"), VarsCmic[-1]),all = T, by="Time")
+      ###Cellobiose
+      cel<-select(filter(data, Substrate=="Cellobiose"), Vars)
+      colnames(cel)<-c("time", "r1", "E1" ,"Cmic1")
+      cel2<-select(filter(data, Substrate!="Cellobiose"), Vars[1])
+      colnames(cel2)<-"time"
+      cel2$r1<-NA
+      cel2$E1<-NA
+      cel2$Cmic1<-NA
+      m2<-rbind(cel, cel2)
+      m2<-m2[order(m2$time),]
       
-      m2<-merge(m1, 
-                select(filter(Obs_decay, Substrate=="Mix"), VarsCmic[-1]),all = T, by="Time")
+      ###Mix
+      mix<-select(filter(data, Substrate=="Mix"), Vars)
+      colnames(mix)<-c("time", "r2", "E2" ,"Cmic2")
+      mix2<-select(filter(data, Substrate!="Mix"), Vars[1])
+      colnames(mix2)<-"time"
+      mix2$r2<-NA
+      mix2$E2<-NA
+      mix2$Cmic2<-NA
+      m3<-rbind(mix, mix2)
+      m3<-m3[order(m3$time),]
       
+      m1[,c(5:7)]<-m2[,c(2:4)]
+      m1[,c(8:10)]<-m3[,c(2:4)]
       
-      colnames(m2)<-c("time", "Cmic", "Cmic1", "Cmic2")
+      mtrue<-select(m1, c("time", "Cmic", "Cmic1", "Cmic2"))
       
       out<-monod(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
-      cost<-modCost(model = out, obs = m2)
+      cost<-modCost(model = out, obs = mtrue)
       
       return(cost)
       
@@ -262,9 +359,9 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmi
     
     al$parameters<-parameters
     al$OvP_r<-OvP_r
-    al$ll_r<-likelihood_r
+    al$ll<-rbind(likelihood_r, likelihood_Cmic)
     al$OvP_Cmic<-OvP_Cmic
-    al$ll_Cmic<-likelihood_Cmic
+    
     
     return(al)
     
@@ -288,7 +385,9 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmi
     estim<-function(data){
       
       Obs_dat<-select(data, Vars)
-      colnames(Obs_dat)<-ColV
+      colnames(Obs_dat)<-c("time", "r","E", "Cmic")
+      mtrue<-select(Obs_dat, ColM)  
+        
       
       cinit<-as.numeric(data[1, "DOCinit"])
       
@@ -296,7 +395,11 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmi
         
         
         out<-as.data.frame(ode(y=c(Cmic=Cmic, C=cinit), parms=pars, times=seq(0,130), func=deriv))
-        cost<-modCost(model = out, obs = Obs_dat, weight = "mean")
+        if(Mean==FALSE){
+          cost<-modCost(model = out, obs = mtrue)
+        }else{
+          cost<-modCost(model = out, obs = mtrue, weight="mean")
+        }
         
         return(cost)
         
@@ -390,7 +493,7 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmi
     
     cost_r<-function(pars, data){
       
-      Obs_dat<-data[,c("Time", "r")]
+      Obs_dat<-select(data, Vars[1:2])
       
       colnames(Obs_dat)<-c("time", "r")
       
@@ -433,7 +536,7 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmi
     
     cost_Cmic<-function(pars, data){
       
-      Obs_decay<-select(data, VarsCmic)
+      Obs_decay<-select(data, Vars[c(1,4)])
       
       colnames(Obs_dat)<-c("time", "Cmic")
       cinit<-as.numeric(data[1, "DOCinit"])
@@ -471,9 +574,9 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmi
     
     al$parameters<-parameters
     al$OvP_r<-OvP_r
-    al$ll_r<-likelihood_r
+    al$ll<-rbind(likelihood_r, likelihood_Cmic)
     al$OvP_Cmic<-OvP_Cmic
-    al$ll_Cmic<-likelihood_Cmic
+    
     
     return(al)
     

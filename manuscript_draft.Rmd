@@ -105,7 +105,19 @@ In eqs. 2 and 3, CUE is carbon use efficiency and $k_{MB}$ is death rate constan
 in which $V_{MAX}$ is maximum velocity constant and $K_{M}$ is affinity constant. Respiration rate is then given by $uptake~\times~(1~-~CUE)$. Monod growth model assumes that the production of extracellular enzymes is negligible.
 
 ####Microbial enzyme models (Fig. 1c)
-In microbial enzyme models, microbial biomass produce extracellular enzymes. The way the carbon is partitioned between $C_{MB}$, $CO_{2}$ and $C_{Enz}$ can follow different mechanisms.  
+In microbial enzyme models, microbial biomass produce extracellular enzymes. The way the carbon is partitioned between $C_{MB}$, $CO_{2}$ and $C_{Enz}$ can follow different rules.
+
+* Classical microbial enzyme model (MEM)
+
+Microbial enzyme model presented by Allison et al. [-@Allison2010] assumes that extracellular enzymes are produced constitutively by the rate ($r_{Enz}$), which is proportional to biomass:
+
+[5] $~~~~~~~~~~enzyme~production~=~r_{Enz}~\times~C_{MB}$.
+
+When extracellular enzymes are produced, microbial biomass is loosing carbon. Therefore, the mass balance equation for microbial biomass is:
+
+[6] $~~~~~~~~~~\frac{dC_{MB}}{dt}~=~uptake~\times~CUE~-~death~-~enzyme~production$.
+
+
 
 
 ## Results

@@ -1,4 +1,4 @@
-mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter){
+mmem_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
   
   #SUB - needs to be calibrated in matrix
   #FACT 1 = Substrate, 2=Structure, 3=Both, 4=No
@@ -53,15 +53,15 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
           #defining stochiometric coefficients
           #PO ratio
           #PO=1.5*(1-((Cu/Cmic)/((Cu/Cmic)+Sover)))
-          y=2*1.5*Yatp
+          y=2*PO*Yatp
           
           #x
           #x=(Cu/Cmic)/((Cu/Cmic)+Sprod)
           
           #coefficients
-          psi.r=1/((y*x)+(y*0.64*(1-x))+1)
-          psi.g=y*x/((y*x)+(y*0.64*(1-x))+1)
-          psi.e=0.64*y*(1-x)/((y*x)+(y*0.64*(1-x))+1)
+          psi.r=1/((y*x)+(y*w*(1-x))+1)
+          psi.g=y*x/((y*x)+(y*w*(1-x))+1)
+          psi.e=w*y*(1-x)/((y*x)+(y*w*(1-x))+1)
           
           
           dCmic<--kmic*Cmic+Cu*psi.g
@@ -90,30 +90,62 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     #create cost function
     estim<-function(data){
       
-      Obs_decay<-select(data, Vars)
+      ###Glucose
+      gl<-select(filter(data, Substrate=="Glucose" ), Vars)
+      colnames(gl)<-c("time", "r", "E" ,"Cmic")
+      gl2<-select(filter(data, Substrate!="Glucose" ), Vars[1])
+      colnames(gl2)<-"time"
+      gl2$r<-NA
+      gl2$E<-NA
+      gl2$Cmic<-NA
+      m1<-rbind(gl, gl2)
+      m1<-m1[order(m1$time),]
       
-      m1<-merge(select(filter(Obs_decay, Substrate=="Glucose"), Vars[-1]),
-                select(filter(Obs_decay, Substrate=="Cellobiose"), Vars[-1]),all = T, by="Time")
+      ###Cellobiose
+      cel<-select(filter(data, Substrate=="Cellobiose"), Vars)
+      colnames(cel)<-c("time", "r1", "E1" ,"Cmic1")
+      cel2<-select(filter(data, Substrate!="Cellobiose"), Vars[1])
+      colnames(cel2)<-"time"
+      cel2$r1<-NA
+      cel2$E1<-NA
+      cel2$Cmic1<-NA
+      m2<-rbind(cel, cel2)
+      m2<-m2[order(m2$time),]
       
-      m2<-merge(m1, 
-                select(filter(Obs_decay, Substrate=="Mix"), Vars[-1]),all = T, by="Time")
+      ###Mix
+      mix<-select(filter(data, Substrate=="Mix"), Vars)
+      colnames(mix)<-c("time", "r2", "E2" ,"Cmic2")
+      mix2<-select(filter(data, Substrate!="Mix"), Vars[1])
+      colnames(mix2)<-"time"
+      mix2$r2<-NA
+      mix2$E2<-NA
+      mix2$Cmic2<-NA
+      m3<-rbind(mix, mix2)
+      m3<-m3[order(m3$time),]
       
-      colnames(m2)<-ColM
+      m1[,c(5:7)]<-m2[,c(2:4)]
+      m1[,c(8:10)]<-m3[,c(2:4)]
+      
+      mtrue<-select(m1, ColM)
       
       
       cost_function<-function(pars){
         
         
         out<-mmem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
-        cost<-modCost(model = out, obs = m2, weight = "mean")
+        if(Mean==FALSE){
+          cost<-modCost(model = out, obs = mtrue)
+        }else{
+          cost<-modCost(model = out, obs = mtrue, weight="mean")
+        }
         
         return(cost)
         
       }
       
-      res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, kmic=0.01, ke=0.01, x=0.5, Yatp=1),
-                   lower=c(Vmax=1e-4, Km=1e-4, kmic=1e-5, ke=1e-6, x=0, Yatp=0.0001),
-                   upper=c(Vmax=1e4, Km=1e4, kmic=1e5, ke=1e6, x=1, Yatp=30),niter=Niter)
+      res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, kmic=0.01, ke=0.01, x=0.5, Yatp=1, w=0.5, PO=1.5),
+                   lower=c(Vmax=1e-4, Km=1e-4, kmic=1e-5, ke=1e-6, x=0, Yatp=0.0001, w=0, PO=0.1),
+                   upper=c(Vmax=1e4, Km=1e4, kmic=1e5, ke=1e6, x=1, Yatp=30,w=1, PO=3),niter=Niter)
       
       return(res)
       
@@ -143,40 +175,46 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
                            ke=vector("numeric", length = length(unique(dat$id))),
                            x=vector("numeric", length = length(unique(dat$id))),
                            Yatp=vector("numeric", length = length(unique(dat$id))),
+                           w=vector("numeric", length = length(unique(dat$id))),
+                           PO=vector("numeric", length = length(unique(dat$id))),
                            Vmax.l=vector("numeric", length = length(unique(dat$id))), 
                            Km.l=vector("numeric", length = length(unique(dat$id))), 
                            kmic.l=vector("numeric", length = length(unique(dat$id))), 
                            ke.l=vector("numeric", length = length(unique(dat$id))),
                            x.l=vector("numeric", length = length(unique(dat$id))),
                            Yatp.l=vector("numeric", length = length(unique(dat$id))),
+                           w.l=vector("numeric", length = length(unique(dat$id))),
+                           PO.l=vector("numeric", length = length(unique(dat$id))),
                            Vmax.u=vector("numeric", length = length(unique(dat$id))), 
                            Km.u=vector("numeric", length = length(unique(dat$id))), 
                            kmic.u=vector("numeric", length = length(unique(dat$id))), 
                            ke.u=vector("numeric", length = length(unique(dat$id))),
                            x.u=vector("numeric", length = length(unique(dat$id))),
                            Yatp.u=vector("numeric", length = length(unique(dat$id))),
+                           w.u=vector("numeric", length = length(unique(dat$id))),
+                           PO.u=vector("numeric", length = length(unique(dat$id))),
                            ID=unique(dat$id))
     
     
     #median
     for(i in unique(dat$id)){
-      for(n in 1:6){
+      for(n in 1:8){
         
         parameters[i, n]<-summary(res[[i]])[6,n]
       }
     }
     #lower quartile
     for(i in unique(dat$id)){
-      for(n in 1:6){
+      for(n in 1:8){
         
-        parameters[i, n+6]<-summary(res[[i]])[5,n]
+        parameters[i, n+8]<-summary(res[[i]])[5,n]
       }
     }
     #lower quartile
     for(i in unique(dat$id)){
-      for(n in 1:6){
+      for(n in 1:8){
         
-        parameters[i, n+12]<-summary(res[[i]])[7,n]
+        parameters[i, n+16]<-summary(res[[i]])[7,n]
       }
     }
     
@@ -195,18 +233,46 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     cost_r<-function(pars, data){
       
-      Obs_dat<-data[,c("Substrate", "r", "Time")]
+      ###Glucose
+      gl<-select(filter(data, Substrate=="Glucose"), Vars)
+      colnames(gl)<-c("time", "r", "E" ,"Cmic")
+      gl2<-select(filter(data, Substrate!="Glucose"), Vars[1])
+      colnames(gl2)<-"time"
+      gl2$r<-NA
+      gl2$E<-NA
+      gl2$Cmic<-NA
+      m1<-rbind(gl, gl2)
+      m1<-m1[order(m1$time),]
       
-      m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c("r", "Time")], 
-                Obs_dat[Obs_dat$Substrate=="Cellobiose", c("r", "Time")],all = T, by="Time")
+      ###Cellobiose
+      cel<-select(filter(data, Substrate=="Cellobiose"), Vars)
+      colnames(cel)<-c("time", "r1", "E1" ,"Cmic1")
+      cel2<-select(filter(data, Substrate!="Cellobiose"), Vars[1])
+      colnames(cel2)<-"time"
+      cel2$r1<-NA
+      cel2$E1<-NA
+      cel2$Cmic1<-NA
+      m2<-rbind(cel, cel2)
+      m2<-m2[order(m2$time),]
       
-      m2<-merge(m1, 
-                Obs_dat[Obs_dat$Substrate=="Mix", c("r", "Time")],all = T, by="Time")
+      ###Mix
+      mix<-select(filter(data, Substrate=="Mix"), Vars)
+      colnames(mix)<-c("time", "r2", "E2" ,"Cmic2")
+      mix2<-select(filter(data, Substrate!="Mix"), Vars[1])
+      colnames(mix2)<-"time"
+      mix2$r2<-NA
+      mix2$E2<-NA
+      mix2$Cmic2<-NA
+      m3<-rbind(mix, mix2)
+      m3<-m3[order(m3$time),]
       
-      colnames(m2)<-c("time", "r", "r1", "r2")
+      m1[,c(5:7)]<-m2[,c(2:4)]
+      m1[,c(8:10)]<-m3[,c(2:4)]
+      
+      mtrue<-select(m1, c("time", "r", "r1", "r2"))
       
       out<-mmem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
-      cost<-modCost(model = out, obs = m2)
+      cost<-modCost(model = out, obs = mtrue)
       
       return(cost)
       
@@ -234,7 +300,7 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     rsq_r=1-(SSmodel_r/SSdata_r)
     
-    likelihood_r<-c(logLik=ll_r, npar=6*length(unique(dat$id)), rsq=rsq_r, AIC=2*6*length(unique(dat$id))-2*ll_r)
+    likelihood_r<-c(logLik=ll_r, npar=8*length(unique(dat$id)), rsq=rsq_r, AIC=2*8*length(unique(dat$id))-2*ll_r)
     
     #OvP for biomass
     obs_Cmic<-numeric()
@@ -242,19 +308,46 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     cost_Cmic<-function(pars, data){
       
-      Obs_decay<-select(data, VarsCmic)
+      ###Glucose
+      gl<-select(filter(data, Substrate=="Glucose"), Vars)
+      colnames(gl)<-c("time", "r", "E" ,"Cmic")
+      gl2<-select(filter(data, Substrate!="Glucose"), Vars[1])
+      colnames(gl2)<-"time"
+      gl2$r<-NA
+      gl2$E<-NA
+      gl2$Cmic<-NA
+      m1<-rbind(gl, gl2)
+      m1<-m1[order(m1$time),]
       
-      m1<-merge(select(filter(Obs_decay, Substrate=="Glucose"), VarsCmic[-1]),
-                select(filter(Obs_decay, Substrate=="Cellobiose"), VarsCmic[-1]),all = T, by="Time")
+      ###Cellobiose
+      cel<-select(filter(data, Substrate=="Cellobiose"), Vars)
+      colnames(cel)<-c("time", "r1", "E1" ,"Cmic1")
+      cel2<-select(filter(data, Substrate!="Cellobiose"), Vars[1])
+      colnames(cel2)<-"time"
+      cel2$r1<-NA
+      cel2$E1<-NA
+      cel2$Cmic1<-NA
+      m2<-rbind(cel, cel2)
+      m2<-m2[order(m2$time),]
       
-      m2<-merge(m1, 
-                select(filter(Obs_decay, Substrate=="Mix"), VarsCmic[-1]),all = T, by="Time")
+      ###Mix
+      mix<-select(filter(data, Substrate=="Mix"), Vars)
+      colnames(mix)<-c("time", "r2", "E2" ,"Cmic2")
+      mix2<-select(filter(data, Substrate!="Mix"), Vars[1])
+      colnames(mix2)<-"time"
+      mix2$r2<-NA
+      mix2$E2<-NA
+      mix2$Cmic2<-NA
+      m3<-rbind(mix, mix2)
+      m3<-m3[order(m3$time),]
       
+      m1[,c(5:7)]<-m2[,c(2:4)]
+      m1[,c(8:10)]<-m3[,c(2:4)]
       
-      colnames(m2)<-c("time", "Cmic", "Cmic1", "Cmic2")
+      mtrue<-select(m1, c("time", "Cmic", "Cmic1", "Cmic2"))
       
       out<-mmem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
-      cost<-modCost(model = out, obs = m2)
+      cost<-modCost(model = out, obs = mtrue)
       
       return(cost)
       
@@ -280,7 +373,7 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     rsq_Cmic=1-(SSmodel_Cmic/SSdata_Cmic)
     
-    likelihood_Cmic<-c(logLik=ll_Cmic, npar=6*length(unique(dat$id)), rsq=rsq_Cmic, AIC=2*6*length(unique(dat$id))-2*ll_Cmic)
+    likelihood_Cmic<-c(logLik=ll_Cmic, npar=8*length(unique(dat$id)), rsq=rsq_Cmic, AIC=2*8*length(unique(dat$id))-2*ll_Cmic)
     
     #OvP for enzymes
     obs_E<-numeric()
@@ -288,15 +381,43 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     cost_E<-function(pars, data){
       
-      Obs_dat<-data[,c("Substrate", "E", "Time")]
+      ###Glucose
+      gl<-select(filter(data, Substrate=="Glucose"), Vars)
+      colnames(gl)<-c("time", "r", "E" ,"Cmic")
+      gl2<-select(filter(data, Substrate!="Glucose"), Vars[1])
+      colnames(gl2)<-"time"
+      gl2$r<-NA
+      gl2$E<-NA
+      gl2$Cmic<-NA
+      m1<-rbind(gl, gl2)
+      m1<-m1[order(m1$time),]
       
-      m1<-merge(Obs_dat[Obs_dat$Substrate=="Glucose", c("E", "Time")], 
-                Obs_dat[Obs_dat$Substrate=="Cellobiose", c("E", "Time")],all = T, by="Time")
+      ###Cellobiose
+      cel<-select(filter(data, Substrate=="Cellobiose"), Vars)
+      colnames(cel)<-c("time", "r1", "E1" ,"Cmic1")
+      cel2<-select(filter(data, Substrate!="Cellobiose"), Vars[1])
+      colnames(cel2)<-"time"
+      cel2$r1<-NA
+      cel2$E1<-NA
+      cel2$Cmic1<-NA
+      m2<-rbind(cel, cel2)
+      m2<-m2[order(m2$time),]
       
-      m2<-merge(m1, 
-                Obs_dat[Obs_dat$Substrate=="Mix", c("E", "Time")],all = T, by="Time")
+      ###Mix
+      mix<-select(filter(data, Substrate=="Mix"), Vars)
+      colnames(mix)<-c("time", "r2", "E2" ,"Cmic2")
+      mix2<-select(filter(data, Substrate!="Mix"), Vars[1])
+      colnames(mix2)<-"time"
+      mix2$r2<-NA
+      mix2$E2<-NA
+      mix2$Cmic2<-NA
+      m3<-rbind(mix, mix2)
+      m3<-m3[order(m3$time),]
       
-      colnames(m2)<-c("time", "E", "E1", "E2")
+      m1[,c(5:7)]<-m2[,c(2:4)]
+      m1[,c(8:10)]<-m3[,c(2:4)]
+      
+      mtrue<-select(m1, c("time", "E", "E1", "E2"))
       
       out<-mmem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
       cost<-modCost(model = out, obs = m2)
@@ -325,17 +446,15 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     rsq_E=1-(SSmodel_E/SSdata_E)
     
-    likelihood_E<-c(logLik=ll_E, npar=6*length(unique(dat$id)), rsq=rsq_E, AIC=2*6*length(unique(dat$id))-2*ll_E)
+    likelihood_E<-c(logLik=ll_E, npar=8*length(unique(dat$id)), rsq=rsq_E, AIC=2*8*length(unique(dat$id))-2*ll_E)
     
     al<-list()
     
     al$parameters<-parameters
     al$OvP_r<-OvP_r
-    al$ll_r<-likelihood_r
+    al$ll<-rbind(likelihood_r, likelihood_Cmic, likelihood_E)
     al$OvP_Cmic<-OvP_Cmic
-    al$ll_Cmic<-likelihood_Cmic
     al$OvP_E<-OvP_E
-    al$ll_E<-likelihood_E
     
     return(al)
     
@@ -355,15 +474,15 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
         #defining stochiometric coefficients
         #PO ratio
         #PO=1.5*(1-((Cu/Cmic)/((Cu/Cmic)+Sover)))
-        y=2*1.5*Yatp
+        y=2*PO*Yatp
         
         #x
         #x=(Cu/Cmic)/((Cu/Cmic)+Sprod)
         
         #coefficients
-        psi.r=1/((y*x)+(y*0.64*(1-x))+1)
-        psi.g=y*x/((y*x)+(y*0.64*(1-x))+1)
-        psi.e=0.64*y*(1-x)/((y*x)+(y*0.64*(1-x))+1)
+        psi.r=1/((y*x)+(y*w*(1-x))+1)
+        psi.g=y*x/((y*x)+(y*w*(1-x))+1)
+        psi.e=w*y*(1-x)/((y*x)+(y*w*(1-x))+1)
         
         
         dCmic<--kmic*Cmic+Cu*psi.g
@@ -380,7 +499,8 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     estim<-function(data){
       
       Obs_dat<-select(data, Vars)
-      colnames(Obs_dat)<-ColV
+      colnames(Obs_dat)<-c("time", "r","E", "Cmic")
+      mtrue<-select(Obs_dat, ColM)  
       
       cinit<-as.numeric(data[1, "DOCinit"])
       
@@ -388,15 +508,20 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
         
         
         out<-as.data.frame(ode(y=c(Cmic=Cmic, C=cinit, E=0), parms=pars, times=seq(0,130), func=deriv))
-        cost<-modCost(model = out, obs = Obs_dat, weight = "mean")
+        
+        if(Mean==FALSE){
+          cost<-modCost(model = out, obs = mtrue)
+        }else{
+          cost<-modCost(model = out, obs = mtrue, weight="mean")
+        }
         
         return(cost)
         
       }
       
-      res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, kmic=0.01, ke=0.01, x=0.5, Yatp=1),
-                   lower=c(Vmax=1e-4, Km=1e-4, kmic=1e-5, ke=1e-6, x=0, Yatp=0.0001),
-                   upper=c(Vmax=1e4, Km=1e4, kmic=1e5, ke=1e6, x=1, Yatp=30),niter=Niter)
+      res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, kmic=0.01, ke=0.01, x=0.5, Yatp=1, w=0.5, PO=1.5),
+                   lower=c(Vmax=1e-4, Km=1e-4, kmic=1e-5, ke=1e-6, x=0, Yatp=0.0001, w=0, PO=0.1),
+                   upper=c(Vmax=1e4, Km=1e4, kmic=1e5, ke=1e6, x=1, Yatp=30,w=1, PO=3),niter=Niter)
       
       return(res)
       
@@ -420,40 +545,46 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
                            ke=vector("numeric", length = length(unique(dat$id))),
                            x=vector("numeric", length = length(unique(dat$id))),
                            Yatp=vector("numeric", length = length(unique(dat$id))),
+                           w=vector("numeric", length = length(unique(dat$id))),
+                           PO=vector("numeric", length = length(unique(dat$id))),
                            Vmax.l=vector("numeric", length = length(unique(dat$id))), 
                            Km.l=vector("numeric", length = length(unique(dat$id))), 
                            kmic.l=vector("numeric", length = length(unique(dat$id))), 
                            ke.l=vector("numeric", length = length(unique(dat$id))),
                            x.l=vector("numeric", length = length(unique(dat$id))),
                            Yatp.l=vector("numeric", length = length(unique(dat$id))),
+                           w.l=vector("numeric", length = length(unique(dat$id))),
+                           PO.l=vector("numeric", length = length(unique(dat$id))),
                            Vmax.u=vector("numeric", length = length(unique(dat$id))), 
                            Km.u=vector("numeric", length = length(unique(dat$id))), 
                            kmic.u=vector("numeric", length = length(unique(dat$id))), 
                            ke.u=vector("numeric", length = length(unique(dat$id))),
                            x.u=vector("numeric", length = length(unique(dat$id))),
                            Yatp.u=vector("numeric", length = length(unique(dat$id))),
+                           w.u=vector("numeric", length = length(unique(dat$id))),
+                           PO.u=vector("numeric", length = length(unique(dat$id))),
                            ID=unique(dat$id))
     
     
     #median
     for(i in unique(dat$id)){
-      for(n in 1:6){
+      for(n in 1:8){
         
         parameters[i, n]<-summary(res[[i]])[6,n]
       }
     }
     #lower quartile
     for(i in unique(dat$id)){
-      for(n in 1:6){
+      for(n in 1:8){
         
-        parameters[i, n+6]<-summary(res[[i]])[5,n]
+        parameters[i, n+8]<-summary(res[[i]])[5,n]
       }
     }
     #lower quartile
     for(i in unique(dat$id)){
-      for(n in 1:6){
+      for(n in 1:8){
         
-        parameters[i, n+12]<-summary(res[[i]])[7,n]
+        parameters[i, n+16]<-summary(res[[i]])[7,n]
       }
     }
     
@@ -488,7 +619,7 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     cost_r<-function(pars, data){
       
-      Obs_dat<-data[,c("Time", "r")]
+      Obs_dat<-select(data, Vars[1:2])
       
       colnames(Obs_dat)<-c("time", "r")
       
@@ -523,7 +654,7 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     rsq_r=1-(SSmodel_r/SSdata_r)
     
-    likelihood_r<-c(logLik=ll_r, npar=6*length(unique(dat$id)), rsq=rsq_r, AIC=2*6*length(unique(dat$id))-2*ll_r)
+    likelihood_r<-c(logLik=ll_r, npar=8*length(unique(dat$id)), rsq=rsq_r, AIC=2*8*length(unique(dat$id))-2*ll_r)
     
     #OvP for biomass
     obs_Cmic<-numeric()
@@ -531,7 +662,8 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     cost_Cmic<-function(pars, data){
       
-      Obs_decay<-select(data, VarsCmic)
+      
+      Obs_decay<-select(data, Vars[c(1,4)])
       
       colnames(Obs_dat)<-c("time", "Cmic")
       cinit<-as.numeric(data[1, "DOCinit"])
@@ -563,7 +695,7 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     rsq_Cmic=1-(SSmodel_Cmic/SSdata_Cmic)
     
-    likelihood_Cmic<-c(logLik=ll_Cmic, npar=6*length(unique(dat$id)), rsq=rsq_Cmic, AIC=2*6*length(unique(dat$id))-2*ll_Cmic)
+    likelihood_Cmic<-c(logLik=ll_Cmic, npar=8*length(unique(dat$id)), rsq=rsq_Cmic, AIC=2*8*length(unique(dat$id))-2*ll_Cmic)
     
     #OvP for enzymes
     obs_E<-numeric()
@@ -571,7 +703,7 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     cost_E<-function(pars, data){
       
-      Obs_dat<-data[,c("Time", "E")]
+      Obs_decay<-select(data, Vars[c(1,3)])
       
       colnames(Obs_dat)<-c("time", "E")
       Ci<-as.numeric(data[1, "DOCinit"])
@@ -603,7 +735,7 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     rsq_E=1-(SSmodel_E/SSdata_E)
     
-    likelihood_E<-c(logLik=ll_E, npar=6*length(unique(dat$id)), rsq=rsq_E, AIC=2*6*length(unique(dat$id))-2*ll_E)
+    likelihood_E<-c(logLik=ll_E, npar=8*length(unique(dat$id)), rsq=rsq_E, AIC=2*8*length(unique(dat$id))-2*ll_E)
     
     
     
@@ -611,11 +743,9 @@ mmem_function<-function(data, SUB, FACT, Vars, ColM, ColV, VarsCmic, Cmic, Niter
     
     al$parameters<-parameters
     al$OvP_r<-OvP_r
-    al$ll_r<-likelihood_r
+    al$ll<-rbind(likelihood_r, likelihood_Cmic, likelihood_E)
     al$OvP_Cmic<-OvP_Cmic
-    al$ll_Cmic<-likelihood_Cmic
     al$OvP_E<-OvP_E
-    al$ll_E<-likelihood_E
     
     return(al)
     
