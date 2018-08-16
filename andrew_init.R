@@ -801,7 +801,7 @@ andrew_init<-function(data, SUB, FACT, Mean, DNAci, Niter){
       mtrue<-select(mtrue, c("time", "DNAc"))
       
       out<-as.data.frame(ode(y=c(Cmic=pars[["Cmic_0"]], C=cinit, E=0), parms=pars, times=seq(0,130), func=deriv))
-      cost<-modCost(model = out, obs = Obs_dat)
+      cost<-modCost(model = out, obs = mtrue)
       
       return(cost)
       
@@ -843,7 +843,7 @@ andrew_init<-function(data, SUB, FACT, Mean, DNAci, Niter){
       mtrue<-select(mtrue, c("time", "Protc"))
       
       out<-as.data.frame(ode(y=c(Cmic=pars[["Cmic_0"]], C=cinit, E=0), parms=pars, times=seq(0,130), func=deriv))
-      cost<-modCost(model = out, obs = Obs_dat)
+      cost<-modCost(model = out, obs = mtrue)
       
       return(cost)
       

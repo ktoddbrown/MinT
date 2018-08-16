@@ -1,14 +1,14 @@
 #################################################MinT#################################################
 ##libraries
 library(deSolve)
-#library(dplyr)
+library(dplyr)
 library(FME)
 library(reshape)
 #library(reshape2)
 library(ggplot2)
 library(foreach)
 library(doParallel)
-#library(data.table)
+library(data.table)
 library(openxlsx)
 library(plyr)
 
@@ -2633,10 +2633,68 @@ an_each_alld$ll
 #becuase conversion factors give extremely different results, all models are calibrated against
 #DNA or protein content. The percentage of DNA/Protein content in microbial biomass and thus,
 #initial biomass as well, is estimated as two additional parameters
+#I will try to calibrate against DNA only, protein only and DNA and Protein together
 
 ###########################################################################################
-#########################################MEm##############################################
+#########################################MEM##############################################
 ###########################################################################################
+#Using DNA
+source("../mem_init_a.R")
+
+#across all treatments
+mem_alli_a<-mem_init_a(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+#for different structures
+mem_structuresi_a<-mem_init_a(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for different substrates
+mem_substratesi_a<-mem_init_a(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for each separately 
+mem_eachi_a<-mem_init_a(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+stopImplicitCluster()
+
+
+mem_alli_a$ll
+mem_structuresi_a$ll
+mem_substratesi_a$ll
+mem_eachi_a$ll
+
+#Using Proteins
+source("../mem_init_b.R")
+
+#across all treatments
+mem_alli_b<-mem_init_b(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+#for different structures
+mem_structuresi_b<-mem_init_b(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for different substrates
+mem_substratesi_b<-mem_init_b(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for each separately 
+mem_eachi_b<-mem_init_b(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+stopImplicitCluster()
+
+
+mem_alli_b$ll
+mem_structuresi_b$ll
+mem_substratesi_b$ll
+mem_eachi_b$ll
+
+
 source("../mem_init.R")
 
 #across all treatments
@@ -2662,12 +2720,68 @@ stopImplicitCluster()
 mem_alli$ll
 mem_structuresi$ll
 mem_substratesi$ll
-mend_eachi$ll
+mem_eachi$ll
 
 
 ###########################################################################################
 #########################################MEND##############################################
 ###########################################################################################
+#for DNA
+source("../mend_init_a.R")
+
+#across all treatments
+mend_alli_a<-mend_init_a(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+#for different structures
+mend_structuresi_a<-mend_init_a(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for different substrates
+mend_substratesi_a<-mend_init_a(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for each separately 
+mend_eachi_a<-mend_init_a(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+stopImplicitCluster()
+
+
+mend_alli_a$ll
+mend_structuresi_a$ll
+mend_substratesi_a$ll
+mend_eachi_a$ll
+
+#for DNA
+source("../mend_init_b.R")
+
+#across all treatments
+mend_alli_b<-mend_init_b(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+#for different structures
+mend_structuresi_b<-mend_init_b(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for different substrates
+mend_substratesi_b<-mend_init_b(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for each separately 
+mend_eachi_b<-mend_init_b(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+stopImplicitCluster()
+
+
+mend_alli_b$ll
+mend_structuresi_b$ll
+mend_substratesi_b$ll
+mend_eachi_b$ll
+
 source("../mend_init.R")
 
 #across all treatments
@@ -2698,6 +2812,62 @@ mend_eachi$ll
 ###########################################################################################
 #########################################MMEM##############################################
 ###########################################################################################
+#DNA
+source("../mmem_init_a.R")
+
+#across all treatments
+mmem_alli_a<-mmem_init_a(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+#for different structures
+mmem_structuresi_a<-mmem_init_a(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for different substrates
+mmem_substratesi_a<-mmem_init_a(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for each separately 
+mmem_eachi_a<-mmem_init_a(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+stopImplicitCluster()
+
+
+mmem_alli_a$ll
+mmem_structuresi_a$ll
+mmem_substratesi_a$ll
+mmem_eachi_a$ll
+
+#Protein
+source("../mmem_init_b.R")
+
+#across all treatments
+mmem_alli_b<-mmem_init_b(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+#for different structures
+mmem_structuresi_b<-mmem_init_b(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for different substrates
+mmem_substratesi_b<-mmem_init_b(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for each separately 
+mmem_eachi_b<-mmem_init_b(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+stopImplicitCluster()
+
+
+mmem_alli_b$ll
+mmem_structuresi_b$ll
+mmem_substratesi_b$ll
+mmem_eachi_b$ll
+
 source("../mmem_init.R")
 
 #across all treatments
@@ -2728,7 +2898,64 @@ mmem_eachi$ll
 ###########################################################################################
 #########################################Andrew############################################
 ###########################################################################################
-source("../andrew_init.R_init.R")
+#DNA
+source("../andrew_init_a.R")
+
+#across all treatments
+an_alli_a<-andrew_init_a(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+#for different structures
+an_structuresi_a<-andrew_init_a(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for different substrates
+an_substratesi_a<-andrew_init_a(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for each separately 
+an_eachi_a<-andrew_init_a(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+stopImplicitCluster()
+
+
+an_alli_a$ll
+an_structuresi_a$ll
+an_substratesi_a$ll
+an_eachi_a$ll
+
+#Protein
+source("../andrew_init_b.R")
+
+#across all treatments
+an_alli_b<-andrew_init_b(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+#for different structures
+an_structuresi_b<-andrew_init_b(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for different substrates
+an_substratesi_b<-andrew_init_b(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+#for each separately 
+an_eachi_b<-andrew_init_b(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+
+stopImplicitCluster()
+
+
+an_alli_b$ll
+an_structuresi_b$ll
+an_substratesi_b$ll
+an_eachi_b$ll
+
+
+source("../andrew_init.R")
 
 #across all treatments
 an_alli<-andrew_init(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
