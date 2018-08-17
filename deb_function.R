@@ -69,7 +69,7 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
           #by Hanegraaf and Muller, 2001
           r=m+pmax(x*an*(1-Yu), 0)+pmax((1-x)*an*(1-Ye),0)-pmin(0, an)
           
-          DNAc=0.04675*S
+          DNAc=fds*S
           #Protc=0.7095*S+0.6085*R
           Protc=fps*S+fpr*R
           
@@ -87,7 +87,7 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       base_function<-function(Ci){
         
         
-        out<-ode(y=c(R=0, S=0.15, E=0, C=Ci), parms=pars, times=t, func=deriv)
+        out<-ode(y=c(R=pars[["R_0"]], S=pars[["S_0"]], E=0, C=Ci), parms=pars, times=t, func=deriv)
         return(as.data.frame(out))}
       
       #results
@@ -102,9 +102,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
     estim<-function(data){
       
       ###Glucose
-      gl<-dplyr::select(dplyr::filter(data, Substrate=="Glucose" ), c("Time", "r", "E" ,"DNAc", "Protc"))
+      gl<-select(filter(data, Substrate=="Glucose" ), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(gl)<-c("time", "r", "E" ,"DNAc", "Protc")
-      gl2<-dplyr::select(dplyr::filter(data, Substrate!="Glucose" ), "Time")
+      gl2<-select(filter(data, Substrate!="Glucose" ), "Time")
       colnames(gl2)<-"time"
       gl2$r<-NA
       gl2$E<-NA
@@ -114,9 +114,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       m1<-m1[order(m1$time),]
       
       ###Cellobiose
-      cel<-dplyr::select(dplyr::filter(data, Substrate=="Cellobiose"), c("Time", "r", "E" ,"DNAc", "Protc"))
+      cel<-select(filter(data, Substrate=="Cellobiose"), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(cel)<-c("time", "r1", "E1" ,"DNAc1", "Protc1")
-      cel2<-dplyr::select(dplyr::filter(data, Substrate!="Cellobiose"), "Time")
+      cel2<-select(filter(data, Substrate!="Cellobiose"), "Time")
       colnames(cel2)<-"time"
       cel2$r1<-NA
       cel2$E1<-NA
@@ -126,9 +126,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       m2<-m2[order(m2$time),]
       
       ###Mix
-      mix<-dplyr::select(dplyr::filter(data, Substrate=="Mix"), c("Time", "r", "E" ,"DNAc", "Protc"))
+      mix<-select(filter(data, Substrate=="Mix"), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(mix)<-c("time", "r2", "E2" ,"DNAc2", "Protc2")
-      mix2<-dplyr::select(dplyr::filter(data, Substrate!="Mix"), "Time")
+      mix2<-select(filter(data, Substrate!="Mix"), "Time")
       colnames(mix2)<-"time"
       mix2$r2<-NA
       mix2$E2<-NA
@@ -140,7 +140,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       m1[,c(6:9)]<-m2[,c(2:5)]
       m1[,c(10:13)]<-m3[,c(2:5)]
       
-      mtrue<-m1
+      mtrue<-rbind(m1, data.frame(time=0, r=NA, E=0, DNAc=DNAci, Protc=NA,
+                                  r1=NA, E1=0, DNAc1=DNAci, Protc1=NA,
+                                  r2=NA, E2=0, DNAc2=DNAci, Protc2=NA))
       
       
       cost_function<-function(pars){
@@ -157,9 +159,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
         
       }
       
-      res<-modMCMC(f=cost_function, p=c(Vmax=0.5, Km=4.347682, m0=0.003473645, f=4, x=0.8, Yu=0.8, Ye=0.7, ke=0.006, k=0.8, fps=0.8, fpr=0.9),
-                   lower=c(Vmax=0, Km=1e-3, m0=0, f=0, x=0, Yu=0, Ye=0, ke=1e-6, k=0, fps=0, fpr=0),
-                   upper=c(Vmax=1e3, Km=1e3, m0=1, f=1e2, x=1, Yu=1, Ye=1, ke=1e2, k=1, fps=1, fpr=1),niter=Niter)
+      res<-modMCMC(f=cost_function, p=c(Vmax=0.5, Km=4.347682, m0=0.003473645, f=4, x=0.8, Yu=0.8, Ye=0.7, ke=0.006, fps=0.8, fpr=0.9, fds=0.05, R_0=0.01, S_0=0.15),
+                   lower=c(Vmax=0, Km=1e-3, m0=0, f=0, x=0, Yu=0, Ye=0, ke=1e-6, fps=0, fpr=0, fds=0, R_0=0, S_0=0),
+                   upper=c(Vmax=1e3, Km=1e3, m0=1, f=1e2, x=1, Yu=1, Ye=1, ke=1e2, fps=1, fpr=1, fds=1, R_0=25, S_0=25),niter=Niter)
       # 
       # 
       #
@@ -194,9 +196,12 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
                            Yu=vector("numeric", length = length(unique(dat$id))),
                            Ye=vector("numeric", length = length(unique(dat$id))),
                            ke=vector("numeric", length = length(unique(dat$id))), 
-                           k=vector("numeric", length = length(unique(dat$id))), 
+                           #k=vector("numeric", length = length(unique(dat$id))), 
                            fps=vector("numeric", length = length(unique(dat$id))),
                            fpr=vector("numeric", length = length(unique(dat$id))),
+                           fds=vector("numeric", length = length(unique(dat$id))),
+                           R_0=vector("numeric", length = length(unique(dat$id))),
+                           S_0=vector("numeric", length = length(unique(dat$id))),
                            #ks=vector("numeric", length = length(unique(dat$id))),
                            Vmax.l=vector("numeric", length = length(unique(dat$id))), 
                            Km.l=vector("numeric", length = length(unique(dat$id))), 
@@ -206,9 +211,12 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
                            Yu.l=vector("numeric", length = length(unique(dat$id))),
                            Ye.l=vector("numeric", length = length(unique(dat$id))),
                            ke.l=vector("numeric", length = length(unique(dat$id))), 
-                           k.l=vector("numeric", length = length(unique(dat$id))), 
+                           #k.l=vector("numeric", length = length(unique(dat$id))), 
                            fps.l=vector("numeric", length = length(unique(dat$id))), 
                            fpr.l=vector("numeric", length = length(unique(dat$id))),
+                           fds.l=vector("numeric", length = length(unique(dat$id))),
+                           R_0.l=vector("numeric", length = length(unique(dat$id))),
+                           S_0.l=vector("numeric", length = length(unique(dat$id))),
                            #ks.l=vector("numeric", length = length(unique(dat$id))),
                            Vmax.u=vector("numeric", length = length(unique(dat$id))), 
                            Km.u=vector("numeric", length = length(unique(dat$id))), 
@@ -218,9 +226,12 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
                            Yu.u=vector("numeric", length = length(unique(dat$id))),
                            Ye.u=vector("numeric", length = length(unique(dat$id))),
                            ke.u=vector("numeric", length = length(unique(dat$id))), 
-                           k.u=vector("numeric", length = length(unique(dat$id))), 
+                           #k.u=vector("numeric", length = length(unique(dat$id))), 
                            fps.u=vector("numeric", length = length(unique(dat$id))), 
                            fpr.u=vector("numeric", length = length(unique(dat$id))),
+                           fds.u=vector("numeric", length = length(unique(dat$id))),
+                           R_0.u=vector("numeric", length = length(unique(dat$id))),
+                           S_0.u=vector("numeric", length = length(unique(dat$id))),
                            #ks.u=vector("numeric", length = length(unique(dat$id))),
                            ID=unique(dat$id))
     
@@ -229,7 +240,7 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
     for(i in unique(dat$id)){
       for(n in 1:((ncol(parameters)-1)/3)){
         
-        parameters[i, n]<-summary(res[[i]])[6,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -263,9 +274,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
     cost_r<-function(pars, data){
       
       ###Glucose
-      gl<-dplyr::select(dplyr::filter(data, Substrate=="Glucose" ), c("Time", "r", "E" ,"DNAc", "Protc"))
+      gl<-select(filter(data, Substrate=="Glucose" ), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(gl)<-c("time", "r", "E" ,"DNAc", "Protc")
-      gl2<-dplyr::select(dplyr::filter(data, Substrate!="Glucose" ), "Time")
+      gl2<-select(filter(data, Substrate!="Glucose" ), "Time")
       colnames(gl2)<-"time"
       gl2$r<-NA
       gl2$E<-NA
@@ -275,9 +286,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       m1<-m1[order(m1$time),]
       
       ###Cellobiose
-      cel<-dplyr::select(dplyr::filter(data, Substrate=="Cellobiose"), c("Time", "r", "E" ,"DNAc", "Protc"))
+      cel<-select(filter(data, Substrate=="Cellobiose"), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(cel)<-c("time", "r1", "E1" ,"DNAc1", "Protc1")
-      cel2<-dplyr::select(dplyr::filter(data, Substrate!="Cellobiose"), "Time")
+      cel2<-select(filter(data, Substrate!="Cellobiose"), "Time")
       colnames(cel2)<-"time"
       cel2$r1<-NA
       cel2$E1<-NA
@@ -287,9 +298,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       m2<-m2[order(m2$time),]
       
       ###Mix
-      mix<-dplyr::select(dplyr::filter(data, Substrate=="Mix"), c("Time", "r", "E" ,"DNAc", "Protc"))
+      mix<-select(filter(data, Substrate=="Mix"), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(mix)<-c("time", "r2", "E2" ,"DNAc2", "Protc2")
-      mix2<-dplyr::select(dplyr::filter(data, Substrate!="Mix"), "Time")
+      mix2<-select(filter(data, Substrate!="Mix"), "Time")
       colnames(mix2)<-"time"
       mix2$r2<-NA
       mix2$E2<-NA
@@ -300,6 +311,7 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       
       m1[,c(6:9)]<-m2[,c(2:5)]
       m1[,c(10:13)]<-m3[,c(2:5)]
+      
       
       mtrue<-select(m1, c("time", "r", "r1", "r2"))
       
@@ -341,9 +353,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
     cost_DNAc<-function(pars, data){
       
       ###Glucose
-      gl<-dplyr::select(dplyr::filter(data, Substrate=="Glucose" ), c("Time", "r", "E" ,"DNAc", "Protc"))
+      gl<-select(filter(data, Substrate=="Glucose" ), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(gl)<-c("time", "r", "E" ,"DNAc", "Protc")
-      gl2<-dplyr::select(dplyr::filter(data, Substrate!="Glucose" ), "Time")
+      gl2<-select(filter(data, Substrate!="Glucose" ), "Time")
       colnames(gl2)<-"time"
       gl2$r<-NA
       gl2$E<-NA
@@ -353,9 +365,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       m1<-m1[order(m1$time),]
       
       ###Cellobiose
-      cel<-dplyr::select(dplyr::filter(data, Substrate=="Cellobiose"), c("Time", "r", "E" ,"DNAc", "Protc"))
+      cel<-select(filter(data, Substrate=="Cellobiose"), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(cel)<-c("time", "r1", "E1" ,"DNAc1", "Protc1")
-      cel2<-dplyr::select(dplyr::filter(data, Substrate!="Cellobiose"), "Time")
+      cel2<-select(filter(data, Substrate!="Cellobiose"), "Time")
       colnames(cel2)<-"time"
       cel2$r1<-NA
       cel2$E1<-NA
@@ -365,9 +377,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       m2<-m2[order(m2$time),]
       
       ###Mix
-      mix<-dplyr::select(dplyr::filter(data, Substrate=="Mix"), c("Time", "r", "E" ,"DNAc", "Protc"))
+      mix<-select(filter(data, Substrate=="Mix"), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(mix)<-c("time", "r2", "E2" ,"DNAc2", "Protc2")
-      mix2<-dplyr::select(dplyr::filter(data, Substrate!="Mix"), "Time")
+      mix2<-select(filter(data, Substrate!="Mix"), "Time")
       colnames(mix2)<-"time"
       mix2$r2<-NA
       mix2$E2<-NA
@@ -379,7 +391,11 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       m1[,c(6:9)]<-m2[,c(2:5)]
       m1[,c(10:13)]<-m3[,c(2:5)]
       
-      mtrue<-select(m1, c("time", "DNAc", "DNAc1", "DNAc2"))
+      mtrue<-rbind(m1, data.frame(time=0, r=NA, E=0, DNAc=DNAci, Protc=NA,
+                                  r1=NA, E1=0, DNAc1=DNAci, Protc1=NA,
+                                  r2=NA, E2=0, DNAc2=DNAci, Protc2=NA))
+      
+      mtrue<-select(mtrue, c("time", "DNAc", "DNAc1", "DNAc2"))
       
       out<-mmem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
       cost<-modCost(model = out, obs = mtrue)
@@ -418,9 +434,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
     cost_Protc<-function(pars, data){
       
       ###Glucose
-      gl<-dplyr::select(dplyr::filter(data, Substrate=="Glucose" ), c("Time", "r", "E" ,"DNAc", "Protc"))
+      gl<-select(filter(data, Substrate=="Glucose" ), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(gl)<-c("time", "r", "E" ,"DNAc", "Protc")
-      gl2<-dplyr::select(dplyr::filter(data, Substrate!="Glucose" ), "Time")
+      gl2<-select(filter(data, Substrate!="Glucose" ), "Time")
       colnames(gl2)<-"time"
       gl2$r<-NA
       gl2$E<-NA
@@ -430,9 +446,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       m1<-m1[order(m1$time),]
       
       ###Cellobiose
-      cel<-dplyr::select(dplyr::filter(data, Substrate=="Cellobiose"), c("Time", "r", "E" ,"DNAc", "Protc"))
+      cel<-select(filter(data, Substrate=="Cellobiose"), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(cel)<-c("time", "r1", "E1" ,"DNAc1", "Protc1")
-      cel2<-dplyr::select(dplyr::filter(data, Substrate!="Cellobiose"), "Time")
+      cel2<-select(filter(data, Substrate!="Cellobiose"), "Time")
       colnames(cel2)<-"time"
       cel2$r1<-NA
       cel2$E1<-NA
@@ -442,9 +458,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       m2<-m2[order(m2$time),]
       
       ###Mix
-      mix<-dplyr::select(dplyr::filter(data, Substrate=="Mix"), c("Time", "r", "E" ,"DNAc", "Protc"))
+      mix<-select(filter(data, Substrate=="Mix"), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(mix)<-c("time", "r2", "E2" ,"DNAc2", "Protc2")
-      mix2<-dplyr::select(dplyr::filter(data, Substrate!="Mix"), "Time")
+      mix2<-select(filter(data, Substrate!="Mix"), "Time")
       colnames(mix2)<-"time"
       mix2$r2<-NA
       mix2$E2<-NA
@@ -496,9 +512,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
     cost_E<-function(pars, data){
       
       ###Glucose
-      gl<-dplyr::select(dplyr::filter(data, Substrate=="Glucose" ), c("Time", "r", "E" ,"DNAc", "Protc"))
+      gl<-select(filter(data, Substrate=="Glucose" ), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(gl)<-c("time", "r", "E" ,"DNAc", "Protc")
-      gl2<-dplyr::select(dplyr::filter(data, Substrate!="Glucose" ), "Time")
+      gl2<-select(filter(data, Substrate!="Glucose" ), "Time")
       colnames(gl2)<-"time"
       gl2$r<-NA
       gl2$E<-NA
@@ -508,9 +524,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       m1<-m1[order(m1$time),]
       
       ###Cellobiose
-      cel<-dplyr::select(dplyr::filter(data, Substrate=="Cellobiose"), c("Time", "r", "E" ,"DNAc", "Protc"))
+      cel<-select(filter(data, Substrate=="Cellobiose"), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(cel)<-c("time", "r1", "E1" ,"DNAc1", "Protc1")
-      cel2<-dplyr::select(dplyr::filter(data, Substrate!="Cellobiose"), "Time")
+      cel2<-select(filter(data, Substrate!="Cellobiose"), "Time")
       colnames(cel2)<-"time"
       cel2$r1<-NA
       cel2$E1<-NA
@@ -520,9 +536,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       m2<-m2[order(m2$time),]
       
       ###Mix
-      mix<-dplyr::select(dplyr::filter(data, Substrate=="Mix"), c("Time", "r", "E" ,"DNAc", "Protc"))
+      mix<-select(filter(data, Substrate=="Mix"), c("Time", "r", "E" ,"DNAc", "Protc"))
       colnames(mix)<-c("time", "r2", "E2" ,"DNAc2", "Protc2")
-      mix2<-dplyr::select(dplyr::filter(data, Substrate!="Mix"), "Time")
+      mix2<-select(filter(data, Substrate!="Mix"), "Time")
       colnames(mix2)<-"time"
       mix2$r2<-NA
       mix2$E2<-NA
@@ -537,7 +553,7 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       mtrue<-select(m1, c("time", "E", "E1", "E2"))
       
       out<-mmem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
-      cost<-modCost(model = out, obs = m2)
+      cost<-modCost(model = out, obs = mtrue)
       
       return(cost)
       
@@ -606,13 +622,13 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
         #calibrated variables
         #DNA and protein abundance in reserves and structures are mean values reported 
         #by Hanegraaf and Muller, 2001
-        r=m+pmax(x*an*(1-Yu), 0)+pmax((1-x)*an*(1-Ye),0)-pmin(0, an)+(1-k)*Cu
+        r=m+pmax(x*an*(1-Yu), 0)+pmax((1-x)*an*(1-Ye),0)-pmin(0, an)
         
-        DNAc=0.04675*S
+        DNAc=fds*S
         #Protc=0.7095*S+0.6085*R
         Protc=fps*S+fpr*R
         
-        dR<-k*Cu-f*R
+        dR<-Cu-f*R
         dS<-pmax(g*Yu,0)+pmin(0, an)
         dE<-pmax(p*Ye,0)-ke*E
         dC<--Cu+ke*E
@@ -628,14 +644,14 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       
       Obs_dat<-select(data, c("Time", "r", "E", "DNAc", "Protc"))
       colnames(Obs_dat)<-c("time", "r","E", "DNAc", "Protc")
-      mtrue<-Obs_dat  
+      mtrue<-rbind(Obs_dat, data.frame(time=0, r=NA, E=NA, DNAc=DNAci, Protc=NA))   
       
       cinit<-as.numeric(data[1, "DOCinit"])
       
       cost_function<-function(pars){
         
         
-        out<-as.data.frame(ode(y=c(R=0, S=0.15, E=0, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+        out<-as.data.frame(ode(y=c(R=pars[["R_0"]], S=pars[["S_0"]], E=0, C=cinit), parms=pars, times=seq(0,130), func=deriv))
         
         if(Mean==FALSE){
           cost<-modCost(model = out, obs = mtrue)
@@ -647,9 +663,9 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
         
       }
       
-      res<-modMCMC(f=cost_function, p=c(Vmax=0.5, Km=4.347682, m0=0.003473645, f=4, x=0.8, Yu=0.8, Ye=0.7, ke=0.006, k=0.8, fps=0.8, fpr=0.9),
-                   lower=c(Vmax=0, Km=1e-3, m0=0, f=0, x=0, Yu=0, Ye=0, ke=1e-6, k=0, fps=0, fpr=0),
-                   upper=c(Vmax=1e3, Km=1e3, m0=1, f=1e2, x=1, Yu=1, Ye=1, ke=1e2, k=1, fps=1, fpr=1),niter=Niter)
+      res<-modMCMC(f=cost_function, p=c(Vmax=0.5, Km=4.347682, m0=0.003473645, f=4, x=0.8, Yu=0.8, Ye=0.7, ke=0.006, fps=0.8, fpr=0.9, fds=0.05, R_0=0.01, S_0=0.15),
+                   lower=c(Vmax=0, Km=1e-3, m0=0, f=0, x=0, Yu=0, Ye=0, ke=1e-6, fps=0, fpr=0, fds=0, R_0=0, S_0=0),
+                   upper=c(Vmax=1e3, Km=1e3, m0=1, f=1e2, x=1, Yu=1, Ye=1, ke=1e2, fps=1, fpr=1, fds=1, R_0=25, S_0=25),niter=Niter)
       # 
       # 
       #
@@ -678,9 +694,12 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
                            Yu=vector("numeric", length = length(unique(dat$id))),
                            Ye=vector("numeric", length = length(unique(dat$id))),
                            ke=vector("numeric", length = length(unique(dat$id))), 
-                           k=vector("numeric", length = length(unique(dat$id))), 
+                           #k=vector("numeric", length = length(unique(dat$id))), 
                            fps=vector("numeric", length = length(unique(dat$id))),
                            fpr=vector("numeric", length = length(unique(dat$id))),
+                           fds=vector("numeric", length = length(unique(dat$id))),
+                           R_0=vector("numeric", length = length(unique(dat$id))),
+                           S_0=vector("numeric", length = length(unique(dat$id))),
                            #ks=vector("numeric", length = length(unique(dat$id))),
                            Vmax.l=vector("numeric", length = length(unique(dat$id))), 
                            Km.l=vector("numeric", length = length(unique(dat$id))), 
@@ -690,9 +709,12 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
                            Yu.l=vector("numeric", length = length(unique(dat$id))),
                            Ye.l=vector("numeric", length = length(unique(dat$id))),
                            ke.l=vector("numeric", length = length(unique(dat$id))), 
-                           k.l=vector("numeric", length = length(unique(dat$id))), 
+                           #k.l=vector("numeric", length = length(unique(dat$id))), 
                            fps.l=vector("numeric", length = length(unique(dat$id))), 
                            fpr.l=vector("numeric", length = length(unique(dat$id))),
+                           fds.l=vector("numeric", length = length(unique(dat$id))),
+                           R_0.l=vector("numeric", length = length(unique(dat$id))),
+                           S_0.l=vector("numeric", length = length(unique(dat$id))),
                            #ks.l=vector("numeric", length = length(unique(dat$id))),
                            Vmax.u=vector("numeric", length = length(unique(dat$id))), 
                            Km.u=vector("numeric", length = length(unique(dat$id))), 
@@ -702,9 +724,12 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
                            Yu.u=vector("numeric", length = length(unique(dat$id))),
                            Ye.u=vector("numeric", length = length(unique(dat$id))),
                            ke.u=vector("numeric", length = length(unique(dat$id))), 
-                           k.u=vector("numeric", length = length(unique(dat$id))), 
+                           #k.u=vector("numeric", length = length(unique(dat$id))), 
                            fps.u=vector("numeric", length = length(unique(dat$id))), 
                            fpr.u=vector("numeric", length = length(unique(dat$id))),
+                           fds.u=vector("numeric", length = length(unique(dat$id))),
+                           R_0.u=vector("numeric", length = length(unique(dat$id))),
+                           S_0.u=vector("numeric", length = length(unique(dat$id))),
                            #ks.u=vector("numeric", length = length(unique(dat$id))),
                            ID=unique(dat$id))
     
@@ -714,7 +739,7 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
     for(i in unique(dat$id)){
       for(n in 1:((ncol(parameters)-1)/3)){
         
-        parameters[i, n]<-summary(res[[i]])[6,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -769,7 +794,7 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       
       cinit<-as.numeric(data[1,"DOCinit"])
       
-      out<-out<-as.data.frame(ode(y=c(R=0, S=0.15, E=0, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+      out<-as.data.frame(ode(y=c(R=pars[["R_0"]], S=pars[["S_0"]], E=0, C=cinit), parms=pars, times=seq(0,130), func=deriv))
       cost<-modCost(model = out, obs = Obs_dat)
       
       return(cost)
@@ -806,13 +831,14 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
     
     cost_DNAc<-function(pars, data){
       
+      Obs_dat<-select(data, c("Time", "r","E", "DNAc", "Protc"))
+      colnames(Obs_dat)<-c("time", "r","E", "DNAc", "Protc")
+      mtrue<-rbind(Obs_dat, data.frame(time=0, r=NA, E=NA, DNAc=DNAci, Protc=NA))  
       
-      Obs_decay<-select(data, c("Time", "DNAc"))
-      
-      colnames(Obs_dat)<-c("time", "DNAc")
+      mtrue<-select(mtrue, c("time", "DNAc"))
       cinit<-as.numeric(data[1, "DOCinit"])
       
-      out<-as.data.frame(ode(y=c(R=0, S=0.15, E=0, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+      out<-as.data.frame(ode(y=c(R=pars[["R_0"]], S=pars[["S_0"]], E=0, C=cinit), parms=pars, times=seq(0,130), func=deriv))
       cost<-modCost(model = out, obs = Obs_dat)
       
       return(cost)
@@ -854,7 +880,7 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       colnames(Obs_dat)<-c("time", "Protc")
       cinit<-as.numeric(data[1, "DOCinit"])
       
-      out<-as.data.frame(ode(y=c(R=0, S=0.15, E=0, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+      out<-as.data.frame(ode(y=c(R=pars[["R_0"]], S=pars[["S_0"]], E=0, C=cinit), parms=pars, times=seq(0,130), func=deriv))
       cost<-modCost(model = out, obs = Obs_dat)
       
       return(cost)
@@ -895,7 +921,7 @@ deb_function<-function(data, SUB, FACT, Mean, Niter){
       colnames(Obs_dat)<-c("time", "E")
       Ci<-as.numeric(data[1, "DOCinit"])
       
-      out<-ode(y=c(R=0, S=0.15, E=0, C=cinit), parms=pars, times=seq(0,130), func=deriv)
+      out<-ode(y=c(R=pars[["R_0"]], S=pars[["S_0"]], E=0, C=cinit), parms=pars, times=seq(0,130), func=deriv)
       cost<-modCost(model = out, obs = Obs_dat)
       
       return(cost)

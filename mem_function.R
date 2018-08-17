@@ -176,7 +176,7 @@ mem_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     for(i in unique(dat$id)){
       for(n in 1:6){
         
-        parameters[i, n]<-summary(res[[i]])[6,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -256,8 +256,8 @@ mem_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     
     for(i in unique(dat$id)){
       
-      obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
       
     }
     
@@ -330,8 +330,8 @@ mem_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     }
     
     for(i in unique(dat$id)){
-      obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_Cmic<-data.frame(obs_Cmic, mod_Cmic)
@@ -396,19 +396,15 @@ mem_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       mtrue<-select(m1, c("time", "E", "E1", "E2"))
       
       out<-mem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
-      if(Mean==FALSE){
-        cost<-modCost(model = out, obs = mtrue)
-      }else{
-        cost<-modCost(model = out, obs = mtrue, weight="mean")
-      }
+      cost<-modCost(model = out, obs = mtrue)
       
       return(cost)
       
     }
     
     for(i in unique(dat$id)){
-      obs_E<-append(obs_E, cost_E(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_E<-append(mod_E, cost_E(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_E<-append(obs_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_E<-append(mod_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_E<-data.frame(obs_E, mod_E)
@@ -521,7 +517,7 @@ mem_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     for(i in unique(dat$id)){
       for(n in 1:6){
         
-        parameters[i, n]<-summary(res[[i]])[6,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -576,7 +572,7 @@ mem_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       
       cinit<-as.numeric(data[1,"DOCinit"])
       
-      out<-out<-as.data.frame(ode(y=c(Cmic=Cmic, C=cinit, E=0), parms=pars, times=seq(0,130), func=deriv))
+      out<-as.data.frame(ode(y=c(Cmic=Cmic, C=cinit, E=0), parms=pars, times=seq(0,130), func=deriv))
       cost<-modCost(model = out, obs = Obs_dat)
       
       return(cost)
@@ -585,8 +581,8 @@ mem_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     
     for(i in unique(dat$id)){
       
-      obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
       
     }
     
@@ -627,8 +623,8 @@ mem_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     }
     
     for(i in unique(dat$id)){
-      obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_Cmic<-data.frame(obs_Cmic, mod_Cmic)
@@ -667,8 +663,8 @@ mem_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     }
     
     for(i in unique(dat$id)){
-      obs_E<-append(obs_E, cost_E(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_E<-append(mod_E, cost_E(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_E<-append(obs_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_E<-append(mod_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_E<-data.frame(obs_E, mod_E)

@@ -120,8 +120,8 @@ andrew_init_b<-function(data, SUB, FACT, Mean, DNAci, Niter){
       m3<-rbind(mix, mix2)
       m3<-m3[order(m3$time),]
       
-      m1[,c(6:9)]<-m2[,c(2:5)]
-      m1[,c(10:13)]<-m3[,c(2:5)]
+      m1[,c(5:7)]<-m2[,c(2:4)]
+      m1[,c(8:10)]<-m3[,c(2:4)]
       
       mtrue<-m1
       
@@ -214,7 +214,7 @@ andrew_init_b<-function(data, SUB, FACT, Mean, DNAci, Niter){
     for(i in unique(dat$id)){
       for(n in 1:((ncol(parameters)-1)/3)){
         
-        parameters[i, n]<-summary(res[[i]])[1,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -283,8 +283,8 @@ andrew_init_b<-function(data, SUB, FACT, Mean, DNAci, Niter){
       m3<-rbind(mix, mix2)
       m3<-m3[order(m3$time),]
       
-      m1[,c(6:9)]<-m2[,c(2:5)]
-      m1[,c(10:13)]<-m3[,c(2:5)]
+      m1[,c(5:7)]<-m2[,c(2:4)]
+      m1[,c(8:10)]<-m3[,c(2:4)]
       
       mtrue<-m1
       
@@ -299,8 +299,8 @@ andrew_init_b<-function(data, SUB, FACT, Mean, DNAci, Niter){
     
     for(i in unique(dat$id)){
       
-      obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
       
     }
     
@@ -445,8 +445,8 @@ andrew_init_b<-function(data, SUB, FACT, Mean, DNAci, Niter){
       m3<-rbind(mix, mix2)
       m3<-m3[order(m3$time),]
       
-      m1[,c(6:9)]<-m2[,c(2:5)]
-      m1[,c(10:13)]<-m3[,c(2:5)]
+      m1[,c(5:7)]<-m2[,c(2:4)]
+      m1[,c(8:10)]<-m3[,c(2:4)]
       
       mtrue<-m1
       
@@ -461,8 +461,8 @@ andrew_init_b<-function(data, SUB, FACT, Mean, DNAci, Niter){
     }
     
     for(i in unique(dat$id)){
-      obs_Protc<-append(obs_Protc, cost_Protc(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_Protc<-append(mod_Protc, cost_Protc(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_Protc<-append(obs_Protc, cost_Protc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_Protc<-append(mod_Protc, cost_Protc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_Protc<-data.frame(obs_Protc, mod_Protc)
@@ -526,8 +526,8 @@ andrew_init_b<-function(data, SUB, FACT, Mean, DNAci, Niter){
       m3<-rbind(mix, mix2)
       m3<-m3[order(m3$time),]
       
-      m1[,c(6:9)]<-m2[,c(2:5)]
-      m1[,c(10:13)]<-m3[,c(2:5)]
+      m1[,c(5:7)]<-m2[,c(2:4)]
+      m1[,c(8:10)]<-m3[,c(2:4)]
       
       mtrue<-m1
       
@@ -535,15 +535,15 @@ andrew_init_b<-function(data, SUB, FACT, Mean, DNAci, Niter){
       mtrue<-select(mtrue, c("time", "E", "E1", "E2"))
       
       out<-mmem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
-      cost<-modCost(model = out, obs = m2)
+      cost<-modCost(model = out, obs = mtrue)
       
       return(cost)
       
     }
     
     for(i in unique(dat$id)){
-      obs_E<-append(obs_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_E<-append(mod_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_E<-append(obs_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_E<-append(mod_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_E<-data.frame(obs_E, mod_E)
@@ -694,7 +694,7 @@ andrew_init_b<-function(data, SUB, FACT, Mean, DNAci, Niter){
     for(i in unique(dat$id)){
       for(n in 1:((ncol(parameters)-1)/3)){
         
-        parameters[i, n]<-summary(res[[i]])[1,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -757,8 +757,8 @@ andrew_init_b<-function(data, SUB, FACT, Mean, DNAci, Niter){
     
     for(i in unique(dat$id)){
       
-      obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
       
     }
     
@@ -842,8 +842,8 @@ andrew_init_b<-function(data, SUB, FACT, Mean, DNAci, Niter){
     }
     
     for(i in unique(dat$id)){
-      obs_Protc<-append(obs_Protc, cost_Protc(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_Protc<-append(mod_Protc, cost_Protc(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_Protc<-append(obs_Protc, cost_Protc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_Protc<-append(mod_Protc, cost_Protc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_Protc<-data.frame(obs_Protc, mod_Protc)
@@ -884,8 +884,8 @@ andrew_init_b<-function(data, SUB, FACT, Mean, DNAci, Niter){
     }
     
     for(i in unique(dat$id)){
-      obs_E<-append(obs_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_E<-append(mod_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_E<-append(obs_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_E<-append(mod_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_E<-data.frame(obs_E, mod_E)

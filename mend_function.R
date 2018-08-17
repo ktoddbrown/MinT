@@ -90,13 +90,9 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       ###Glucose
       gl<-select(filter(data, Substrate=="Glucose" ), Vars)
       colnames(gl)<-c("time", "r", "E" ,"Cmic")
-      #round the time to one digit
-      gl$time<-round(gl$time, 1)
       
       gl2<-select(filter(data, Substrate!="Glucose" ), Vars[1])
       colnames(gl2)<-"time"
-      #round the time to one digit
-      gl2$time<-round(gl2$time, 1)
       
       gl2$r<-NA
       gl2$E<-NA
@@ -107,8 +103,6 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       ###Cellobiose
       cel<-select(filter(data, Substrate=="Cellobiose" ), Vars)
       colnames(cel)<-c("time", "r1", "E1" ,"Cmic1")
-      #round the time to one digit
-      cel$time<-round(cel$time, 1)
       
       cel2<-select(filter(data, Substrate!="Cellobiose" ), Vars[1])
       colnames(cel2)<-"time"
@@ -212,7 +206,7 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     for(i in unique(dat$id)){
       for(n in 1:6){
         
-        parameters[i, n]<-summary(res[[i]])[6,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -248,13 +242,10 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       ###Glucose
       gl<-select(filter(data, Substrate=="Glucose" ), Vars)
       colnames(gl)<-c("time", "r", "E" ,"Cmic")
-      #round the time to one digit
-      gl$time<-round(gl$time, 1)
+      
       
       gl2<-select(filter(data, Substrate!="Glucose" ), Vars[1])
       colnames(gl2)<-"time"
-      #round the time to one digit
-      gl2$time<-round(gl2$time, 1)
       
       gl2$r<-NA
       gl2$E<-NA
@@ -265,13 +256,10 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       ###Cellobiose
       cel<-select(filter(data, Substrate=="Cellobiose" ), Vars)
       colnames(cel)<-c("time", "r1", "E1" ,"Cmic1")
-      #round the time to one digit
-      cel$time<-round(cel$time, 1)
       
       cel2<-select(filter(data, Substrate!="Cellobiose" ), Vars[1])
       colnames(cel2)<-"time"
-      #round the time to one digit
-      cel2$time<-round(cel2$time, 1)
+      
       
       
       cel2$r1<-NA
@@ -283,14 +271,11 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       ###Mix
       mix<-select(filter(data, Substrate=="Mix" ), Vars)
       colnames(mix)<-c("time", "r2", "E2" ,"Cmic2")
-      #round the time to one digit
-      mix$time<-round(mix$time, 1)
+     
       
       
       mix2<-select(filter(data, Substrate!="Mix" ), Vars[1])
       colnames(mix2)<-"time"
-      #round the time to one digit
-      mix2$time<-round(mix2$time, 1)
       
       mix2$r2<-NA
       mix2$E2<-NA
@@ -311,8 +296,8 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     
     for(i in unique(dat$id)){
       
-      obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
       
     }
     
@@ -342,13 +327,8 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       ###Glucose
       gl<-select(filter(data, Substrate=="Glucose" ), Vars)
       colnames(gl)<-c("time", "r", "E" ,"Cmic")
-      #round the time to one digit
-      gl$time<-round(gl$time, 1)
-      
       gl2<-select(filter(data, Substrate!="Glucose" ), Vars[1])
       colnames(gl2)<-"time"
-      #round the time to one digit
-      gl2$time<-round(gl2$time, 1)
       
       gl2$r<-NA
       gl2$E<-NA
@@ -359,14 +339,9 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       ###Cellobiose
       cel<-select(filter(data, Substrate=="Cellobiose" ), Vars)
       colnames(cel)<-c("time", "r1", "E1" ,"Cmic1")
-      #round the time to one digit
-      cel$time<-round(cel$time, 1)
       
       cel2<-select(filter(data, Substrate!="Cellobiose" ), Vars[1])
       colnames(cel2)<-"time"
-      #round the time to one digit
-      cel2$time<-round(cel2$time, 1)
-      
       
       cel2$r1<-NA
       cel2$E1<-NA
@@ -377,14 +352,9 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       ###Mix
       mix<-select(filter(data, Substrate=="Mix" ), Vars)
       colnames(mix)<-c("time", "r2", "E2" ,"Cmic2")
-      #round the time to one digit
-      mix$time<-round(mix$time, 1)
-      
       
       mix2<-select(filter(data, Substrate!="Mix" ), Vars[1])
       colnames(mix2)<-"time"
-      #round the time to one digit
-      mix2$time<-round(mix2$time, 1)
       
       mix2$r2<-NA
       mix2$E2<-NA
@@ -405,8 +375,8 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     }
     
     for(i in unique(dat$id)){
-      obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_Cmic<-data.frame(obs_Cmic, mod_Cmic)
@@ -435,13 +405,10 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       ###Glucose
       gl<-select(filter(data, Substrate=="Glucose" ), Vars)
       colnames(gl)<-c("time", "r", "E" ,"Cmic")
-      #round the time to one digit
-      gl$time<-round(gl$time, 1)
+      
       
       gl2<-select(filter(data, Substrate!="Glucose" ), Vars[1])
       colnames(gl2)<-"time"
-      #round the time to one digit
-      gl2$time<-round(gl2$time, 1)
       
       gl2$r<-NA
       gl2$E<-NA
@@ -452,14 +419,10 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       ###Cellobiose
       cel<-select(filter(data, Substrate=="Cellobiose" ), Vars)
       colnames(cel)<-c("time", "r1", "E1" ,"Cmic1")
-      #round the time to one digit
-      cel$time<-round(cel$time, 1)
+
       
       cel2<-select(filter(data, Substrate!="Cellobiose" ), Vars[1])
       colnames(cel2)<-"time"
-      #round the time to one digit
-      cel2$time<-round(cel2$time, 1)
-      
       
       cel2$r1<-NA
       cel2$E1<-NA
@@ -470,9 +433,6 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       ###Mix
       mix<-select(filter(data, Substrate=="Mix" ), Vars)
       colnames(mix)<-c("time", "r2", "E2" ,"Cmic2")
-      #round the time to one digit
-      mix$time<-round(mix$time, 1)
-      
       
       mix2<-select(filter(data, Substrate!="Mix" ), Vars[1])
       colnames(mix2)<-"time"
@@ -491,15 +451,15 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       mtrue<-select(m1, c("time", "E", "E1", "E2"))
       
       out<-mend(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
-      cost<-modCost(model = out, obs = m2)
+      cost<-modCost(model = out, obs = mtrue)
       
       return(cost)
       
     }
     
     for(i in unique(dat$id)){
-      obs_E<-append(obs_E, cost_E(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_E<-append(mod_E, cost_E(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_E<-append(obs_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_E<-append(mod_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_E<-data.frame(obs_E, mod_E)
@@ -568,8 +528,6 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       
       Obs_dat<-select(data, Vars)
       colnames(Obs_dat)<-c("time", "r","E", "Cmic")
-      #rounding the time
-      Obs_dat$time<-round(Obs_dat$time,1)
       
       mtrue<-select(Obs_dat, ColM)  
       
@@ -635,7 +593,7 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     for(i in unique(dat$id)){
       for(n in 1:6){
         
-        parameters[i, n]<-summary(res[[i]])[6,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -687,12 +645,11 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       Obs_dat<-select(data, Vars[1:2])
       
       colnames(Obs_dat)<-c("time", "r")
-      #rounding the time
-      Obs_dat$time<-round(Obs_dat$time,1)
+      
       
       cinit<-as.numeric(data[1,"DOCinit"])
       
-      out<-out<-as.data.frame(ode(y=c(Cmic=Cmic, C=cinit, E=0), parms=pars, times=seq(0,130), func=deriv))
+      out<-as.data.frame(ode(y=c(Cmic=Cmic, C=cinit, E=0), parms=pars, times=seq(0,130), func=deriv))
       cost<-modCost(model = out, obs = Obs_dat)
       
       return(cost)
@@ -701,8 +658,8 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     
     for(i in unique(dat$id)){
       
-      obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
       
     }
     
@@ -733,8 +690,6 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       Obs_decay<-select(data, Vars[c(1,4)])
       
       colnames(Obs_dat)<-c("time", "Cmic")
-      #rounding the time
-      Obs_dat$time<-round(Obs_dat$time,1)
       
       cinit<-as.numeric(data[1, "DOCinit"])
       
@@ -746,8 +701,8 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     }
     
     for(i in unique(dat$id)){
-      obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_Cmic<-data.frame(obs_Cmic, mod_Cmic)
@@ -777,9 +732,7 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       
       colnames(Obs_dat)<-c("time", "E")
       
-      #rounding the time
-      Obs_dat$time<-round(Obs_dat$time,1)
-      
+     
       Ci<-as.numeric(data[1, "DOCinit"])
       
       out<-ode(y=c(Cmic=Cmic, C=Ci, E=0), parms=pars, times=seq(0,130), func=deriv)
@@ -790,8 +743,8 @@ mend_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     }
     
     for(i in unique(dat$id)){
-      obs_E<-append(obs_E, cost_E(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_E<-append(mod_E, cost_E(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_E<-append(obs_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_E<-append(mod_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_E<-data.frame(obs_E, mod_E)

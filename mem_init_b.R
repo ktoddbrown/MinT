@@ -193,7 +193,7 @@ mem_init_b<-function(data, SUB, FACT, Mean, Niter, DNAci){
     for(i in unique(dat$id)){
       for(n in 1:((ncol(parameters)-1)/3)){
         
-        parameters[i, n]<-summary(res[[i]])[1,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -276,8 +276,8 @@ mem_init_b<-function(data, SUB, FACT, Mean, Niter, DNAci){
     
     for(i in unique(dat$id)){
       
-      obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
       
     }
     
@@ -437,8 +437,8 @@ mem_init_b<-function(data, SUB, FACT, Mean, Niter, DNAci){
     }
     
     for(i in unique(dat$id)){
-      obs_Protc<-append(obs_Protc, cost_Protc(summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_Protc<-append(mod_Protc, cost_Protc(summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_Protc<-append(obs_Protc, cost_Protc(res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_Protc<-append(mod_Protc, cost_Protc(res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_Protc<-data.frame(obs_Protc, mod_Protc)
@@ -509,15 +509,15 @@ mem_init_b<-function(data, SUB, FACT, Mean, Niter, DNAci){
       mtrue<-select(m1, c("time", "E", "E1", "E2"))
       
       out<-mem(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
-      cost<-modCost(model = out, obs = m2)
+      cost<-modCost(model = out, obs = mtrue)
       
       return(cost)
       
     }
     
     for(i in unique(dat$id)){
-      obs_E<-append(obs_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_E<-append(mod_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_E<-append(obs_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_E<-append(mod_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_E<-data.frame(obs_E, mod_E)
@@ -646,7 +646,7 @@ mem_init_b<-function(data, SUB, FACT, Mean, Niter, DNAci){
     for(i in unique(dat$id)){
       for(n in 1:((ncol(parameters)-1)/3)){
         
-        parameters[i, n]<-summary(res[[i]])[1,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -709,8 +709,8 @@ mem_init_b<-function(data, SUB, FACT, Mean, Niter, DNAci){
     
     for(i in unique(dat$id)){
       
-      obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
       
     }
     
@@ -794,8 +794,8 @@ mem_init_b<-function(data, SUB, FACT, Mean, Niter, DNAci){
     }
     
     for(i in unique(dat$id)){
-      obs_Protc<-append(obs_Protc, cost_Protc(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_Protc<-append(mod_Protc, cost_Protc(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_Protc<-append(obs_Protc, cost_Protc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_Protc<-append(mod_Protc, cost_Protc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_Protc<-data.frame(obs_Protc, mod_Protc)
@@ -836,8 +836,8 @@ mem_init_b<-function(data, SUB, FACT, Mean, Niter, DNAci){
     }
     
     for(i in unique(dat$id)){
-      obs_E<-append(obs_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_E<-append(mod_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_E<-append(obs_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_E<-append(mod_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_E<-data.frame(obs_E, mod_E)

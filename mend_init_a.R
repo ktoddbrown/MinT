@@ -210,7 +210,7 @@ mend_init_a<-function(data, SUB, FACT, Mean, Niter, DNAci){
     for(i in unique(dat$id)){
       for(n in 1:((ncol(parameters)-1)/3)){
         
-        parameters[i, n]<-summary(res[[i]])[1,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -297,8 +297,8 @@ mend_init_a<-function(data, SUB, FACT, Mean, Niter, DNAci){
     
     for(i in unique(dat$id)){
       
-      obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
       
     }
     
@@ -379,8 +379,8 @@ mend_init_a<-function(data, SUB, FACT, Mean, Niter, DNAci){
     }
     
     for(i in unique(dat$id)){
-      obs_DNAc<-append(obs_DNAc, cost_DNAc(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_DNAc<-append(mod_DNAc, cost_DNAc(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_DNAc<-append(obs_DNAc, cost_DNAc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_DNAc<-append(mod_DNAc, cost_DNAc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_DNAc<-data.frame(obs_DNAc, mod_DNAc)
@@ -537,15 +537,15 @@ mend_init_a<-function(data, SUB, FACT, Mean, Niter, DNAci){
       mtrue<-select(mtrue, c("time", "E", "E1", "E2"))
       
       out<-mend(X=c(25, 25, 16.5), pars = pars, t=seq(0,130))
-      cost<-modCost(model = out, obs = m2)
+      cost<-modCost(model = out, obs = mtrue)
       
       return(cost)
       
     }
     
     for(i in unique(dat$id)){
-      obs_E<-append(obs_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_E<-append(mod_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_E<-append(obs_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_E<-append(mod_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_E<-data.frame(obs_E, mod_E)
@@ -756,8 +756,8 @@ mend_init_a<-function(data, SUB, FACT, Mean, Niter, DNAci){
     
     for(i in unique(dat$id)){
       
-      obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
       
     }
     
@@ -799,8 +799,8 @@ mend_init_a<-function(data, SUB, FACT, Mean, Niter, DNAci){
     }
     
     for(i in unique(dat$id)){
-      obs_DNAc<-append(obs_DNAc, cost_DNAc(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_DNAc<-append(mod_DNAc, cost_DNAc(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_DNAc<-append(obs_DNAc, cost_DNAc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_DNAc<-append(mod_DNAc, cost_DNAc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_DNAc<-data.frame(obs_DNAc, mod_DNAc)
@@ -883,8 +883,8 @@ mend_init_a<-function(data, SUB, FACT, Mean, Niter, DNAci){
     }
     
     for(i in unique(dat$id)){
-      obs_E<-append(obs_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_E<-append(mod_E, cost_E(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_E<-append(obs_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_E<-append(mod_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_E<-data.frame(obs_E, mod_E)

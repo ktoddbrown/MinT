@@ -180,7 +180,7 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     for(i in unique(dat$id)){
       for(n in 1:4){
         
-        parameters[i, n]<-summary(res[[i]])[6,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -260,8 +260,8 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     
     for(i in unique(dat$id)){
       
-      obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
       
     }
     
@@ -334,8 +334,8 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     }
     
     for(i in unique(dat$id)){
-      obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_Cmic<-data.frame(obs_Cmic, mod_Cmic)
@@ -444,7 +444,7 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     for(i in unique(dat$id)){
       for(n in 1:4){
         
-        parameters[i, n]<-summary(res[[i]])[6,n]
+        parameters[i, n]<-res[[i]]$bestpar[n]
       }
     }
     #lower quartile
@@ -499,7 +499,7 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
       
       cinit<-as.numeric(data[1,"DOCinit"])
       
-      out<-out<-as.data.frame(ode(y=c(Cmic=Cmic, C=cinit), parms=pars, times=seq(0,130), func=deriv))
+      out<-as.data.frame(ode(y=c(Cmic=Cmic, C=cinit), parms=pars, times=seq(0,130), func=deriv))
       cost<-modCost(model = out, obs = Obs_dat)
       
       return(cost)
@@ -508,8 +508,8 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     
     for(i in unique(dat$id)){
       
-      obs_r<-append(obs_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
       
     }
     
@@ -549,8 +549,8 @@ monod_growth_function<-function(data, SUB, FACT, Vars, ColM, Mean, Cmic, Niter){
     }
     
     for(i in unique(dat$id)){
-      obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$obs)
-      mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=summary(res[[i]])[6,], data=dat[dat$id==i, ])$residuals$mod)
+      obs_Cmic<-append(obs_Cmic, cost_Cmic(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
+      mod_Cmic<-append(mod_Cmic, cost_Cmic(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
     }
     
     OvP_Cmic<-data.frame(obs_Cmic, mod_Cmic)
