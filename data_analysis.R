@@ -241,14 +241,68 @@ dat$Cmic.prot_H<-m0[(m0$Substrate!="Free" & m0$Substrate!="Celluloze" & !is.na(m
 #measured initial microbial biomass
 Cmic.prot.init_H<-mean((m0$DNA.init*fill_coefs[2]+fill_coefs[1])/0.82*0.45/12.01/3*0.25, na.rm=T)
 
-
-
 #5. DEB require protein and DNA C concentration
 dat$DNAc<-dat$DNA*0.51/12.01/4
 dat$Protc<-dat$Prot.in*0.46/12.01/4
 
 #initial DNA concentration
 DNAci<-mean(m0$DNA.init, na.rm = T)*0.46/12.01/3*0.25
+
+################################Using data without mix C source#######################
+d<-subset(mint, Substrate=="Glucose" | Substrate=="Cellobiose")
+summary(d)
+
+#removing outliers
+#respiration rate
+ggplot(d, aes(Time, r))+geom_point(cex=6)+facet_wrap(Structure~Substrate, scales="free")
+
+d[(d$Substrate=="Glucose" & d$Structure=="Glass wool" & d$Time>20 & d$Time<30 & d$r<0.4 & !is.na(d$r)), "r"]<-NA
+
+#DNA
+ggplot(d, aes(Time, DNA))+geom_point(cex=6)+facet_wrap(Structure~Substrate, scales="free")
+
+d[(d$Substrate=="Cellobiose" & d$Structure=="Broth" & d$DNA>9 & !is.na(d$DNA)), "DNA"]<-NA
+d[(d$Substrate=="Glucose" & d$Structure=="Broth" & d$DNA>9 & !is.na(d$DNA)), "DNA"]<-NA
+d[(d$Substrate=="Cellobiose" & d$Structure=="Glass wool" & d$DNA>8 & !is.na(d$DNA)), "DNA"]<-NA
+d[(d$Substrate=="Glucose" & d$Structure=="Glass wool" & d$Time>30 & d$Time<60 & d$DNA<5.5 & !is.na(d$DNA)), "DNA"]<-NA
+d[(d$Substrate=="Cellobiose" & d$Structure=="Mixed glass" & d$DNA>7 & !is.na(d$DNA)), "DNA"]<-NA
+
+#Proteins
+ggplot(d, aes(Time, Prot.in))+geom_point(cex=6)+facet_wrap(Structure~Substrate, scales="free")
+
+d[(d$Substrate=="Cellobiose" & d$Structure=="Broth" & d$Time>100), "Prot.in"]<-NA
+d[(d$Substrate=="Glucose" & d$Structure=="Broth" & d$Time>100), "Prot.in"]<-NA
+d[(d$Substrate=="Glucose" & d$Structure=="Mixed glass" & d$Prot.in<40 & !is.na(d$Prot.in)), "Prot.in"]<-NA
+
+#Enzymes
+ggplot(d, aes(Time, E))+geom_point(cex=6)+facet_wrap(Structure~Substrate, scales="free")
+
+d[(d$Substrate=="Glucose" & d$Structure=="Broth" & d$E>0.6 & !is.na(d$E)), "E"]<-NA
+d[(d$Substrate=="Glucose" & d$Structure=="Mixed glass" & d$E>0.6 & !is.na(d$E)), "E"]<-NA
+
+
+#recalculations
+
+#1. Highest DNA
+#measured microbial biomass
+d$Cmic.dna_H<-d$DNA/0.004*0.45/12.01/4
+
+#2. Median DNA - this is 2.39% of biomass - the best choice of a modeller
+#measured microbial biomass
+d$Cmic.dna_M<-(d$DNA/0.0239)*0.45/12.01/4
+
+#3. Lowest protein 
+#gap filling
+#measured microbial biomass
+d$Cmic.prot_L<-d$Prot.in/0.272*0.45/12.01/4
+
+#4. Highest protein 
+#measured microbial biomass
+d$Cmic.prot_H<-d$Prot.in/0.82*0.45/12.01/4
+
+#5. DEB require protein and DNA C concentration
+d$DNAc<-d$DNA*0.51/12.01/4
+d$Protc<-d$Prot.in*0.46/12.01/4
 
 #######################################################################################
 ##############################First order decay########################################
@@ -289,22 +343,22 @@ source("../monod_growth_function.R")
 
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and d for lowest protein
-monod_all_a<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+monod_all_a<-monod_growth_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                           ColM = c("time", "r", "r1", "r2"),
                                           Cmic=Cmic.dna.init_H,
                                           Niter = 10000)
-monod_all_b<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Mean = TRUE,
+monod_all_b<-monod_growth_function(data=d, SUB = TRUE, FACT = 4, Mean = TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                           ColM = c("time", "r", "r1", "r2"),
                                           Cmic=Cmic.dna.init_M,
                                           Niter = 10000)
-monod_all_c<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+monod_all_c<-monod_growth_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                           ColM = c("time", "r", "r1", "r2"),
                                           Cmic=Cmic.prot.init_H,
                                           Niter = 10000)
-monod_all_d<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+monod_all_d<-monod_growth_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                           ColM = c("time", "r", "r1", "r2"),
                                           Cmic=Cmic.prot.init_L,
@@ -312,71 +366,71 @@ monod_all_d<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-monod_structures_a<-monod_growth_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+monod_structures_a<-monod_growth_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                           ColM = c("time", "r", "r1", "r2"),
                                           Cmic=Cmic.dna.init_H,
                                           Niter = 10000)
-monod_structures_b<-monod_growth_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+monod_structures_b<-monod_growth_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                           ColM = c("time", "r", "r1", "r2"),
                                           Cmic=Cmic.dna.init_M,
                                           Niter = 10000)
-monod_structures_c<-monod_growth_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+monod_structures_c<-monod_growth_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                           ColM = c("time", "r", "r1", "r2"),
                                           Cmic=Cmic.prot.init_H,
                                           Niter = 10000)
-monod_structures_d<-monod_growth_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+monod_structures_d<-monod_growth_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                           ColM = c("time", "r", "r1", "r2"),
                                           Cmic=Cmic.prot.init_L,
                                           Niter = 10000)
 
 #for different substrates
-monod_substrates_a<-monod_growth_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+monod_substrates_a<-monod_growth_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                                 Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                                 ColM = c("time", "r"),
                                                 Cmic=Cmic.dna.init_H,
                                                 Niter = 10000)
-monod_substrates_b<-monod_growth_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+monod_substrates_b<-monod_growth_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                                  Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                                  ColM = c("time", "r"),
                                                  Cmic=Cmic.dna.init_M,
                                                  Niter = 10000)
-monod_substrates_c<-monod_growth_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+monod_substrates_c<-monod_growth_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                           ColM = c("time", "r"),
                                           Cmic=Cmic.prot.init_H,
                                           Niter = 10000)
-monod_substrates_d<-monod_growth_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+monod_substrates_d<-monod_growth_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                           ColM = c("time", "r"),
                                           Cmic=Cmic.prot.init_L,
                                           Niter = 10000)
 
 #for each separately 
-monod_each_a<-monod_growth_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+monod_each_a<-monod_growth_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                           ColM = c("time", "r"),
                                           Cmic=Cmic.dna.init_H,
                                           Niter = 10000)
-monod_each_b<-monod_growth_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+monod_each_b<-monod_growth_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                           ColM = c("time", "r"),
                                           Cmic=Cmic.dna.init_M,
                                           Niter = 10000)
-monod_each_c<-monod_growth_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+monod_each_c<-monod_growth_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                           ColM = c("time", "r"),
                                           Cmic=Cmic.prot.init_H,
                                           Niter = 10000)
-monod_each_d<-monod_growth_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+monod_each_d<-monod_growth_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                           ColM = c("time", "r"),
                                           Cmic=Cmic.prot.init_L,
@@ -421,22 +475,22 @@ source("../mem_function.R")
 
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and c for lowest protein
-mem_all_a<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+mem_all_a<-mem_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                                    Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                    ColM = c("time", "r", "r1", "r2"),
                                    Cmic=Cmic.dna.init_H,
                                    Niter = 10000)
-mem_all_b<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+mem_all_b<-mem_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                                    Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                    ColM = c("time", "r", "r1", "r2"),
                                    Cmic=Cmic.dna.init_M,
                                    Niter = 10000)
-mem_all_c<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+mem_all_c<-mem_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                                    Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                    ColM = c("time", "r", "r1", "r2"),
                                    Cmic=Cmic.prot.init_H,
                                    Niter = 10000)
-mem_all_d<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+mem_all_d<-mem_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                                    Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                    ColM = c("time", "r", "r1", "r2"),
                                    Cmic=Cmic.prot.init_L,
@@ -444,71 +498,71 @@ mem_all_d<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mem_structures_a<-mem_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+mem_structures_a<-mem_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                           ColM = c("time", "r", "r1", "r2"),
                                           Cmic=Cmic.dna.init_H,
                                           Niter = 10000)
-mem_structures_b<-mem_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+mem_structures_b<-mem_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                           ColM = c("time", "r", "r1", "r2"),
                                           Cmic=Cmic.dna.init_M,
                                           Niter = 10000)
-mem_structures_c<-mem_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+mem_structures_c<-mem_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                           ColM = c("time", "r", "r1", "r2"),
                                           Cmic=Cmic.prot.init_H,
                                           Niter = 10000)
-mem_structures_d<-mem_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+mem_structures_d<-mem_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                           ColM = c("time", "r", "r1", "r2"),
                                           Cmic=Cmic.prot.init_L,
                                           Niter = 10000)
 
 #for different substrates
-mem_substrates_a<-mem_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+mem_substrates_a<-mem_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                           ColM = c("time", "r"),
                                           Cmic=Cmic.dna.init_H,
                                           Niter = 10000)
-mem_substrates_b<-mem_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+mem_substrates_b<-mem_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                           ColM = c("time", "r"),
                                           Cmic=Cmic.dna.init_M,
                                           Niter = 10000)
-mem_substrates_c<-mem_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+mem_substrates_c<-mem_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                           ColM = c("time", "r"),
                                           Cmic=Cmic.prot.init_H,
                                           Niter = 10000)
-mem_substrates_d<-mem_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+mem_substrates_d<-mem_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                           ColM = c("time", "r"),
                                           Cmic=Cmic.prot.init_L,
                                           Niter = 10000)
 
 #for each separately 
-mem_each_a<-mem_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+mem_each_a<-mem_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                     ColM = c("time", "r"),
                                     Cmic=Cmic.dna.init_H,
                                     Niter = 10000)
-mem_each_b<-mem_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+mem_each_b<-mem_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                     ColM = c("time", "r"),
                                     Cmic=Cmic.dna.init_M,
                                     Niter = 10000)
-mem_each_c<-mem_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+mem_each_c<-mem_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                     ColM = c("time", "r"),
                                     Cmic=Cmic.prot.init_H,
                                     Niter = 10000)
-mem_each_d<-mem_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+mem_each_d<-mem_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                     ColM = c("time", "r"),
                                     Cmic=Cmic.prot.init_L,
@@ -552,22 +606,22 @@ source("../mend_function.R")
 
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and c for lowest protein
-mend_all_a<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+mend_all_a<-mend_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                         Vars = c("Time", "r", "E", "Cmic.dna_H"),
                         ColM = c("time", "r", "r1", "r2"),
                         Cmic=Cmic.dna.init_H,
                         Niter = 10000)
-mend_all_b<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+mend_all_b<-mend_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                         Vars = c("Time", "r", "E", "Cmic.dna_M"),
                         ColM = c("time", "r", "r1", "r2"),
                         Cmic=Cmic.dna.init_M,
                         Niter = 10000)
-mend_all_c<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+mend_all_c<-mend_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                         Vars = c("Time", "r", "E", "Cmic.prot_H"),
                         ColM = c("time", "r", "r1", "r2"),
                         Cmic=Cmic.prot.init_H,
                         Niter = 10000)
-mend_all_d<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+mend_all_d<-mend_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                         Vars = c("Time", "r", "E", "Cmic.prot_L"),
                         ColM = c("time", "r", "r1", "r2"),
                         Cmic=Cmic.prot.init_L,
@@ -575,71 +629,71 @@ mend_all_d<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mend_structures_a<-mend_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+mend_structures_a<-mend_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                ColM = c("time", "r", "r1", "r2"),
                                Cmic=Cmic.dna.init_H,
                                Niter = 10000)
-mend_structures_b<-mend_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+mend_structures_b<-mend_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                ColM = c("time", "r", "r1", "r2"),
                                Cmic=Cmic.dna.init_M,
                                Niter = 10000)
-mend_structures_c<-mend_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+mend_structures_c<-mend_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                ColM = c("time", "r", "r1", "r2"),
                                Cmic=Cmic.prot.init_H,
                                Niter = 10000)
-mend_structures_d<-mend_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+mend_structures_d<-mend_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                ColM = c("time", "r", "r1", "r2"),
                                Cmic=Cmic.prot.init_L,
                                Niter = 10000)
 
 #for different substrates
-mend_substrates_a<-mend_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+mend_substrates_a<-mend_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                ColM = c("time", "r"),
                                Cmic=Cmic.dna.init_H,
                                Niter = 10000)
-mend_substrates_b<-mend_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+mend_substrates_b<-mend_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                ColM = c("time", "r"),
                                Cmic=Cmic.dna.init_M,
                                Niter = 10000)
-mend_substrates_c<-mend_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+mend_substrates_c<-mend_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                ColM = c("time", "r"),
                                Cmic=Cmic.prot.init_H,
                                Niter = 10000)
-mend_substrates_d<-mend_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+mend_substrates_d<-mend_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                ColM = c("time", "r"),
                                Cmic=Cmic.prot.init_L,
                                Niter = 10000)
 
 #for each separately 
-mend_each_a<-mend_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+mend_each_a<-mend_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                          Vars = c("Time", "r", "E", "Cmic.dna_H"),
                          ColM = c("time", "r"),
                          Cmic=Cmic.dna.init_H,
                          Niter = 10000)
-mend_each_b<-mend_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+mend_each_b<-mend_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                          Vars = c("Time", "r", "E", "Cmic.dna_M"),
                          ColM = c("time", "r"),
                          Cmic=Cmic.dna.init_M,
                          Niter = 10000)
-mend_each_c<-mend_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+mend_each_c<-mend_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                          Vars = c("Time", "r", "E", "Cmic.prot_H"),
                          ColM = c("time", "r"),
                          Cmic=Cmic.prot.init_H,
                          Niter = 10000)
-mend_each_d<-mend_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+mend_each_d<-mend_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                          Vars = c("Time", "r", "E", "Cmic.prot_L"),
                          ColM = c("time", "r"),
                          Cmic=Cmic.prot.init_L,
@@ -684,22 +738,22 @@ source("../mmem_function.R")
 
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and c for lowest protein
-mmem_all_a<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+mmem_all_a<-mmem_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                           Vars = c("Time", "r", "E", "Cmic.dna_H"),
                           ColM = c("time", "r", "r1", "r2"),
                           Cmic=Cmic.dna.init_H,
                           Niter = 10000)
-mmem_all_b<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+mmem_all_b<-mmem_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                           Vars = c("Time", "r", "E", "Cmic.dna_M"),
                           ColM = c("time", "r", "r1", "r2"),
                           Cmic=Cmic.dna.init_M,
                           Niter = 10000)
-mmem_all_c<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+mmem_all_c<-mmem_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                           ColM = c("time", "r", "r1", "r2"),
                           Cmic=Cmic.prot.init_H,
                           Niter = 10000)
-mmem_all_d<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+mmem_all_d<-mmem_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                           ColM = c("time", "r", "r1", "r2"),
                           Cmic=Cmic.prot.init_L,
@@ -707,71 +761,71 @@ mmem_all_d<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mmem_structures_a<-mmem_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+mmem_structures_a<-mmem_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                  ColM = c("time", "r", "r1", "r2"),
                                  Cmic=Cmic.dna.init_H,
                                  Niter = 10000)
-mmem_structures_b<-mmem_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+mmem_structures_b<-mmem_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                  ColM = c("time", "r", "r1", "r2"),
                                  Cmic=Cmic.dna.init_M,
                                  Niter = 10000)
-mmem_structures_c<-mmem_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+mmem_structures_c<-mmem_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                  ColM = c("time", "r", "r1", "r2"),
                                  Cmic=Cmic.prot.init_H,
                                  Niter = 10000)
-mmem_structures_d<-mmem_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+mmem_structures_d<-mmem_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                  ColM = c("time", "r", "r1", "r2"),
                                  Cmic=Cmic.prot.init_L,
                                  Niter = 10000)
 
 #for different substrates
-mmem_substrates_a<-mmem_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+mmem_substrates_a<-mmem_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                  ColM = c("time", "r"),
                                  Cmic=Cmic.dna.init_H,
                                  Niter = 10000)
-mmem_substrates_b<-mmem_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+mmem_substrates_b<-mmem_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                  ColM = c("time", "r"),
                                  Cmic=Cmic.dna.init_M,
                                  Niter = 10000)
-mmem_substrates_c<-mmem_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+mmem_substrates_c<-mmem_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                  ColM = c("time", "r"),
                                  Cmic=Cmic.prot.init_H,
                                  Niter = 10000)
-mmem_substrates_d<-mmem_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+mmem_substrates_d<-mmem_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                  ColM = c("time", "r"),
                                  Cmic=Cmic.prot.init_L,
                                  Niter = 10000)
 
 #for each separately 
-mmem_each_a<-mmem_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+mmem_each_a<-mmem_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                            Vars = c("Time", "r", "E", "Cmic.dna_H"),
                            ColM = c("time", "r"),
                            Cmic=Cmic.dna.init_H,
                            Niter = 10000)
-mmem_each_b<-mmem_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+mmem_each_b<-mmem_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                            Vars = c("Time", "r", "E", "Cmic.dna_M"),
                            ColM = c("time", "r"),
                            Cmic=Cmic.dna.init_M,
                            Niter = 10000)
-mmem_each_c<-mmem_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+mmem_each_c<-mmem_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                            Vars = c("Time", "r", "E", "Cmic.prot_H"),
                            ColM = c("time", "r"),
                            Cmic=Cmic.prot.init_H,
                            Niter = 10000)
-mmem_each_d<-mmem_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+mmem_each_d<-mmem_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                            Vars = c("Time", "r", "E", "Cmic.prot_L"),
                            ColM = c("time", "r"),
                            Cmic=Cmic.prot.init_L,
@@ -816,22 +870,22 @@ source("../andrew_function.R")
 
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and c for lowest protein
-an_all_a<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+an_all_a<-andrew_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                           Vars = c("Time", "r", "E", "Cmic.dna_H"),
                           ColM = c("time", "r", "r1", "r2"),
                           Cmic=Cmic.dna.init_H,
                           Niter = 10000)
-an_all_b<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+an_all_b<-andrew_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                           Vars = c("Time", "r", "E", "Cmic.dna_M"),
                           ColM = c("time", "r", "r1", "r2"),
                           Cmic=Cmic.dna.init_M,
                           Niter = 10000)
-an_all_c<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+an_all_c<-andrew_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                           ColM = c("time", "r", "r1", "r2"),
                           Cmic=Cmic.prot.init_H,
                           Niter = 10000)
-an_all_d<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
+an_all_d<-andrew_function(data=d, SUB = TRUE, FACT = 4, Mean=TRUE,
                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                           ColM = c("time", "r", "r1", "r2"),
                           Cmic=Cmic.prot.init_L,
@@ -839,71 +893,71 @@ an_all_d<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-an_structures_a<-andrew_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+an_structures_a<-andrew_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                  ColM = c("time", "r", "r1", "r2"),
                                  Cmic=Cmic.dna.init_H,
                                  Niter = 10000)
-an_structures_b<-andrew_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+an_structures_b<-andrew_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                  ColM = c("time", "r", "r1", "r2"),
                                  Cmic=Cmic.dna.init_M,
                                  Niter = 10000)
-an_structures_c<-andrew_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+an_structures_c<-andrew_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                  ColM = c("time", "r", "r1", "r2"),
                                  Cmic=Cmic.prot.init_H,
                                  Niter = 10000)
-an_structures_d<-andrew_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE,
+an_structures_d<-andrew_function(data=d, SUB = TRUE, FACT = 2, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                  ColM = c("time", "r", "r1", "r2"),
                                  Cmic=Cmic.prot.init_L,
                                  Niter = 10000)
 
 #for different substrates
-an_substrates_a<-andrew_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+an_substrates_a<-andrew_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                  ColM = c("time", "r"),
                                  Cmic=Cmic.dna.init_H,
                                  Niter = 10000)
-an_substrates_b<-andrew_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+an_substrates_b<-andrew_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                  ColM = c("time", "r"),
                                  Cmic=Cmic.dna.init_M,
                                  Niter = 10000)
-an_substrates_c<-andrew_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+an_substrates_c<-andrew_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                  ColM = c("time", "r"),
                                  Cmic=Cmic.prot.init_H,
                                  Niter = 10000)
-an_substrates_d<-andrew_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE,
+an_substrates_d<-andrew_function(data=d, SUB = FALSE, FACT = 1, Mean=TRUE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                  ColM = c("time", "r"),
                                  Cmic=Cmic.prot.init_L,
                                  Niter = 10000)
 
 #for each separately 
-an_each_a<-andrew_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+an_each_a<-andrew_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                            Vars = c("Time", "r", "E", "Cmic.dna_H"),
                            ColM = c("time", "r"),
                            Cmic=Cmic.dna.init_H,
                            Niter = 10000)
-an_each_b<-andrew_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+an_each_b<-andrew_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                            Vars = c("Time", "r", "E", "Cmic.dna_M"),
                            ColM = c("time", "r"),
                            Cmic=Cmic.dna.init_M,
                            Niter = 10000)
-an_each_c<-andrew_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+an_each_c<-andrew_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                            Vars = c("Time", "r", "E", "Cmic.prot_H"),
                            ColM = c("time", "r"),
                            Cmic=Cmic.prot.init_H,
                            Niter = 10000)
-an_each_d<-andrew_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE,
+an_each_d<-andrew_function(data=d, SUB = FALSE, FACT = 3, Mean=TRUE,
                            Vars = c("Time", "r", "E", "Cmic.prot_L"),
                            ColM = c("time", "r"),
                            Cmic=Cmic.prot.init_L,
@@ -950,22 +1004,22 @@ an_each_d$ll
 ###############################################################################################
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and d for lowest protein
-monod_all_mica<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+monod_all_mica<-monod_growth_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                                    Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                    ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                    Cmic=Cmic.dna.init_H,
                                    Niter = 10000)
-monod_all_micb<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+monod_all_micb<-monod_growth_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                                    Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                    ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                    Cmic=Cmic.dna.init_M,
                                    Niter = 10000)
-monod_all_micc<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+monod_all_micc<-monod_growth_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                                    Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                    ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                    Cmic=Cmic.prot.init_H,
                                    Niter = 10000)
-monod_all_micd<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+monod_all_micd<-monod_growth_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                                    Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                    ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                    Cmic=Cmic.prot.init_L,
@@ -973,71 +1027,71 @@ monod_all_micd<-monod_growth_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-monod_structures_mica<-monod_growth_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+monod_structures_mica<-monod_growth_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                           Cmic=Cmic.dna.init_H,
                                           Niter = 10000)
-monod_structures_micb<-monod_growth_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+monod_structures_micb<-monod_growth_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                           Cmic=Cmic.dna.init_M,
                                           Niter = 10000)
-monod_structures_micc<-monod_growth_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+monod_structures_micc<-monod_growth_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                           Cmic=Cmic.prot.init_H,
                                           Niter = 10000)
-monod_structures_micd<-monod_growth_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+monod_structures_micd<-monod_growth_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                           Cmic=Cmic.prot.init_L,
                                           Niter = 10000)
 
 #for different substrates
-monod_substrates_mica<-monod_growth_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+monod_substrates_mica<-monod_growth_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                           ColM = c("time", "Cmic"),
                                           Cmic=Cmic.dna.init_H,
                                           Niter = 10000)
-monod_substrates_micb<-monod_growth_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+monod_substrates_micb<-monod_growth_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                           Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                           ColM = c("time", "Cmic"),
                                           Cmic=Cmic.dna.init_M,
                                           Niter = 10000)
-monod_substrates_micc<-monod_growth_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+monod_substrates_micc<-monod_growth_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                           ColM = c("time", "Cmic"),
                                           Cmic=Cmic.prot.init_H,
                                           Niter = 10000)
-monod_substrates_micd<-monod_growth_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+monod_substrates_micd<-monod_growth_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                           ColM = c("time", "Cmic"),
                                           Cmic=Cmic.prot.init_L,
                                           Niter = 10000)
 
 #for each separately 
-monod_each_mica<-monod_growth_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+monod_each_mica<-monod_growth_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                     ColM = c("time", "Cmic"),
                                     Cmic=Cmic.dna.init_H,
                                     Niter = 10000)
-monod_each_micb<-monod_growth_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+monod_each_micb<-monod_growth_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                     ColM = c("time", "Cmic"),
                                     Cmic=Cmic.dna.init_M,
                                     Niter = 10000)
-monod_each_micc<-monod_growth_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+monod_each_micc<-monod_growth_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                     ColM = c("time", "Cmic"),
                                     Cmic=Cmic.prot.init_H,
                                     Niter = 10000)
-monod_each_micd<-monod_growth_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+monod_each_micd<-monod_growth_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                     ColM = c("time", "Cmic"),
                                     Cmic=Cmic.prot.init_L,
@@ -1074,22 +1128,22 @@ monod_each_micd$ll
 ###############################################################################################
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and c for lowest protein
-mem_all_mica<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mem_all_mica<-mem_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                         Vars = c("Time", "r", "E", "Cmic.dna_H"),
                         ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                         Cmic=Cmic.dna.init_H,
                         Niter = 10000)
-mem_all_micb<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mem_all_micb<-mem_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                         Vars = c("Time", "r", "E", "Cmic.dna_M"),
                         ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                         Cmic=Cmic.dna.init_M,
                         Niter = 10000)
-mem_all_micc<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mem_all_micc<-mem_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                         Vars = c("Time", "r", "E", "Cmic.prot_H"),
                         ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                         Cmic=Cmic.prot.init_H,
                         Niter = 10000)
-mem_all_micd<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mem_all_micd<-mem_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                         Vars = c("Time", "r", "E", "Cmic.prot_L"),
                         ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                         Cmic=Cmic.prot.init_L,
@@ -1097,71 +1151,71 @@ mem_all_micd<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mem_structures_mica<-mem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mem_structures_mica<-mem_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                Cmic=Cmic.dna.init_H,
                                Niter = 10000)
-mem_structures_micb<-mem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mem_structures_micb<-mem_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                Cmic=Cmic.dna.init_M,
                                Niter = 10000)
-mem_structures_micc<-mem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mem_structures_micc<-mem_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                Cmic=Cmic.prot.init_H,
                                Niter = 10000)
-mem_structures_micd<-mem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mem_structures_micd<-mem_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                Cmic=Cmic.prot.init_L,
                                Niter = 10000)
 
 #for different substrates
-mem_substrates_mica<-mem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mem_substrates_mica<-mem_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                ColM = c("time", "Cmic"),
                                Cmic=Cmic.dna.init_H,
                                Niter = 10000)
-mem_substrates_micb<-mem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mem_substrates_micb<-mem_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                ColM = c("time", "Cmic"),
                                Cmic=Cmic.dna.init_M,
                                Niter = 10000)
-mem_substrates_micc<-mem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mem_substrates_micc<-mem_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                ColM = c("time", "Cmic"),
                                Cmic=Cmic.prot.init_H,
                                Niter = 10000)
-mem_substrates_micd<-mem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mem_substrates_micd<-mem_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                ColM = c("time", "Cmic"),
                                Cmic=Cmic.prot.init_L,
                                Niter = 10000)
 
 #for each separately 
-mem_each_mica<-mem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mem_each_mica<-mem_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                          Vars = c("Time", "r", "E", "Cmic.dna_H"),
                          ColM = c("time", "Cmic"),
                          Cmic=Cmic.dna.init_H,
                          Niter = 10000)
-mem_each_micb<-mem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mem_each_micb<-mem_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                          Vars = c("Time", "r", "E", "Cmic.dna_M"),
                          ColM = c("time", "Cmic"),
                          Cmic=Cmic.dna.init_M,
                          Niter = 10000)
-mem_each_micc<-mem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mem_each_micc<-mem_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                          Vars = c("Time", "r", "E", "Cmic.prot_H"),
                          ColM = c("time", "Cmic"),
                          Cmic=Cmic.prot.init_H,
                          Niter = 10000)
-mem_each_micd<-mem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mem_each_micd<-mem_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                          Vars = c("Time", "r", "E", "Cmic.prot_L"),
                          ColM = c("time", "Cmic"),
                          Cmic=Cmic.prot.init_L,
@@ -1203,22 +1257,22 @@ mem_each_micd$ll
 ###############################################################################################
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and c for lowest protein
-mend_all_mica<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mend_all_mica<-mend_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                           Vars = c("Time", "r", "E", "Cmic.dna_H"),
                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                           Cmic=Cmic.dna.init_H,
                           Niter = 10000)
-mend_all_micb<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mend_all_micb<-mend_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                           Vars = c("Time", "r", "E", "Cmic.dna_M"),
                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                           Cmic=Cmic.dna.init_M,
                           Niter = 10000)
-mend_all_micc<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mend_all_micc<-mend_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                           Cmic=Cmic.prot.init_H,
                           Niter = 10000)
-mend_all_micd<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mend_all_micd<-mend_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                           Cmic=Cmic.prot.init_L,
@@ -1226,77 +1280,77 @@ mend_all_micd<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mend_structures_mica<-mend_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mend_structures_mica<-mend_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                  ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                  Cmic=Cmic.dna.init_H,
                                  Niter = 10000)
-mend_structures_micb<-mend_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mend_structures_micb<-mend_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                  ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                  Cmic=Cmic.dna.init_M,
                                  Niter = 10000)
-mend_structures_micc<-mend_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mend_structures_micc<-mend_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                  ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                  Cmic=Cmic.prot.init_H,
                                  Niter = 10000)
-mend_structures_micd<-mend_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mend_structures_micd<-mend_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                  ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                  Cmic=Cmic.prot.init_L,
                                  Niter = 10000)
 
 #for different substrates
-mend_substrates_mica<-mend_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mend_substrates_mica<-mend_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                  ColM = c("time", "Cmic"),
                                  Cmic=Cmic.dna.init_H,
                                  Niter = 10000)
-mend_substrates_micb<-mend_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mend_substrates_micb<-mend_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                  ColM = c("time", "Cmic"),
                                  Cmic=Cmic.dna.init_M,
                                  Niter = 10000)
-mend_substrates_micc<-mend_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mend_substrates_micc<-mend_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                  ColM = c("time", "Cmic"),
                                  Cmic=Cmic.prot.init_H,
                                  Niter = 10000)
-mend_substrates_micd<-mend_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mend_substrates_micd<-mend_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                  ColM = c("time", "Cmic"),
                                  Cmic=Cmic.prot.init_L,
                                  Niter = 10000)
 
 #for each separately 
-mend_each_mica<-mend_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mend_each_mica<-mend_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.dna_H"),
                            ColM = c("time", "Cmic"),
                            Cmic=Cmic.dna.init_H,
                            Niter = 10000)
-mend_each_micb<-mend_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mend_each_micb<-mend_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.dna_M"),
                            ColM = c("time", "Cmic"),
                            Cmic=Cmic.dna.init_M,
                            Niter = 10000)
-mend_each_micc<-mend_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mend_each_micc<-mend_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.prot_H"),
                            ColM = c("time", "Cmic"),
                            Cmic=Cmic.prot.init_H,
                            Niter = 10000)
-mend_each_micd<-mend_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mend_each_micd<-mend_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.prot_L"),
                            ColM = c("time", "Cmic"),
                            Cmic=Cmic.prot.init_L,
                            Niter = 10000)
 
-stopImplicitCluster()-1
+stopImplicitCluster()
 
 #Models comparison absed on Likelihood ratio test
 #this should be correct way
@@ -1332,22 +1386,22 @@ mend_each_micd$ll
 ###############################################################################################
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and c for lowest protein
-mmem_all_mica<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mmem_all_mica<-mmem_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                           Vars = c("Time", "r", "E", "Cmic.dna_H"),
                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                           Cmic=Cmic.dna.init_H,
                           Niter = 10000)
-mmem_all_micb<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mmem_all_micb<-mmem_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                           Vars = c("Time", "r", "E", "Cmic.dna_M"),
                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                           Cmic=Cmic.dna.init_M,
                           Niter = 10000)
-mmem_all_micc<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mmem_all_micc<-mmem_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                           Cmic=Cmic.prot.init_H,
                           Niter = 10000)
-mmem_all_micd<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mmem_all_micd<-mmem_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                           Cmic=Cmic.prot.init_L,
@@ -1360,66 +1414,66 @@ cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mmem_structures_mica<-mmem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mmem_structures_mica<-mmem_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                  ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                  Cmic=Cmic.dna.init_H,
                                  Niter = 10000)
-mmem_structures_micb<-mmem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mmem_structures_micb<-mmem_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                  ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                  Cmic=Cmic.dna.init_M,
                                  Niter = 10000)
-mmem_structures_micc<-mmem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mmem_structures_micc<-mmem_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                  ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                  Cmic=Cmic.prot.init_H,
                                  Niter = 10000)
-mmem_structures_micd<-mmem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mmem_structures_micd<-mmem_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                  ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                  Cmic=Cmic.prot.init_L,
                                  Niter = 10000)
 
 #for different substrates
-mmem_substrates_mica<-mmem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mmem_substrates_mica<-mmem_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                  ColM = c("time", "Cmic"),
                                  Cmic=Cmic.dna.init_H,
                                  Niter = 10000)
-mmem_substrates_micb<-mmem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mmem_substrates_micb<-mmem_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                  ColM = c("time", "Cmic"),
                                  Cmic=Cmic.dna.init_M,
                                  Niter = 10000)
-mmem_substrates_micc<-mmem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mmem_substrates_micc<-mmem_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                  ColM = c("time", "Cmic"),
                                  Cmic=Cmic.prot.init_H,
                                  Niter = 10000)
-mmem_substrates_micd<-mmem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mmem_substrates_micd<-mmem_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                  ColM = c("time", "Cmic"),
                                  Cmic=Cmic.prot.init_L,
                                  Niter = 10000)
 
 #for each separately 
-mmem_each_mica<-mmem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mmem_each_mica<-mmem_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.dna_H"),
                            ColM = c("time", "Cmic"),
                            Cmic=Cmic.dna.init_H,
                            Niter = 10000)
-mmem_each_micb<-mmem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mmem_each_micb<-mmem_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.dna_M"),
                            ColM = c("time", "Cmic"),
                            Cmic=Cmic.dna.init_M,
                            Niter = 10000)
-mmem_each_micc<-mmem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mmem_each_micc<-mmem_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.prot_H"),
                            ColM = c("time", "Cmic"),
                            Cmic=Cmic.prot.init_H,
                            Niter = 10000)
-mmem_each_micd<-mmem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mmem_each_micd<-mmem_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.prot_L"),
                            ColM = c("time", "Cmic"),
                            Cmic=Cmic.prot.init_L,
@@ -1461,22 +1515,22 @@ mmem_each_micd$ll
 ###############################################################################################
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and c for lowest protein
-an_all_mica<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+an_all_mica<-andrew_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                           Vars = c("Time", "r", "E", "Cmic.dna_H"),
                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                           Cmic=Cmic.dna.init_H,
                           Niter = 10000)
-an_all_micb<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+an_all_micb<-andrew_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                           Vars = c("Time", "r", "E", "Cmic.dna_M"),
                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                           Cmic=Cmic.dna.init_M,
                           Niter = 10000)
-an_all_micc<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+an_all_micc<-andrew_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                           Vars = c("Time", "r", "E", "Cmic.prot_H"),
                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                           Cmic=Cmic.prot.init_H,
                           Niter = 10000)
-an_all_micd<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+an_all_micd<-andrew_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                           Vars = c("Time", "r", "E", "Cmic.prot_L"),
                           ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                           Cmic=Cmic.prot.init_L,
@@ -1484,71 +1538,71 @@ an_all_micd<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-an_structures_mica<-andrew_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+an_structures_mica<-andrew_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                  ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                  Cmic=Cmic.dna.init_H,
                                  Niter = 10000)
-an_structures_micb<-andrew_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+an_structures_micb<-andrew_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                  ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                  Cmic=Cmic.dna.init_M,
                                  Niter = 10000)
-an_structures_micc<-andrew_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+an_structures_micc<-andrew_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                  ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                  Cmic=Cmic.prot.init_H,
                                  Niter = 10000)
-an_structures_micd<-andrew_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+an_structures_micd<-andrew_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                  ColM = c("time", "Cmic", "Cmic1", "Cmic2"),
                                  Cmic=Cmic.prot.init_L,
                                  Niter = 10000)
 
 #for different substrates
-an_substrates_mica<-andrew_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+an_substrates_mica<-andrew_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                  ColM = c("time", "Cmic"),
                                  Cmic=Cmic.dna.init_H,
                                  Niter = 10000)
-an_substrates_micb<-andrew_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+an_substrates_micb<-andrew_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                  ColM = c("time", "Cmic"),
                                  Cmic=Cmic.dna.init_M,
                                  Niter = 10000)
-an_substrates_micc<-andrew_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+an_substrates_micc<-andrew_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                  ColM = c("time", "Cmic"),
                                  Cmic=Cmic.prot.init_H,
                                  Niter = 10000)
-an_substrates_micd<-andrew_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+an_substrates_micd<-andrew_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                  Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                  ColM = c("time", "Cmic"),
                                  Cmic=Cmic.prot.init_L,
                                  Niter = 10000)
 
 #for each separately 
-an_each_mica<-andrew_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+an_each_mica<-andrew_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.dna_H"),
                            ColM = c("time", "Cmic"),
                            Cmic=Cmic.dna.init_H,
                            Niter = 10000)
-an_each_micb<-andrew_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+an_each_micb<-andrew_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.dna_M"),
                            ColM = c("time", "Cmic"),
                            Cmic=Cmic.dna.init_M,
                            Niter = 10000)
-an_each_micc<-andrew_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+an_each_micc<-andrew_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.prot_H"),
                            ColM = c("time", "Cmic"),
                            Cmic=Cmic.prot.init_H,
                            Niter = 10000)
-an_each_micd<-andrew_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+an_each_micd<-andrew_function(data=d, SUB = FALSE, FACT = 3, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.prot_L"),
                            ColM = c("time", "Cmic"),
                            Cmic=Cmic.prot.init_L,
@@ -1595,22 +1649,22 @@ an_each_micd$ll
 ###############################################################################################
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and c for lowest protein
-mem_all_Ea<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mem_all_Ea<-mem_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.dna_H"),
                            ColM = c("time", "E", "E1", "E2"),
                            Cmic=Cmic.dna.init_H,
                            Niter = 10000)
-mem_all_Eb<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mem_all_Eb<-mem_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.dna_M"),
                            ColM = c("time", "E", "E1", "E2"),
                            Cmic=Cmic.dna.init_M,
                            Niter = 10000)
-mem_all_Ec<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mem_all_Ec<-mem_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.prot_H"),
                            ColM = c("time", "E", "E1", "E2"),
                            Cmic=Cmic.prot.init_H,
                            Niter = 10000)
-mem_all_Ed<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mem_all_Ed<-mem_function(data=d, SUB = TRUE, FACT = 4, Mean=FALSE,
                            Vars = c("Time", "r", "E", "Cmic.prot_L"),
                            ColM = c("time", "E", "E1", "E2"),
                            Cmic=Cmic.prot.init_L,
@@ -1618,44 +1672,44 @@ mem_all_Ed<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mem_structures_Ea<-mem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mem_structures_Ea<-mem_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                   Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                   ColM = c("time", "E", "E1", "E2"),
                                   Cmic=Cmic.dna.init_H,
                                   Niter = 10000)
-mem_structures_Eb<-mem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mem_structures_Eb<-mem_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                   Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                   ColM = c("time", "E", "E1", "E2"),
                                   Cmic=Cmic.dna.init_M,
                                   Niter = 10000)
-mem_structures_Ec<-mem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mem_structures_Ec<-mem_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                   Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                   ColM = c("time", "E", "E1", "E2"),
                                   Cmic=Cmic.prot.init_H,
                                   Niter = 10000)
-mem_structures_Ed<-mem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mem_structures_Ed<-mem_function(data=d, SUB = TRUE, FACT = 2, Mean=FALSE,
                                   Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                   ColM = c("time", "E", "E1", "E2"),
                                   Cmic=Cmic.prot.init_L,
                                   Niter = 10000)
 
 #for different substrates
-mem_substrates_Ea<-mem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mem_substrates_Ea<-mem_function(data=d, SUB = FALSE, FACT = 1, Mean=FALSE,
                                   Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                   ColM = c("time", "E"),
                                   Cmic=Cmic.dna.init_H,
                                   Niter = 10000)
-mem_substrates_Eb<-mem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mem_substrates_Eb<-mem_function(data=d, FACT = 1, Mean=FALSE,
                                   Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                   ColM = c("time", "E"),
                                   Cmic=Cmic.dna.init_M,
                                   Niter = 10000)
-mem_substrates_Ec<-mem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mem_substrates_Ec<-mem_function(data=d, FACT = 1, Mean=FALSE,
                                   Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                   ColM = c("time", "E"),
                                   Cmic=Cmic.prot.init_H,
@@ -1667,22 +1721,22 @@ mem_substrates_Ed<-mem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
                                   Niter = 10000)
 
 #for each separately 
-mem_each_Ea<-mem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mem_each_Ea<-mem_function(data=d, FACT = 3, Mean=FALSE,
                             Vars = c("Time", "r", "E", "Cmic.dna_H"),
                             ColM = c("time", "E"),
                             Cmic=Cmic.dna.init_H,
                             Niter = 10000)
-mem_each_Eb<-mem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mem_each_Eb<-mem_function(data=d, FACT = 3, Mean=FALSE,
                             Vars = c("Time", "r", "E", "Cmic.dna_M"),
                             ColM = c("time", "E"),
                             Cmic=Cmic.dna.init_M,
                             Niter = 10000)
-mem_each_Ec<-mem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mem_each_Ec<-mem_function(data=d, FACT = 3, Mean=FALSE,
                             Vars = c("Time", "r", "E", "Cmic.prot_H"),
                             ColM = c("time", "E"),
                             Cmic=Cmic.prot.init_H,
                             Niter = 10000)
-mem_each_Ed<-mem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mem_each_Ed<-mem_function(data=d, FACT = 3, Mean=FALSE,
                             Vars = c("Time", "r", "E", "Cmic.prot_L"),
                             ColM = c("time", "E"),
                             Cmic=Cmic.prot.init_L,
@@ -1724,22 +1778,22 @@ mem_each_Ed$ll
 ###############################################################################################
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and c for lowest protein
-mend_all_Ea<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mend_all_Ea<-mend_function(data=d, FACT = 4, Mean=FALSE,
                              Vars = c("Time", "r", "E", "Cmic.dna_H"),
                              ColM = c("time", "E", "E1", "E2"),
                              Cmic=Cmic.dna.init_H,
                              Niter = 10000)
-mend_all_Eb<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mend_all_Eb<-mend_function(data=d, FACT = 4, Mean=FALSE,
                              Vars = c("Time", "r", "E", "Cmic.dna_M"),
                              ColM = c("time", "E", "E1", "E2"),
                              Cmic=Cmic.dna.init_M,
                              Niter = 10000)
-mend_all_Ec<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mend_all_Ec<-mend_function(data=d, FACT = 4, Mean=FALSE,
                              Vars = c("Time", "r", "E", "Cmic.prot_H"),
                              ColM = c("time", "E", "E1", "E2"),
                              Cmic=Cmic.prot.init_H,
                              Niter = 10000)
-mend_all_Ed<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mend_all_Ed<-mend_function(data=d, FACT = 4, Mean=FALSE,
                              Vars = c("Time", "r", "E", "Cmic.prot_L"),
                              ColM = c("time", "E", "E1", "E2"),
                              Cmic=Cmic.prot.init_L,
@@ -1747,71 +1801,71 @@ mend_all_Ed<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mend_structures_Ea<-mend_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mend_structures_Ea<-mend_function(data=d, FACT = 2, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                     ColM = c("time", "E", "E1", "E2"),
                                     Cmic=Cmic.dna.init_H,
                                     Niter = 10000)
-mend_structures_Eb<-mend_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mend_structures_Eb<-mend_function(data=d, FACT = 2, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                     ColM = c("time", "E", "E1", "E2"),
                                     Cmic=Cmic.dna.init_M,
                                     Niter = 10000)
-mend_structures_Ec<-mend_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mend_structures_Ec<-mend_function(data=d, FACT = 2, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                     ColM = c("time", "E", "E1", "E2"),
                                     Cmic=Cmic.prot.init_H,
                                     Niter = 10000)
-mend_structures_Ed<-mend_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mend_structures_Ed<-mend_function(data=d, FACT = 2, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                     ColM = c("time", "E", "E1", "E2"),
                                     Cmic=Cmic.prot.init_L,
                                     Niter = 10000)
 
 #for different substrates
-mend_substrates_Ea<-mend_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mend_substrates_Ea<-mend_function(data=d, FACT = 1, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                     ColM = c("time", "E"),
                                     Cmic=Cmic.dna.init_H,
                                     Niter = 10000)
-mend_substrates_Eb<-mend_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mend_substrates_Eb<-mend_function(data=d, FACT = 1, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                     ColM = c("time", "E"),
                                     Cmic=Cmic.dna.init_M,
                                     Niter = 10000)
-mend_substrates_Ec<-mend_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mend_substrates_Ec<-mend_function(data=d, FACT = 1, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                     ColM = c("time", "E"),
                                     Cmic=Cmic.prot.init_H,
                                     Niter = 10000)
-mend_substrates_Ed<-mend_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mend_substrates_Ed<-mend_function(data=d, FACT = 1, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                     ColM = c("time", "E"),
                                     Cmic=Cmic.prot.init_L,
                                     Niter = 10000)
 
 #for each separately 
-mend_each_Ea<-mend_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mend_each_Ea<-mend_function(data=d, FACT = 3, Mean=FALSE,
                               Vars = c("Time", "r", "E", "Cmic.dna_H"),
                               ColM = c("time", "E"),
                               Cmic=Cmic.dna.init_H,
                               Niter = 10000)
-mend_each_Eb<-mend_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mend_each_Eb<-mend_function(data=d, FACT = 3, Mean=FALSE,
                               Vars = c("Time", "r", "E", "Cmic.dna_M"),
                               ColM = c("time", "E"),
                               Cmic=Cmic.dna.init_M,
                               Niter = 10000)
-mend_each_Ec<-mend_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mend_each_Ec<-mend_function(data=d, FACT = 3, Mean=FALSE,
                               Vars = c("Time", "r", "E", "Cmic.prot_H"),
                               ColM = c("time", "E"),
                               Cmic=Cmic.prot.init_H,
                               Niter = 10000)
-mend_each_Ed<-mend_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mend_each_Ed<-mend_function(data=d, FACT = 3, Mean=FALSE,
                               Vars = c("Time", "r", "E", "Cmic.prot_L"),
                               ColM = c("time", "E"),
                               Cmic=Cmic.prot.init_L,
@@ -1853,22 +1907,22 @@ mend_each_Ed$ll
 ###############################################################################################
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and c for lowest protein
-mmem_all_Ea<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mmem_all_Ea<-mmem_function(data=d, FACT = 4, Mean=FALSE,
                              Vars = c("Time", "r", "E", "Cmic.dna_H"),
                              ColM = c("time", "E", "E1", "E2"),
                              Cmic=Cmic.dna.init_H,
                              Niter = 10000)
-mmem_all_Eb<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mmem_all_Eb<-mmem_function(data=d, FACT = 4, Mean=FALSE,
                              Vars = c("Time", "r", "E", "Cmic.dna_M"),
                              ColM = c("time", "E", "E1", "E2"),
                              Cmic=Cmic.dna.init_M,
                              Niter = 10000)
-mmem_all_Ec<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mmem_all_Ec<-mmem_function(data=d, FACT = 4, Mean=FALSE,
                              Vars = c("Time", "r", "E", "Cmic.prot_H"),
                              ColM = c("time", "E", "E1", "E2"),
                              Cmic=Cmic.prot.init_H,
                              Niter = 10000)
-mmem_all_Ed<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+mmem_all_Ed<-mmem_function(data=d, FACT = 4, Mean=FALSE,
                              Vars = c("Time", "r", "E", "Cmic.prot_L"),
                              ColM = c("time", "E", "E1", "E2"),
                              Cmic=Cmic.prot.init_L,
@@ -1876,71 +1930,71 @@ mmem_all_Ed<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mmem_structures_Ea<-mmem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mmem_structures_Ea<-mmem_function(data=d, FACT = 2, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                     ColM = c("time", "E", "E1", "E2"),
                                     Cmic=Cmic.dna.init_H,
                                     Niter = 10000)
-mmem_structures_Eb<-mmem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mmem_structures_Eb<-mmem_function(data=d, FACT = 2, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                     ColM = c("time", "E", "E1", "E2"),
                                     Cmic=Cmic.dna.init_M,
                                     Niter = 10000)
-mmem_structures_Ec<-mmem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mmem_structures_Ec<-mmem_function(data=d, FACT = 2, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                     ColM = c("time", "E", "E1", "E2"),
                                     Cmic=Cmic.prot.init_H,
                                     Niter = 10000)
-mmem_structures_Ed<-mmem_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+mmem_structures_Ed<-mmem_function(data=d, FACT = 2, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                     ColM = c("time", "E", "E1", "E2"),
                                     Cmic=Cmic.prot.init_L,
                                     Niter = 10000)
 
 #for different substrates
-mmem_substrates_Ea<-mmem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mmem_substrates_Ea<-mmem_function(data=d, FACT = 1, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                     ColM = c("time", "E"),
                                     Cmic=Cmic.dna.init_H,
                                     Niter = 10000)
-mmem_substrates_Eb<-mmem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mmem_substrates_Eb<-mmem_function(data=d, FACT = 1, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                     ColM = c("time", "E"),
                                     Cmic=Cmic.dna.init_M,
                                     Niter = 10000)
-mmem_substrates_Ec<-mmem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mmem_substrates_Ec<-mmem_function(data=d, FACT = 1, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                     ColM = c("time", "E"),
                                     Cmic=Cmic.prot.init_H,
                                     Niter = 10000)
-mmem_substrates_Ed<-mmem_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+mmem_substrates_Ed<-mmem_function(data=d, FACT = 1, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                     ColM = c("time", "E"),
                                     Cmic=Cmic.prot.init_L,
                                     Niter = 10000)
 
 #for each separately 
-mmem_each_Ea<-mmem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mmem_each_Ea<-mmem_function(data=d, FACT = 3, Mean=FALSE,
                               Vars = c("Time", "r", "E", "Cmic.dna_H"),
                               ColM = c("time", "E"),
                               Cmic=Cmic.dna.init_H,
                               Niter = 10000)
-mmem_each_Eb<-mmem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mmem_each_Eb<-mmem_function(data=d, FACT = 3, Mean=FALSE,
                               Vars = c("Time", "r", "E", "Cmic.dna_M"),
                               ColM = c("time", "E"),
                               Cmic=Cmic.dna.init_M,
                               Niter = 10000)
-mmem_each_Ec<-mmem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mmem_each_Ec<-mmem_function(data=d, FACT = 3, Mean=FALSE,
                               Vars = c("Time", "r", "E", "Cmic.prot_H"),
                               ColM = c("time", "E"),
                               Cmic=Cmic.prot.init_H,
                               Niter = 10000)
-mmem_each_Ed<-mmem_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+mmem_each_Ed<-mmem_function(data=d, FACT = 3, Mean=FALSE,
                               Vars = c("Time", "r", "E", "Cmic.prot_L"),
                               ColM = c("time", "E"),
                               Cmic=Cmic.prot.init_L,
@@ -1982,22 +2036,22 @@ mmem_each_Ed$ll
 ###############################################################################################
 #across all treatments
 #a stands for highest DNA, b for median, c for highest protein and c for lowest protein
-an_all_Ea<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+an_all_Ea<-andrew_function(data=d, FACT = 4, Mean=FALSE,
                              Vars = c("Time", "r", "E", "Cmic.dna_H"),
                              ColM = c("time", "E", "E1", "E2"),
                              Cmic=Cmic.dna.init_H,
                              Niter = 10000)
-an_all_Eb<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+an_all_Eb<-andrew_function(data=d, FACT = 4, Mean=FALSE,
                              Vars = c("Time", "r", "E", "Cmic.dna_M"),
                              ColM = c("time", "E", "E1", "E2"),
                              Cmic=Cmic.dna.init_M,
                              Niter = 10000)
-an_all_Ec<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+an_all_Ec<-andrew_function(data=d, FACT = 4, Mean=FALSE,
                              Vars = c("Time", "r", "E", "Cmic.prot_H"),
                              ColM = c("time", "E", "E1", "E2"),
                              Cmic=Cmic.prot.init_H,
                              Niter = 10000)
-an_all_Ed<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
+an_all_Ed<-andrew_function(data=d, FACT = 4, Mean=FALSE,
                              Vars = c("Time", "r", "E", "Cmic.prot_L"),
                              ColM = c("time", "E", "E1", "E2"),
                              Cmic=Cmic.prot.init_L,
@@ -2005,71 +2059,71 @@ an_all_Ed<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-an_structures_Ea<-andrew_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+an_structures_Ea<-andrew_function(data=d, FACT = 2, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                     ColM = c("time", "E", "E1", "E2"),
                                     Cmic=Cmic.dna.init_H,
                                     Niter = 10000)
-an_structures_Eb<-andrew_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+an_structures_Eb<-andrew_function(data=d, FACT = 2, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                     ColM = c("time", "E", "E1", "E2"),
                                     Cmic=Cmic.dna.init_M,
                                     Niter = 10000)
-an_structures_Ec<-andrew_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+an_structures_Ec<-andrew_function(data=d, FACT = 2, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                     ColM = c("time", "E", "E1", "E2"),
                                     Cmic=Cmic.prot.init_H,
                                     Niter = 10000)
-an_structures_Ed<-andrew_function(data=dat, SUB = TRUE, FACT = 2, Mean=FALSE,
+an_structures_Ed<-andrew_function(data=d, FACT = 2, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                     ColM = c("time", "E", "E1", "E2"),
                                     Cmic=Cmic.prot.init_L,
                                     Niter = 10000)
 
 #for different substrates
-an_substrates_Ea<-andrew_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+an_substrates_Ea<-andrew_function(data=d, FACT = 1, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_H"),
                                     ColM = c("time", "E"),
                                     Cmic=Cmic.dna.init_H,
                                     Niter = 10000)
-an_substrates_Eb<-andrew_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+an_substrates_Eb<-andrew_function(data=d, FACT = 1, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.dna_M"),
                                     ColM = c("time", "E"),
                                     Cmic=Cmic.dna.init_M,
                                     Niter = 10000)
-an_substrates_Ec<-andrew_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+an_substrates_Ec<-andrew_function(data=d, FACT = 1, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_H"),
                                     ColM = c("time", "E"),
                                     Cmic=Cmic.prot.init_H,
                                     Niter = 10000)
-an_substrates_Ed<-andrew_function(data=dat, SUB = FALSE, FACT = 1, Mean=FALSE,
+an_substrates_Ed<-andrew_function(data=d, FACT = 1, Mean=FALSE,
                                     Vars = c("Time", "r", "E", "Cmic.prot_L"),
                                     ColM = c("time", "E"),
                                     Cmic=Cmic.prot.init_L,
                                     Niter = 10000)
 
 #for each separately 
-an_each_Ea<-andrew_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+an_each_Ea<-andrew_function(data=d, FACT = 3, Mean=FALSE,
                               Vars = c("Time", "r", "E", "Cmic.dna_H"),
                               ColM = c("time", "E"),
                               Cmic=Cmic.dna.init_H,
                               Niter = 10000)
-an_each_Eb<-andrew_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+an_each_Eb<-andrew_function(data=d, FACT = 3, Mean=FALSE,
                               Vars = c("Time", "r", "E", "Cmic.dna_M"),
                               ColM = c("time", "E"),
                               Cmic=Cmic.dna.init_M,
                               Niter = 10000)
-an_each_Ec<-andrew_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+an_each_Ec<-andrew_function(data=d, FACT = 3, Mean=FALSE,
                               Vars = c("Time", "r", "E", "Cmic.prot_H"),
                               ColM = c("time", "E"),
                               Cmic=Cmic.prot.init_H,
                               Niter = 10000)
-an_each_Ed<-andrew_function(data=dat, SUB = FALSE, FACT = 3, Mean=FALSE,
+an_each_Ed<-andrew_function(data=d, FACT = 3, Mean=FALSE,
                               Vars = c("Time", "r", "E", "Cmic.prot_L"),
                               ColM = c("time", "E"),
                               Cmic=Cmic.prot.init_L,
@@ -2139,7 +2193,7 @@ mem_all_alld<-mem_function(data=dat, SUB = TRUE, FACT = 4, Mean=FALSE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
@@ -2268,7 +2322,7 @@ mend_all_alld<-mend_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
@@ -2397,7 +2451,7 @@ mmem_all_alld<-mmem_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
@@ -2526,7 +2580,7 @@ an_all_alld<-andrew_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE,
 
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
@@ -2642,21 +2696,21 @@ an_each_alld$ll
 source("../mem_init_a.R")
 
 #across all treatments
-mem_alli_a<-mem_init_a(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mem_alli_a<-mem_init_a(data=d,  FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mem_structuresi_a<-mem_init_a(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mem_structuresi_a<-mem_init_a(data=d, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for different substrates
-mem_substratesi_a<-mem_init_a(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mem_substratesi_a<-mem_init_a(data=d,  FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for each separately 
-mem_eachi_a<-mem_init_a(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mem_eachi_a<-mem_init_a(data=d,  FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 stopImplicitCluster()
 
@@ -2670,21 +2724,21 @@ mem_eachi_a$ll
 source("../mem_init_b.R")
 
 #across all treatments
-mem_alli_b<-mem_init_b(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mem_alli_b<-mem_init_b(data=d,  FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mem_structuresi_b<-mem_init_b(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mem_structuresi_b<-mem_init_b(data=d,  FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for different substrates
-mem_substratesi_b<-mem_init_b(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mem_substratesi_b<-mem_init_b(data=d,  FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for each separately 
-mem_eachi_b<-mem_init_b(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mem_eachi_b<-mem_init_b(data=d,  FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 stopImplicitCluster()
 
@@ -2698,21 +2752,21 @@ mem_eachi_b$ll
 source("../mem_init.R")
 
 #across all treatments
-mem_alli<-mem_init(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mem_alli<-mem_init(data=d,  FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mem_structuresi<-mem_init(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mem_structuresi<-mem_init(data=d,  FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for different substrates
-mem_substratesi<-mem_init(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mem_substratesi<-mem_init(data=d,  FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for each separately 
-mem_eachi<-mem_init(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mem_eachi<-mem_init(data=d,  FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 stopImplicitCluster()
 
@@ -2730,21 +2784,21 @@ mem_eachi$ll
 source("../mend_init_a.R")
 
 #across all treatments
-mend_alli_a<-mend_init_a(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mend_alli_a<-mend_init_a(data=d,  FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mend_structuresi_a<-mend_init_a(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mend_structuresi_a<-mend_init_a(data=d,  FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for different substrates
-mend_substratesi_a<-mend_init_a(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mend_substratesi_a<-mend_init_a(data=d, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for each separately 
-mend_eachi_a<-mend_init_a(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mend_eachi_a<-mend_init_a(data=d,  FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 stopImplicitCluster()
 
@@ -2758,21 +2812,21 @@ mend_eachi_a$ll
 source("../mend_init_b.R")
 
 #across all treatments
-mend_alli_b<-mend_init_b(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mend_alli_b<-mend_init_b(data=d, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mend_structuresi_b<-mend_init_b(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mend_structuresi_b<-mend_init_b(data=d,  FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for different substrates
-mend_substratesi_b<-mend_init_b(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mend_substratesi_b<-mend_init_b(data=d,  FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for each separately 
-mend_eachi_b<-mend_init_b(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mend_eachi_b<-mend_init_b(data=d,  FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 stopImplicitCluster()
 
@@ -2785,21 +2839,21 @@ mend_eachi_b$ll
 source("../mend_init.R")
 
 #across all treatments
-mend_alli<-mend_init(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mend_alli<-mend_init(data=d,  FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mend_structuresi<-mend_init(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mend_structuresi<-mend_init(data=d,  FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for different substrates
-mend_substratesi<-mend_init(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mend_substratesi<-mend_init(data=d,  FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for each separately 
-mend_eachi<-mend_init(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mend_eachi<-mend_init(data=d,  FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 stopImplicitCluster()
 
@@ -2816,21 +2870,21 @@ mend_eachi$ll
 source("../mmem_init_a.R")
 
 #across all treatments
-mmem_alli_a<-mmem_init_a(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mmem_alli_a<-mmem_init_a(data=d,  FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mmem_structuresi_a<-mmem_init_a(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mmem_structuresi_a<-mmem_init_a(data=d,  FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for different substrates
-mmem_substratesi_a<-mmem_init_a(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mmem_substratesi_a<-mmem_init_a(data=d,  FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for each separately 
-mmem_eachi_a<-mmem_init_a(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mmem_eachi_a<-mmem_init_a(data=d,  FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 stopImplicitCluster()
 
@@ -2844,21 +2898,21 @@ mmem_eachi_a$ll
 source("../mmem_init_b.R")
 
 #across all treatments
-mmem_alli_b<-mmem_init_b(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mmem_alli_b<-mmem_init_b(data=d, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mmem_structuresi_b<-mmem_init_b(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mmem_structuresi_b<-mmem_init_b(data=d, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for different substrates
-mmem_substratesi_b<-mmem_init_b(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mmem_substratesi_b<-mmem_init_b(data=d,  FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for each separately 
-mmem_eachi_b<-mmem_init_b(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mmem_eachi_b<-mmem_init_b(data=d,  FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 stopImplicitCluster()
 
@@ -2871,21 +2925,21 @@ mmem_eachi_b$ll
 source("../mmem_init.R")
 
 #across all treatments
-mmem_alli<-mmem_init(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mmem_alli<-mmem_init(data=d, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-mmem_structuresi<-mmem_init(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mmem_structuresi<-mmem_init(data=d,  FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for different substrates
-mmem_substratesi<-mmem_init(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mmem_substratesi<-mmem_init(data=d, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for each separately 
-mmem_eachi<-mmem_init(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+mmem_eachi<-mmem_init(data=d, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 stopImplicitCluster()
 
@@ -2902,21 +2956,21 @@ mmem_eachi$ll
 source("../andrew_init_a.R")
 
 #across all treatments
-an_alli_a<-andrew_init_a(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+an_alli_a<-andrew_init_a(data=d,  FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-an_structuresi_a<-andrew_init_a(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+an_structuresi_a<-andrew_init_a(data=d,  FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for different substrates
-an_substratesi_a<-andrew_init_a(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+an_substratesi_a<-andrew_init_a(data=d,  FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for each separately 
-an_eachi_a<-andrew_init_a(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+an_eachi_a<-andrew_init_a(data=d,  FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 stopImplicitCluster()
 
@@ -2930,21 +2984,21 @@ an_eachi_a$ll
 source("../andrew_init_b.R")
 
 #across all treatments
-an_alli_b<-andrew_init_b(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+an_alli_b<-andrew_init_b(data=d, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-an_structuresi_b<-andrew_init_b(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+an_structuresi_b<-andrew_init_b(data=d,  FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for different substrates
-an_substratesi_b<-andrew_init_b(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+an_substratesi_b<-andrew_init_b(data=d, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for each separately 
-an_eachi_b<-andrew_init_b(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+an_eachi_b<-andrew_init_b(data=d,  FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 stopImplicitCluster()
 
@@ -2958,21 +3012,21 @@ an_eachi_b$ll
 source("../andrew_init.R")
 
 #across all treatments
-an_alli<-andrew_init(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+an_alli<-andrew_init(data=d, FACT = 4, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-an_structuresi<-andrew_init(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+an_structuresi<-andrew_init(data=d, FACT = 2, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for different substrates
-an_substratesi<-andrew_init(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+an_substratesi<-andrew_init(data=d, FACT = 1, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 #for each separately 
-an_eachi<-andrew_init(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
+an_eachi<-andrew_init(data=d, FACT = 3, Mean=TRUE, DNAci=DNAci, Niter = 10000)
 
 stopImplicitCluster()
 
@@ -2988,28 +3042,26 @@ an_eachi$ll
 source("../deb_function.R")
 
 #across all treatments
-deb_all<-deb_function(data=dat, SUB = TRUE, FACT = 4, Mean=TRUE, Niter = 10000)
-deb_all$ll
-deb_all$parameters
+deb_all<-deb_function(data=d,  FACT = 4, Mean=TRUE, Niter = 10000, DNAci=DNAci)
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-deb_structures<-deb_function(data=dat, SUB = TRUE, FACT = 2, Mean=TRUE, Niter = 10000)
+deb_structures<-deb_function(data=d, FACT = 2, Mean=TRUE, Niter = 10000, DNAci=DNAci)
 
 #for different substrates
-deb_substrates<-deb_function(data=dat, SUB = FALSE, FACT = 1, Mean=TRUE, Niter = 10000)
+deb_substrates<-deb_function(data=d, FACT = 1, Mean=TRUE, Niter = 10000, DNAci=DNAci)
 
 #for each separately 
-deb_each<-deb_function(data=dat, SUB = FALSE, FACT = 3, Mean=TRUE, Niter = 10000)
+deb_each<-deb_function(data=d,FACT = 3, Mean=TRUE, Niter = 10000, DNAci=DNAci)
 
 stopImplicitCluster()
 
 
 
-
+deb_all$ll
 deb_structures$ll
 deb_substrates$ll
 deb_each$ll
