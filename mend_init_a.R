@@ -1,35 +1,46 @@
-mend_init_a<-function(data, FACT, Mean, Niter, DNAci){
+mend_init_a<-function(data, FACT){
   
   #SUB - needs to be calibrated in matrix
   #FACT 1 = Substrate, 2=Structure, 3=Both, 4=No
-  #Vars = names of variables to calibrated the model against
-  #ColM = colnames for these varaibles in matrix
-  #ColV = colnames for these varaibles in normal setting
-  #VarsCmic = which biomass to use for likelihood calculation (it should follow the same notation as Vars)
-  #Cmic = initial microbial biomass C
+  #DNAci = initial DNA concentration
   
   #if factor needs to be included, its levels are defined
   if(FACT==1){
     
-    dat<-setDT(data)[, id := .GRP, by = .(Substrate)]
+    dat<-data
+    dat$id<-ifelse(d$Substrate=="Glucose", 1, 2)
     
   }else{
     
     if(FACT==2){
       
-      dat<-setDT(data)[, id := .GRP, by = .(Structure)]
+      dat<-data
+      dat<-data
+      ids<-dat %>% group_by(Structure) %>% summarise(id=n())
+      ids$id<-seq(1:nrow(ids))
+      
+      dat<-merge(dat, ids, by.x=c("Structure"), by.y=c("Structure"))
+      
     }else{
       
       if(FACT==3){
         
-        dat<-setDT(data)[, id := .GRP, by = .(Substrate,Structure)]
+        dat<-data
+        ids<-dat %>% group_by(Substrate, Structure) %>% summarise(id=n())
+        ids$id<-seq(1:nrow(ids))
+        
+        dat<-merge(dat, ids, by.x=c("Substrate","Structure"), by.y=c("Substrate", "Structure"))
+        
+        
       }else{
+        
         dat<-data
         dat$id<-c(1)
         
       }
     }
   }
+  
     #mend model
     deriv<-function(time, state, pars){
       
@@ -58,329 +69,190 @@ mend_init_a<-function(data, FACT, Mean, Niter, DNAci){
         DNAc=fd*Cmic
         #Protc=fp*Cmic
         
-        return(list(c(dCmic, dC, dE), r=F4+F5, DNAc=DNAc))
+        return(list(c(dCmic, dC, dE), DNAc=DNAc, r=F4+F5))
         
       })
     }
+    #define names of parameters
+    parnames<-c("Vmax", "Km", "CUE", "mr", "pe", "kmic", "ke", "Cmic_0", "fd")
     
-    
-    #create cost function
-    estim<-function(data){
+    #parameters estimation function
+    estim<-function(odeset){
       
-      Obs_dat<-select(data, c("Time", "r","E", "DNAc"))
-      colnames(Obs_dat)<-c("time", "r","E", "DNAc")
-      mtrue<-rbind(Obs_dat, data.frame(time=0, r=NA, E=NA, DNAc=DNAci))  
-      
-      cost_function<-function(pars){
+      #defining cost function
+      cost<-function(x){
         
+        par<-x[1:length(parnames)]
         
-        out<-as.data.frame(ode(y=c(Cmic=pars[["Cmic_0"]], C=25, E=0), parms=pars, times=seq(0,130), func=deriv))
+        names(par)<-parnames
         
-        if(Mean==FALSE){
-          cost<-modCost(model = out, obs = mtrue)
-        }else{
-          cost<-modCost(model = out, obs = mtrue, weight="mean")
-        }
+        #first, pars dependent output from ode is matched with measured values
+        yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25, E=0), parms=par, deriv, times=sort(odeset$Time)))
         
-        return(cost)
+        #select time and the measured variables 
+        yhat<-select(yhat_all, c("time", "DNAc", "r", "E"))
+        
+        #reformat to long format data frame
+        Yhat<-melt(yhat, id.vars = "time")
+        
+        #add the measured data to a data frame
+        Yhat$obs<-c(odeset[order(odeset$Time), "DNAc"], odeset[order(odeset$Time), c("r")], odeset[order(odeset$Time), "E"])
+        
+        #add the weighting factor
+        #I want to have the weighting factor to be proportional to mean of the given variable 
+        yweights<-Yhat %>% group_by(variable) %>% summarise(weights=mean(value, na.rm = T))
+        
+        #match with the Yhat data frame
+        Yhat<-merge(Yhat, yweights, by.x=c("variable"), by.y=c("variable"))
+        
+        #now, the root mean square error is calculated
+        NRMSE<-as.numeric(Yhat %>% group_by(variable) %>% summarise(NRMSE=sum((((value-obs)/mean(weights))^2), na.rm = T)) %>% 
+                            summarise(NRMSE=sum(NRMSE)) )
+        
+        return(NRMSE)
         
       }
       
-      res<-modMCMC(f=cost_function, p=c(Vmax=0.1, Km=3, CUE=0.8, mr=0.01, ke=0.01, pe=0.5, fd=0.05, Cmic_0=0.12),
-                   lower=c(Vmax=1e-4, Km=1e-4, CUE=0, mr=1e-5, ke=1e-6, pe=0, fd=0, Cmic_0=1e-6),
-                   upper=c(Vmax=1e4, Km=1e4, CUE=1, mr=1e5, ke=1e6, pe=1, fd=1, Cmic_0=25),niter=Niter)
+      #defining goodness of fit function 
+      rsq_ode<-function(x){
+        
+        par<-x[1:length(parnames)]
+        
+        names(par)<-parnames
+        
+        #first, pars dependent output from ode is matched with measured values
+        yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25, E=0), parms=par, deriv, times=sort(odeset$Time)))
+        
+        #select time and the measured variables 
+        yhat<-select(yhat_all, c("time", "DNAc", "r", "E"))
+        
+        #reformat to long format data frame
+        Yhat<-melt(yhat, id.vars = "time")
+        
+        #add the measured data to a data frame
+        Yhat$obs<-c(odeset[order(odeset$Time), "DNAc"], odeset[order(odeset$Time), c("r")], odeset[order(odeset$Time), "E"])
+        Yhat$Substrate<-rep(odeset[order(odeset$Time), "Substrate"], times=3)
+        Yhat$Structure<-rep(odeset[order(odeset$Time), "Structure"], times=3)
+        
+        #rsquared calculation for each variable
+        Gfit<-Yhat %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
+                                                        SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
+                                                        ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+        Gfit$R2<-with(Gfit, 1-SSres/SStot)
+        Gfit$N<-c(8)
+        Gfit$AIC<-with(Gfit, 2*N-2*ll)
+        
+        rsq_out<-list(Yhat=Yhat, Gfit=Gfit)
+        
+        return(rsq_out)
+        
+      }
       
       
-      return(res)
+      #approximate parameter estimation is done by MCMC method
+      par_mcmc<-modMCMC(f=cost, p=c(0.1, 3,0.5, 0.01, 0.001, 0.01, 0.01, 0.1, 0.004), 
+                          lower=c(1e-3, 1e-3,0.01, 1e-5, 0.001, 1e-5, 1e-5, 0.01, 0.004),
+                          upper=c(1, 10, 0.8, 0.5, 1, 0.1, 0.1, 2, 0.5), niter=10000)
       
+      #lower and upper limits for parameters are extracted
+      pl<-summary(par_mcmc)["min",]
+      pu<-summary(par_mcmc)["max",]
+      
+      #these limits are used to find global optimum by DEoptim
+      opt_par<-DEoptim(fn=cost, lower=pl, upper=pu, 
+                       control = c(itermax = 10000, steptol = 50, reltol = 1e-8, 
+                                   trace=FALSE, strategy=3, NP=250))
+      
+      #global optimum parameters are further used in MCMC to find parameters distribution
+      par_prof<-modMCMC(f=cost, p=opt_par$optim$bestmem, 
+                        lower=pl,
+                        upper=pu, niter=5000)
+      
+      #goodness of fit
+      fit<-rsq_ode(opt_par$optim$bestmem)
+      
+      #best parameters
+      p<-opt_par$optim$bestmem
+      names(p)<-parnames
+      
+      #return list with opt_par and par_prof
+      estim_out<-list(pars=p, par_prof=par_prof, fit=fit)
+      
+      return(estim_out)
+    
     }
+    
     
     #parameter estimation
     if(FACT==4){
       
       res<-vector("list", length = 1)
-      res[[1]]<-estim(data=dat)
+      res[[1]]<-estim(odeset=dat)
       
     }else{
       
       res<-foreach(i=unique(dat$id), .combine=list, .multicombine = TRUE,
-                   .packages=c("FME", "dplyr")) %dopar% {
+                   .packages=c("FME", "dplyr", "DEoptim", "reshape")) %dopar% {
                      
-                     estim(data=dat[dat$id==i,])
+                     estim(odeset=dat[dat$id==i,])
                      
                    }
     }
     
-    #parameters extraction
-    parameters<-data.frame(Vmax=vector("numeric", length = length(unique(dat$id))), 
-                           Km=vector("numeric", length = length(unique(dat$id))), 
-                           CUE=vector("numeric", length = length(unique(dat$id))), 
-                           mr=vector("numeric", length = length(unique(dat$id))),
-                           ke=vector("numeric", length = length(unique(dat$id))),
-                           pe=vector("numeric", length = length(unique(dat$id))),
-                           fd=vector("numeric", length = length(unique(dat$id))),
-                           #fp=vector("numeric", length = length(unique(dat$id))),
-                           Cmic_0=vector("numeric", length = length(unique(dat$id))),
-                           Vmax.l=vector("numeric", length = length(unique(dat$id))), 
-                           Km.l=vector("numeric", length = length(unique(dat$id))), 
-                           CUE.l=vector("numeric", length = length(unique(dat$id))), 
-                           mr.l=vector("numeric", length = length(unique(dat$id))),
-                           ke.l=vector("numeric", length = length(unique(dat$id))),
-                           pe.l=vector("numeric", length = length(unique(dat$id))),
-                           fd.l=vector("numeric", length = length(unique(dat$id))),
-                           #fp.l=vector("numeric", length = length(unique(dat$id))),
-                           Cmic_0.l=vector("numeric", length = length(unique(dat$id))),
-                           Vmax.u=vector("numeric", length = length(unique(dat$id))), 
-                           Km.u=vector("numeric", length = length(unique(dat$id))), 
-                           CUE.u=vector("numeric", length = length(unique(dat$id))), 
-                           mr.u=vector("numeric", length = length(unique(dat$id))),
-                           ke.u=vector("numeric", length = length(unique(dat$id))),
-                           pe.u=vector("numeric", length = length(unique(dat$id))),
-                           fd.u=vector("numeric", length = length(unique(dat$id))),
-                           #fp.u=vector("numeric", length = length(unique(dat$id))),
-                           Cmic_0.u=vector("numeric", length = length(unique(dat$id))),
-                           ID=unique(dat$id))
     
-    #median
-    for(i in unique(dat$id)){
-      for(n in 1:((ncol(parameters)-1)/3)){
-        
-        parameters[i, n]<-summary(res[[i]])[1,n]
-      }
-    }
-    #lower quartile
-    for(i in unique(dat$id)){
-      for(n in 1:((ncol(parameters)-1)/3)){
-        
-        parameters[i, n+((ncol(parameters)-1)/3)]<-summary(res[[i]])[5,n]
-      }
-    }
-    #lower quartile
-    for(i in unique(dat$id)){
-      for(n in 1:((ncol(parameters)-1)/3)){
-        
-        parameters[i, n+2*((ncol(parameters)-1)/3)]<-summary(res[[i]])[7,n]
-      }
-    }
-    
-    
-    labeles<-dat[,c("Time", "Substrate", "Structure")]
-    
-    #OvP for respiration
-    obs_r<-numeric()
-    mod_r<-numeric()
-    time_r<-numeric()
-    
-    
-    cost_r<-function(pars, data){
+    #calculation of overall goodness of fit from individual results
+    if(FACT==4){
       
-      Obs_datr<-select(data, c("Time", "r"))
-      colnames(Obs_datr)<-c("time", "r")
-      
-      out<-as.data.frame(ode(y=c(Cmic=pars[["Cmic_0"]], C=25, E=0), parms=pars, times=seq(0,130), func=deriv))
-      cost<-modCost(model = out, obs = Obs_datr)
-      
-      return(cost)
-      
-    }
-    
-    for(i in unique(dat$id)){
-      
-      obs_r<-append(obs_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
-      mod_r<-append(mod_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
-      time_r<-append(time_r, cost_r(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$x)
-      
-    }
-    
-    OvP_r<-data.frame(obs_r, mod_r, time_r)
-    
-    #add Substrate and structure
-    OvP_r<-merge(OvP_r, labeles, by.x="time_r", by.y="Time")
-    
-    #logLik calculation
-    mu_r<-mean(obs_r)
-    variance_r<-sd(obs_r)^2
-    
-    
-    ll_r<--1*sum((obs_r-mod_r)^2)/2/variance_r
-    
-    
-    SSmodel_r<-sum((obs_r-mod_r)^2)
-    SSdata_r<-sum((obs_r-mean(obs_r))^2)
-    
-    rsq_r=1-(SSmodel_r/SSdata_r)
-    
-    likelihood_r<-c(logLik=ll_r, npar=((ncol(parameters)-1)/3)*length(unique(dat$id)), rsq=rsq_r, AIC=2*((ncol(parameters)-1)/3)*length(unique(dat$id))-2*ll_r)
-    
-    
-    #OvP for DNAc
-    obs_DNAc<-numeric()
-    mod_DNAc<-numeric()
-    time_DNAc<-numeric()
-    
-    
-    cost_DNAc<-function(pars, data){
-      
-      Obs_datd<-select(data, c("Time", "r","E", "DNAc", "Protc"))
-      colnames(Obs_datd)<-c("time", "r","E", "DNAc", "Protc")
-      #mtrue<-rbind(Obs_dat, data.frame(time=0, r=NA, E=NA, DNAc=DNAci, Protc=NA))  
-      Obs_datd<-select(Obs_datd, c("time", "DNAc"))
-      
-      out<-as.data.frame(ode(y=c(Cmic=pars[["Cmic_0"]], C=25, E=0), parms=pars, times=seq(0,130), func=deriv))
-      cost<-modCost(model = out, obs = Obs_datd)
-      
-      return(cost)
-      
-    }
-    
-    for(i in unique(dat$id)){
-      obs_DNAc<-append(obs_DNAc, cost_DNAc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
-      mod_DNAc<-append(mod_DNAc, cost_DNAc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
-      time_DNAc<-append(time_DNAc, cost_DNAc(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$x)
-      
-    }
-    
-    OvP_DNAc<-data.frame(obs_DNAc, mod_DNAc,time_DNAc)
-    
-    #add Substrate and structure
-    OvP_DNAc<-merge(OvP_DNAc, labeles, by.x="time_DNAc", by.y="Time")
-    
-    #logLik calculation
-    mu_DNAc<-mean(obs_DNAc)
-    variance_DNAc<-sd(obs_DNAc)^2
-    
-    
-    ll_DNAc<--1*sum((obs_DNAc-mod_DNAc)^2)/2/variance_DNAc
-    
-    
-    SSmodel_DNAc<-sum((obs_DNAc-mod_DNAc)^2)
-    SSdata_DNAc<-sum((obs_DNAc-mean(obs_DNAc))^2)
-    
-    rsq_DNAc=1-(SSmodel_DNAc/SSdata_DNAc)
-    
-    likelihood_DNAc<-c(logLik=ll_DNAc, npar=((ncol(parameters)-1)/3)*length(unique(dat$id)), rsq=rsq_DNAc, AIC=2*((ncol(parameters)-1)/3)*length(unique(dat$id))-2*ll_DNAc)
-    
-    # #OvP for Prot
-    # obs_Protc<-numeric()
-    # mod_Protc<-numeric()
-    # 
-    # cost_Protc<-function(pars, data){
-    #   
-    #   Obs_dat<-select(data, c("Time", "r","E", "DNAc", "Protc"))
-    #   colnames(Obs_dat)<-c("time", "r","E", "DNAc", "Protc")
-    #   mtrue<-rbind(Obs_dat, data.frame(time=0, r=NA, E=NA, DNAc=DNAci, Protc=NA))  
-    #   
-    #   mtrue<-select(mtrue, c("time", "Protc"))
-    #   
-    #   out<-as.data.frame(ode(y=c(Cmic=pars[["Cmic_0"]], C=cinit, E=0), parms=pars, times=seq(0,130), func=deriv))
-    #   cost<-modCost(model = out, obs = mtrue)
-    #   
-    #   return(cost)
-    #   
-    # }
-    # 
-    # for(i in unique(dat$id)){
-    #   obs_Protc<-append(obs_Protc, cost_Protc(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$obs)
-    #   mod_Protc<-append(mod_Protc, cost_Protc(pars=summary(res[[i]])[1,], data=dat[dat$id==i, ])$residuals$mod)
-    # }
-    # 
-    # OvP_Protc<-data.frame(obs_Protc, mod_Protc)
-    # 
-    # #logLik calculation
-    # mu_Protc<-mean(obs_Protc)
-    # variance_Protc<-sd(obs_Protc)^2
-    # 
-    # 
-    # ll_Protc<--1*sum((obs_Protc-mod_Protc)^2)/2/variance_Protc
-    # 
-    # 
-    # SSmodel_Protc<-sum((obs_Protc-mod_Protc)^2)
-    # SSdata_Protc<-sum((obs_Protc-mean(obs_Protc))^2)
-    # 
-    # rsq_Protc=1-(SSmodel_Protc/SSdata_Protc)
-    # 
-    # likelihood_Protc<-c(logLik=ll_Protc, npar=((ncol(parameters)-1)/3)*length(unique(dat$id)), 
-    #                    rsq=rsq_Protc, AIC=2*((ncol(parameters)-1)/3)*length(unique(dat$id))-2*ll_Protc)
-    # 
-    #OvP for enzymes
-    obs_E<-numeric()
-    mod_E<-numeric()
-    time_E<-numeric()
-    
-    cost_E<-function(pars, data){
-      
-      Obs_date<-select(data, c("Time", "E"))
-      colnames(Obs_date)<-c("time", "E")
-      
-      out<-ode(y=c(Cmic=pars[["Cmic_0"]], C=25, E=0), parms=pars, times=seq(0,130), func=deriv)
-      cost<-modCost(model = out, obs = Obs_date)
-      
-      return(cost)
-      
-    }
-    
-    for(i in unique(dat$id)){
-      obs_E<-append(obs_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$obs)
-      mod_E<-append(mod_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$mod)
-      time_E<-append(time_E, cost_E(pars=res[[i]]$bestpar, data=dat[dat$id==i, ])$residuals$x)
-      
-    }
-    
-    OvP_E<-data.frame(obs_E, mod_E,time_E)
-    
-    #add Substrate and structure
-    OvP_E<-merge(OvP_E, labeles, by.x="time_E", by.y="Time")
-    
-    #logLik calculation
-    mu_E<-mean(obs_E)
-    variance_E<-sd(obs_E)^2
-    
-    
-    ll_E<--1*sum((obs_E-mod_E)^2)/2/variance_E
-    
-    
-    SSmodel_E<-sum((obs_E-mod_E)^2)
-    SSdata_E<-sum((obs_E-mean(obs_E))^2)
-    
-    rsq_E=1-(SSmodel_E/SSdata_E)
-    
-    likelihood_E<-c(logLik=ll_E, npar=((ncol(parameters)-1)/3)*length(unique(dat$id)), rsq=rsq_E, AIC=2*((ncol(parameters)-1)/3)*length(unique(dat$id))-2*ll_E)
-    
-    al<-list()
-    
-    if(FACT==1){
-      
-      parameters$Substrate<-ddply(dat, .(id,Substrate), summarize, mean(r))[,2]
+      res$goodness<-res[[1]]$fit$Gfit
+      res$OvP<-res[[1]]$fit$Yhat
       
     }else{
       
-      if(FACT==4){
+      if(FACT==1){
+        
+        res$OvP<-rbind(res[[1]]$fit$Yhat, res[[2]]$fit$Yhat)
+        
+        #rsquared calculation for each variable
+        res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
+                                                               SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
+                                                               ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+        res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
+        res$goodness$N<-rep(length(parnames)*2, times=3)
+        res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
         
         
       }else{
         
-        if(FACT==3){
+        if(FACT==2){
           
-          parameters$Substrate<-ddply(dat, .(id,Substrate, Structure), summarize, mean(r))[,2]
-          parameters$Structure<-ddply(dat, .(id,Substrate, Structure), summarize, mean(r))[,3]
+          res$OvP<-rbind(res[[1]]$fit$Yhat, res[[2]]$fit$Yhat, res[[3]]$fit$Yhat)
+          
+          #rsquared calculation for each variable
+          res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
+                                                                 SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
+                                                                 ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+          res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
+          res$goodness$N<-rep(length(parnames)*3, times=3)
+          res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
           
         }else{
           
-          parameters$Structure<-ddply(dat, .(id,Structure), summarize, mean(r))[,2]  
+          res$OvP<-rbind(res[[1]]$fit$Yhat, res[[2]]$fit$Yhat, res[[3]]$fit$Yhat, res[[4]]$fit$Yhat, res[[5]]$fit$Yhat, res[[6]]$fit$Yhat)
+          
+          #rsquared calculation for each variable
+          res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
+                                                                 SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
+                                                                 ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+          res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
+          res$goodness$N<-rep(length(parnames)*6, times=3)
+          res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
+          
         }
+        
       }
+      
     }
     
-    
-    al$parameters<-parameters
-    al$OvP_r<-OvP_r
-    al$ll<-rbind(likelihood_r, likelihood_DNAc, likelihood_E)
-    al$OvP_DNAc<-OvP_DNAc
-    #al$OvP_Protc<-OvP_Protc
-    al$OvP_E<-OvP_E
-    
-    return(al)
-    
-  
+  return(res)
   
 }

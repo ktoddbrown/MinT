@@ -39,7 +39,7 @@ rsconnect/
 
 #figures
 *.pdf
-[FIGURES]/
+FIGURES/
 R/
 OLD/
 
