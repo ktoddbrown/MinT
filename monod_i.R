@@ -1,14 +1,12 @@
-mend_init_a<-function(data, FACT){
+###monod growth function
+monod_i<-function(data, FACT){
   
-  #SUB - needs to be calibrated in matrix
   #FACT 1 = Substrate, 2=Structure, 3=Both, 4=No
-  #DNAci = initial DNA concentration
   
-  #if factor needs to be included, its levels are defined
   if(FACT==1){
     
     dat<-data
-    dat$id<-ifelse(d$Substrate=="Glucose", 1, 2)
+    dat$id<-ifelse(data$Substrate=="Glucose", 1, 2)
     
   }else{
     
@@ -41,40 +39,24 @@ mend_init_a<-function(data, FACT){
     }
   }
   
-    #mend model
+  
+    #monod growth function
     deriv<-function(time, state, pars){
       
       with(as.list(c(state, pars)),{
         
-        #equations
-        #C uptake
-        F1=1/CUE*(Vmax+mr)*Cmic*C/(Km+C)
-        #growth respiration
-        F4=(1/CUE-1)*Vmax*Cmic*C/(Km+C)
-        #maintnance respiration
-        F5=(1/CUE-1)*mr*Cmic*C/(Km+C)
-        #microbial mortality
-        F8=(1-pe)*mr*Cmic
-        #enzyme production
-        F9=pe*mr*Cmic
-        #enzyme decay
-        F10=ke*E
+        Protc=fp*Cmic
         
-        #states
-        dCmic<-F1-(F4+F5)-F8-F9
-        dC<--F1+F8+F10
-        dE<-F9-F10
+        dCmic<--k*Cmic+CUE*Vmax*Cmic*C/(Km+C)
+        dC<-k*Cmic-Vmax*Cmic*C/(Km+C)
         
-        #DNA and Protein content in biomass
-        DNAc=fd*Cmic
-        #Protc=fp*Cmic
-        
-        return(list(c(dCmic, dC, dE), DNAc=DNAc, r=F4+F5))
+        return(list(c(dCmic, dC), r=(1-CUE)*Vmax*Cmic*C/(Km+C), Protc=Protc))
         
       })
     }
+    
     #define names of parameters
-    parnames<-c("Vmax", "Km", "CUE", "mr", "pe", "kmic", "ke", "Cmic_0", "fd")
+    parnames<-c("Vmax", "Km", "CUE", "k", "fp", "Cmic_0")
     
     #parameters estimation function
     estim<-function(odeset){
@@ -87,16 +69,16 @@ mend_init_a<-function(data, FACT){
         names(par)<-parnames
         
         #first, pars dependent output from ode is matched with measured values
-        yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25, E=0), parms=par, deriv, times=sort(odeset$Time)))
+        yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25), parms=par, deriv, times=sort(odeset$Time)))
         
         #select time and the measured variables 
-        yhat<-select(yhat_all, c("time", "DNAc", "r", "E"))
+        yhat<-select(yhat_all, c("time", "r", "Protc"))
         
         #reformat to long format data frame
         Yhat<-melt(yhat, id.vars = "time")
         
         #add the measured data to a data frame
-        Yhat$obs<-c(odeset[order(odeset$Time), "DNAc"], odeset[order(odeset$Time), c("r")], odeset[order(odeset$Time), "E"])
+        Yhat$obs<-c(odeset[order(odeset$Time), c("r")], odeset[order(odeset$Time), "Protc"])
         
         #add the weighting factor
         #I want to have the weighting factor to be proportional to mean of the given variable 
@@ -107,7 +89,7 @@ mend_init_a<-function(data, FACT){
         
         #now, the root mean square error is calculated
         NRMSE<-as.numeric(Yhat %>% group_by(variable) %>% summarise(NRMSE=sum((((value-obs)/mean(weights))^2), na.rm = T)) %>% 
-                            summarise(NRMSE=sum(NRMSE)) )
+                            summarise(NRMSE=sum(NRMSE)))
         
         return(NRMSE)
         
@@ -121,25 +103,25 @@ mend_init_a<-function(data, FACT){
         names(par)<-parnames
         
         #first, pars dependent output from ode is matched with measured values
-        yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25, E=0), parms=par, deriv, times=sort(odeset$Time)))
+        yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25), parms=par, deriv, times=sort(odeset$Time)))
         
         #select time and the measured variables 
-        yhat<-select(yhat_all, c("time", "DNAc", "r", "E"))
+        yhat<-select(yhat_all, c("time", "r", "Protc"))
         
         #reformat to long format data frame
         Yhat<-melt(yhat, id.vars = "time")
         
         #add the measured data to a data frame
-        Yhat$obs<-c(odeset[order(odeset$Time), "DNAc"], odeset[order(odeset$Time), c("r")], odeset[order(odeset$Time), "E"])
-        Yhat$Substrate<-rep(odeset[order(odeset$Time), "Substrate"], times=3)
-        Yhat$Structure<-rep(odeset[order(odeset$Time), "Structure"], times=3)
+        Yhat$obs<-c(odeset[order(odeset$Time), c("r")], odeset[order(odeset$Time), "Protc"])
+        Yhat$Substrate<-rep(odeset[order(odeset$Time), "Substrate"], times=2)
+        Yhat$Structure<-rep(odeset[order(odeset$Time), "Structure"], times=2)
         
         #rsquared calculation for each variable
         Gfit<-Yhat %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
                                                         SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                         ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
         Gfit$R2<-with(Gfit, 1-SSres/SStot)
-        Gfit$N<-c(8)
+        Gfit$N<-c(6)
         Gfit$AIC<-with(Gfit, 2*N-2*ll)
         
         rsq_out<-list(Yhat=Yhat, Gfit=Gfit)
@@ -148,11 +130,10 @@ mend_init_a<-function(data, FACT){
         
       }
       
-      
       #approximate parameter estimation is done by MCMC method
-      par_mcmc<-modMCMC(f=cost, p=c(0.1, 3,0.5, 0.01, 0.001, 0.01, 0.01, 0.1, 0.004), 
-                          lower=c(1e-3, 1e-3,0.01, 1e-5, 0.001, 1e-5, 1e-5, 0.01, 0.004),
-                          upper=c(1, 10, 0.8, 0.5, 1, 0.1, 0.1, 2, 0.5), niter=10000)
+      par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, k=1e-3, fp=0.5, Cmic_0=0.01), 
+                        lower=c(Vmax=1e-6, Km=1e-3, CUE=0, k=1e-6, fp=0, Cmic_0=0.0001),
+                        upper=c(Vmax=10, Km=100, CUE=1, k=1, fp=1, Cmic_0=10), niter=10000)
       
       #lower and upper limits for parameters are extracted
       pl<-summary(par_mcmc)["min",]
@@ -179,7 +160,7 @@ mend_init_a<-function(data, FACT){
       estim_out<-list(pars=p, par_prof=par_prof, fit=fit)
       
       return(estim_out)
-    
+      
     }
     
     
@@ -214,10 +195,10 @@ mend_init_a<-function(data, FACT){
         
         #rsquared calculation for each variable
         res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
-                                                               SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
-                                                               ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+                                                                   SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
+                                                                   ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
         res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
-        res$goodness$N<-rep(length(parnames)*2, times=3)
+        res$goodness$N<-rep(length(parnames)*2, times=2)
         res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
         
         
@@ -229,10 +210,10 @@ mend_init_a<-function(data, FACT){
           
           #rsquared calculation for each variable
           res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
-                                                                 SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
-                                                                 ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+                                                                     SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
+                                                                     ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
           res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
-          res$goodness$N<-rep(length(parnames)*3, times=3)
+          res$goodness$N<-rep(length(parnames)*3, times=2)
           res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
           
         }else{
@@ -241,10 +222,10 @@ mend_init_a<-function(data, FACT){
           
           #rsquared calculation for each variable
           res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
-                                                                 SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
-                                                                 ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+                                                                     SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
+                                                                     ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
           res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
-          res$goodness$N<-rep(length(parnames)*6, times=3)
+          res$goodness$N<-rep(length(parnames)*6, times=2)
           res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
           
         }
@@ -253,6 +234,7 @@ mend_init_a<-function(data, FACT){
       
     }
     
-  return(res)
-  
+    return(res)
+    
+    
 }
