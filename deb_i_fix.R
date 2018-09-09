@@ -1,11 +1,13 @@
-mend<-function(data, FACT){
+deb_i_fix<-function(data, FACT){
   
   #FACT 1 = Substrate, 2=Structure, 3=Both, 4=No
   
+  
+  #if factor needs to be included, its levels are defined
   if(FACT==1){
     
     dat<-data
-    dat$id<-ifelse(d$Substrate=="Glucose", 1, 2)
+    dat$id<-ifelse(data$Substrate=="Glucose", 1, 2)
     
   }else{
     
@@ -38,31 +40,39 @@ mend<-function(data, FACT){
     }
   }
   
-    #mend model
+    #deb model
     deriv<-function(time, state, pars){
       
       with(as.list(c(state, pars)),{
         
-        #equations
-        #C uptake
-        F1=1/CUE*(Vmax+mr)*Cmic*C/(Km+C)
-        #growth respiration
-        F4=(1/CUE-1)*Vmax*Cmic*C/(Km+C)
-        #maintnance respiration
-        F5=(1/CUE-1)*mr*Cmic*C/(Km+C)
-        #microbial mortality
-        F8=mr*Cmic
+        #Carbon uptake
+        Cu=Vmax*C*S/(Km+C)
         
-        #states
-        dCmic<-F1-(F4+F5)-F8
-        dC<--F1+F8
+        #maintnance
+        m=S*m0
         
-        return(list(c(dCmic, dC), r=F4+F5, Protc=0.548*Cmic))
+        #reserve mobilization rate for growth and enzyme production
+        an=f*R-m
+        
+        #calibrated variables
+        #protein abundance in reserves and structures is mean value reported 
+        #by Hanegraaf and Muller, 2001
+        r=m+pmax(an*(1-Yu), 0)-pmin(0, an)
+        
+        #Protc=0.7095*S+0.6085*R
+        Protc=fpr*R+fps*S
+        
+        dR<-Cu-f*R
+        dS<-pmax(an*Yu,0)+pmin(0, an)
+        dC<--Cu
+        
+        
+        return(list(c(dR, dS, dC), r=r, Protc=Protc))
         
       })
     }
     #define names of parameters
-    parnames<-c("Vmax", "Km", "CUE", "mr", "Cmic_0")
+    parnames<-c("Vmax", "Km", "m0", "f", "Yu", "fpr", "fps")
     
     #parameters estimation function
     estim<-function(odeset){
@@ -75,16 +85,16 @@ mend<-function(data, FACT){
         names(par)<-parnames
         
         #first, pars dependent output from ode is matched with measured values
-        yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25), parms=par, deriv, times=sort(odeset$Time)))
+        yhat_all<-as.data.frame(ode(y=c(R=0.02747527, S=0.5714159, C=25), parms=par, deriv, times=sort(odeset$Time)))
         
         #select time and the measured variables 
-        yhat<-select(yhat_all, c("time", "Protc", "r"))
+        yhat<-select(yhat_all, c("time", "r", "Protc"))
         
         #reformat to long format data frame
         Yhat<-melt(yhat, id.vars = "time")
         
         #add the measured data to a data frame
-        Yhat$obs<-c(odeset[order(odeset$Time), "Protc"], odeset[order(odeset$Time), c("r")])
+        Yhat$obs<-c(odeset[order(odeset$Time), c("r")], odeset[order(odeset$Time), "Protc"])
         
         #add the weighting factor
         #I want to have the weighting factor to be proportional to mean of the given variable 
@@ -109,16 +119,16 @@ mend<-function(data, FACT){
         names(par)<-parnames
         
         #first, pars dependent output from ode is matched with measured values
-        yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25), parms=par, deriv, times=sort(odeset$Time)))
+        yhat_all<-as.data.frame(ode(y=c(R=0.02747527, S=0.5714159,, C=25), parms=par, deriv, times=sort(odeset$Time)))
         
         #select time and the measured variables 
-        yhat<-select(yhat_all, c("time", "Protc", "r"))
+        yhat<-select(yhat_all, c("time", "r", "Protc"))
         
         #reformat to long format data frame
         Yhat<-melt(yhat, id.vars = "time")
         
         #add the measured data to a data frame
-        Yhat$obs<-c(odeset[order(odeset$Time), "Protc"], odeset[order(odeset$Time), c("r")])
+        Yhat$obs<-c(odeset[order(odeset$Time), c("r")], odeset[order(odeset$Time), "Protc"])
         Yhat$Substrate<-rep(odeset[order(odeset$Time), "Substrate"], times=2)
         Yhat$Structure<-rep(odeset[order(odeset$Time), "Structure"], times=2)
         
@@ -127,7 +137,7 @@ mend<-function(data, FACT){
                                                         SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                         ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
         Gfit$R2<-with(Gfit, 1-SSres/SStot)
-        Gfit$N<-c(5)
+        Gfit$N<-c(9)
         Gfit$AIC<-with(Gfit, 2*N-2*ll)
         
         rsq_out<-list(Yhat=Yhat, Gfit=Gfit)
@@ -137,9 +147,9 @@ mend<-function(data, FACT){
       }
       
       #approximate parameter estimation is done by MCMC method
-      par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, mr=0.01, Cmic_0=0.01), 
-                          lower=c(Vmax=1e-3, Km=1e-3, CUE=0, mr=1e-5, Cmic_0=1e-5),
-                          upper=c(Vmax=1, Km=10, CUE=1, mr=10, Cmic_0=5), niter=10000)
+      par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, m0=0.01, f=4, Yu=0.8, fpr=0.5, fps=0.5), 
+                          lower=c(Vmax=1e-5, Km=1e-2, m0=1e-5, f=1e-3, Yu=0.01, fpr=0, fps=0),
+                          upper=c(Vmax=1, Km=20, m0=1, f=100, Yu=0.8, fpr=1, fps=1), niter=10000)
       
       #lower and upper limits for parameters are extracted
       pl<-summary(par_mcmc)["min",]

@@ -136,6 +136,7 @@ d$Cmic<-d$Prot.in/0.548*0.45/12.01/4
 #DEB require knowing only protein C concentration
 d$Protc<-d$Prot.in*0.46/12.01/4
 
+d$DNAc<-d$DNA*0.51/12.01/4
 #############################################################################################
 #First, all models are calibrated against r only
 
@@ -458,17 +459,17 @@ deb_i4$goodness
 
 ###########################################################################################
 ###########################################################################################
-deb_pars<-as.data.frame(rbind(deb_each[[1]]$pars, deb_each[[2]]$pars, deb_each[[3]]$pars,
-                              deb_each[[4]]$pars, deb_each[[5]]$pars, deb_each[[6]]$pars))
+deb_pars<-as.data.frame(rbind(deb_i4[[1]]$pars, deb_i4[[2]]$pars, deb_i4[[3]]$pars,
+                              deb_i4[[4]]$pars, deb_i4[[5]]$pars, deb_i4[[6]]$pars))
 deb_pars$Substrate<-c(rep("Cellobiose", times=3),
                        rep("Glucose", times=3))
 
 deb_pars$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
 Deb_pars<-melt(deb_pars, id.vars=c("Substrate", "Structure"))
 
-deb_pars_sd<-as.data.frame(rbind(summary(deb_each[[1]]$par_prof)[2,], summary(deb_each[[2]]$par_prof)[2,], 
-                                  summary(deb_each[[3]]$par_prof)[2,], summary(deb_each[[4]]$par_prof)[2,], 
-                                  summary(deb_each[[5]]$par_prof)[2,], summary(deb_each[[6]]$par_prof)[2,]))
+deb_pars_sd<-as.data.frame(rbind(summary(deb_i4[[1]]$par_prof)[2,], summary(deb_i4[[2]]$par_prof)[2,], 
+                                  summary(deb_i4[[3]]$par_prof)[2,], summary(deb_i4[[4]]$par_prof)[2,], 
+                                  summary(deb_i4[[5]]$par_prof)[2,], summary(deb_i4[[6]]$par_prof)[2,]))
 deb_pars_sd$Substrate<-c(rep("Cellobiose", times=3),
                           rep("Glucose", times=3))
 
@@ -483,13 +484,15 @@ ggplot(Deb_pars, aes(Substrate, value))+geom_point(cex=6, aes(colour=Structure))
 mean(deb_pars$R_0)
 mean(deb_pars$S_0)
 
-source("../deb_fixed.R")
+source("../deb_i_fix.R")
 
 no_cors<-detectCores()-1
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
-deb_each<-deb_fixed(data=d,FACT = 3)
-deb_each$goodness
+deb_i4_fix<-deb_i_fix(data=d,FACT = 3)
+deb_i4_fix$goodness
 
 stopImplicitCluster()
+
+

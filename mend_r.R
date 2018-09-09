@@ -51,7 +51,7 @@ mend_r<-function(data, FACT){
         #maintnance respiration
         F5=(1/CUE-1)*mr*Cmic*C/(Km+C)
         #microbial mortality
-        F8=(1-pe)*mr*Cmic
+        F8=mr*Cmic
         
         #states
         dCmic<-F1-(F4+F5)-F8
@@ -62,7 +62,7 @@ mend_r<-function(data, FACT){
       })
     }
     #define names of parameters
-    parnames<-c("Vmax", "Km", "CUE", "mr", "kmic", "Cmic_0")
+    parnames<-c("Vmax", "Km", "CUE", "mr", "Cmic_0")
     
     #parameters estimation function
     estim<-function(odeset){
@@ -128,7 +128,7 @@ mend_r<-function(data, FACT){
                                                         SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                         ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
         Gfit$R2<-with(Gfit, 1-SSres/SStot)
-        Gfit$N<-c(6)
+        Gfit$N<-c(5)
         Gfit$AIC<-with(Gfit, 2*N-2*ll)
         
         rsq_out<-list(Yhat=Yhat, Gfit=Gfit)
@@ -138,9 +138,9 @@ mend_r<-function(data, FACT){
       }
       
       #approximate parameter estimation is done by MCMC method
-      par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, mr=0.01, kmic=0.001, Cmic_0=0.01), 
-                          lower=c(Vmax=1e-3, Km=1e-3, CUE=0, mr=1e-5, kmic=1e-5, Cmic_0=1e-5),
-                          upper=c(Vmax=1, Km=10, CUE=1, 0.5, mr=10, kmic=10, Cmic_0=5), niter=10000)
+      par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, mr=0.01, Cmic_0=0.01), 
+                          lower=c(Vmax=1e-3, Km=1e-3, CUE=0, mr=1e-5,  Cmic_0=1e-5),
+                          upper=c(Vmax=1, Km=10, CUE=1, mr=10, Cmic_0=5), niter=10000)
       
       #lower and upper limits for parameters are extracted
       pl<-summary(par_mcmc)["min",]
