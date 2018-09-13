@@ -32,7 +32,7 @@ Cell pelet was bead beated in ethanol solution for 5 minutes to lyse the cells.P
 Three different models (Fig. 1) were used to predict the changes in respiration rate ($R_{H}$) and microbial biomass ($C_{MB}$) in time. The Monod model (Fig. 1a) is a fundamental part of microbial explicit biogeochemical models (@Allison2010; @Wieder2014; @Wieder2013). The Constant Biomass Composition (CBC) model is its adaptation as implemented in MEND model (@Wang2013). The Variable Biomass Composition (VBC) model is an simplified adaptation of Dynamic Energy Budget theory derived by Hanegraaf and Muller (@Hanegraaf2001) for microbial populations. Here we present all models per molar C basis and use the terminology adopted from microbial explicit biogeochemical models for consistency.
 
 ####Monod model (Fig. 1a)
-In this model, organic substrate ($C_{S}$) is consumed by microbial biomass and is transformed to $C_{MB}$ or respired. Microbial biomass is dying at constant rate returning used organic carbon to $C_{S}$ pool:
+In this model, organic substrate ($C_{S}$) is consumed by microbial biomass and transformed to $C_{MB}$ or respired. Microbial biomass is dying at constant rate returning used organic carbon to $C_{S}$ pool:
 
 [1] $~~~~~~~~~~\frac{dC_{MB}}{dt}~=~uptake~\times~CUE~-~k_{MB}~\times~C_{MB}$,
 
@@ -61,19 +61,19 @@ and
 [6] $~~~~~~~~~~R_{M}~=~(\frac{1}{CUE}~-~1)~\times~\frac{m_{R}~\times~C_{S}~\times~C_{MB}}{K_{M}~+~C_{S}}$.
 
 
-In eq. 6, $m_{R}$ is biomass specific maintenance rate constant. Since $R_{G}$ and $R_{M}$ represent a constant fraction of organic C uptake, the equation defining an uptake rate has to take both fluxes into an account and the eq. 3 has to be rewritten as:
+In eq. 6, $m_{R}$ is biomass specific maintenance rate constant. Since $R_{G}$ and $R_{M}$ represent a constant fraction of organic C uptake, the equation defining an uptake rate has to take both fluxes into an account and the eq. 3 is rewritten to:
 
 
 [7] $~~~~~~~~~~uptake~=~\frac{1}{CUE}~\times~(V_{MAX}~+~m_{R}~)\times~\frac{C_{S}~\times~C_{MB}}{K_{M}~+~C_{S}}$.
 
 
-The overall mass balance equations for pool $C_{MB}$ and $C_{S}$ are defined as:
+The overall mass balance equations for pool $C_{MB}$ and $C_{S}$ are respectively:
 
 [8] $~~~~~~~~~~\frac{dC_{MB}}{dt}~=~uptake~-~(R_{G}+R_{M})~-~m_{R}~\times~C_{MB}$,
 
 [9] $~~~~~~~~~~\frac{dC_{S}}{dt}~=~-uptake~+~m_{R}~\times~C_{MB}$.
 
-The last term of eqs. 8 and 9 indicates that the rate of $C_{MB}$ loss due to decay is defined by $m_{R}$.
+The last term of eqs. 8 and 9 indicates that the rate of $C_{MB}$ loss due to decay is controled by $m_{R}$.
 
 ####Variable Biomass Composition (VBC) model (Fig. 1c)
 In contrast to previous models, microbial biomass consits of two functional parts, reserves ($R$) and structures ($S$). Whereas $S$ is functionally similar to $C_{MB}$, $R$ represents a "buffering zone" of $C_{MB}$. $C_{S}$ is assimilated into reserves by a rate proportional to $C_{S}$ and $S$:
@@ -82,11 +82,11 @@ In contrast to previous models, microbial biomass consits of two functional part
 [10] $~~~~~~~~~~assimilation~=\frac{V_{MAX}~\times~C_{S}~\times~S}{K_{M}~+~C_{S}}$.
 
 
-Here we assume that the $C_{S}$ is assimilated into R with efficiency equal to one (@Hanegraaf2001). Organic C is released from reserves by a rate proportional to R. The overall mass balance equation for pool R is defined as:
+Here we assume that the $C_{S}$ is assimilated into R with efficiency equal to one (@Hanegraaf2001). Organic C is released from reserves by a rate proportional to R. The overall mass balance equation for pool R is thus:
 
 [11] $~~~~~~~~~~\frac{dR}{dt}~=~assimilation~-~f_{0}~\times~R$,
 
-where $f_{0}$ is the rate constant controlling the release of organic C from reserves. The released organic C is used to maintain structures or to grow (i.e. increase pool $S$). However, maintaining structures have a priority over the growth (@Hanegraaf2001). The growth is realized only when reserves contain enough organic C. When pool $R$ doesn't contain enough organic C to maintain $S$, proportional part of $S$ is lost via respiration. The respective mass balance equations for pools $S$ and $C_{S}$ are defined as:
+where $f_{0}$ is the constant controlling the rate of release of organic C from reserves. The released organic C is used to maintain structures or to grow (i.e. increase pool $S$). However, maintaining structures have a priority over the growth (@Hanegraaf2001). The growth is realized only when reserves contain enough organic C. When pool $R$ doesn't contain enough organic C to maintain $S$, proportional part of $S$ is lost via respiration. The respective mass balance equations for pools $S$ and $C_{S}$ are defined as:
 
 [12] $~~~~~~~~~~\frac{dS}{dt}~=~max\left\{f_{a}~\times~Y_{S},~0\right\}~+~min\left\{f_{a},~0\right\}$,
 
@@ -98,9 +98,13 @@ In eq. 12, $Y_{S}$ is yield or efficiency of structures construction (functional
 
 [14] $~~~~~~~~~~f_{a}~=~f_{0}~\times~R~-~m_{R}~\times~S$.
 
-As same as in CBC model, $R_{H}$ consists of two different processes, growth and maintenance respiration:
+$R_{H}$ consists of two different processes, growth and maintenance respiration:
 
 [15] $~~~~~~~~~~R_{H}~=~R_{G}~+~R_{M}~=~~max\left\{f_{a}~\times~(1-Y_{S}),~0\right\}~+~m_{R}~\times~S$.
+
+###Models evaluation
+Each model includes several parameters, whose value can vary across experimental groups. The parameters were estimated either across all experimental groups, for different substrates (glucose or cellobiose) separately, for different levels of microcosm complexity (BROTH, GLASS, WOOL) separately, or for all six experimental groups separately. The   
+
 
 ## Results
 
