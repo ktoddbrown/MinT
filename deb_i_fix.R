@@ -119,7 +119,7 @@ deb_i_fix<-function(data, FACT){
         names(par)<-parnames
         
         #first, pars dependent output from ode is matched with measured values
-        yhat_all<-as.data.frame(ode(y=c(R=0.02747527, S=0.5714159,, C=25), parms=par, deriv, times=sort(odeset$Time)))
+        yhat_all<-as.data.frame(ode(y=c(R=0.02747527, S=0.5714159, C=25), parms=par, deriv, times=sort(odeset$Time)))
         
         #select time and the measured variables 
         yhat<-select(yhat_all, c("time", "r", "Protc"))
@@ -137,7 +137,7 @@ deb_i_fix<-function(data, FACT){
                                                         SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                         ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
         Gfit$R2<-with(Gfit, 1-SSres/SStot)
-        Gfit$N<-c(9)
+        Gfit$N<-c(7)
         Gfit$AIC<-with(Gfit, 2*N-2*ll)
         
         rsq_out<-list(Yhat=Yhat, Gfit=Gfit)

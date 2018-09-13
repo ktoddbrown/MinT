@@ -449,6 +449,10 @@ deb_i3$goodness
 deb_i4<-deb_i(data=d, FACT = 3)
 deb_i4$goodness
 
+source("../deb_i2.R")
+deb_i4.2<-deb_i2(data=d, FACT = 3)
+deb_i4.2$goodness
+
 
 stopImplicitCluster()
 
@@ -459,8 +463,8 @@ deb_i4$goodness
 
 ###########################################################################################
 ###########################################################################################
-deb_pars<-as.data.frame(rbind(deb_i4[[1]]$pars, deb_i4[[2]]$pars, deb_i4[[3]]$pars,
-                              deb_i4[[4]]$pars, deb_i4[[5]]$pars, deb_i4[[6]]$pars))
+deb_pars<-as.data.frame(rbind(deb_i4.2[[1]]$pars, deb_i4.2[[2]]$pars, deb_i4.2[[3]]$pars,
+                              deb_i4.2[[4]]$pars, deb_i4.2[[5]]$pars, deb_i4.2[[6]]$pars))
 deb_pars$Substrate<-c(rep("Cellobiose", times=3),
                        rep("Glucose", times=3))
 
