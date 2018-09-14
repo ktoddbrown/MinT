@@ -57,7 +57,7 @@ deb_i<-function(data, FACT){
         #calibrated variables
         #protein abundance in reserves and structures is mean value reported 
         #by Hanegraaf and Muller, 2001
-        r=m+pmax(an*(1-Yu), 0)-pmin(0, an)
+        r=m+pmax(an*(1-Yu), 0)
         
         #Protc=0.7095*S+0.6085*R
         Protc=fpr*R+fps*S

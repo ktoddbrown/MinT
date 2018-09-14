@@ -449,11 +449,6 @@ deb_i3$goodness
 deb_i4<-deb_i(data=d, FACT = 3)
 deb_i4$goodness
 
-source("../deb_i2.R")
-deb_i4.2<-deb_i2(data=d, FACT = 3)
-deb_i4.2$goodness
-
-
 stopImplicitCluster()
 
 deb_i1$goodness
