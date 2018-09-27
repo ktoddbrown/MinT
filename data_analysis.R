@@ -61,7 +61,7 @@ conversions<-data.frame(Sample=m0[,1])
 #Henriksen et al., 1996
 conversions$Cmic<-m0$Prot.in/12.01/4
 conversions$Proxy<-c("Cellular protein")
-conversions$Reference<-c("Henriksen et al., 1996")
+conversions$Reference<-c("Henriksen et al., \n 1996")
 conversions$Organism<-c("Penicillium chrysogenum")
 
 #Hanegraaf and Muller 2001 presented different data
@@ -69,20 +69,20 @@ conversions$Organism<-c("Penicillium chrysogenum")
 conversions<-rbind(conversions, data.frame(Sample=m0[,1],
                                            Cmic=m0$Prot.in/0.57*0.45/12.01/4,
                                            Proxy=rep("Cellular protein"),
-                                           Reference=rep("Hanegraaf and Muller, 2001"),
+                                           Reference=rep("Hanegraaf and \n Muller, 2001"),
                                            Organism=rep("Paracoccus denitrificans")))
 
 #E. Coli
 conversions<-rbind(conversions, data.frame(Sample=m0[,1],
                                            Cmic=m0$Prot.in/0.82*0.45/12.01/4,
                                            Proxy=rep("Cellular protein"),
-                                           Reference=rep("Hanegraaf and Muller, 2001"),
+                                           Reference=rep("Hanegraaf and \n Muller, 2001"),
                                            Organism=rep("Escherichia coli")))
 #van Duuren et al., 2013
 conversions<-rbind(conversions, data.frame(Sample=m0[,1],
                                            Cmic=m0$Prot.in/0.553*0.45/12.01/4,
                                            Proxy=rep("Cellular protein"),
-                                           Reference=rep("van Duuren et al., 2013"),
+                                           Reference=rep("van Duuren et al., \n 2013"),
                                            Organism=rep("Pseudomonas putida")))
 #Baart et al., 2008
 conversions<-rbind(conversions, data.frame(Sample=m0[,1],
@@ -95,19 +95,19 @@ conversions<-rbind(conversions, data.frame(Sample=m0[,1],
 conversions<-rbind(conversions, data.frame(Sample=m0[,1],
                                            Cmic=m0$Prot.in/0.385*0.45/12.01/4,
                                            Proxy=rep("Cellular protein"),
-                                           Reference=rep("Beck at al., 2018"),
+                                           Reference=rep("Beck et al., 2018"),
                                            Organism=rep("Alicyclobacillus acidocaldarius")))
 #Synechococcus 7002
 conversions<-rbind(conversions, data.frame(Sample=m0[,1],
                                            Cmic=m0$Prot.in/0.272*0.45/12.01/4,
                                            Proxy=rep("Cellular protein"),
-                                           Reference=rep("Beck at al., 2018"),
+                                           Reference=rep("Beck et al., 2018"),
                                            Organism=rep("Synechococcus 7002")))
 
 
 #Make a graph
-ggplot(conversions, aes(Reference, Cmic))+geom_boxplot(cex=0.8, aes(colour=Organism), show.legend = F)+
-  facet_grid(.~Proxy)+coord_flip()+theme_min+theme(axis.title.y = element_blank())+
+ggplot(conversions, aes(Reference, Cmic))+geom_boxplot(cex=0.8, aes(fill=Organism), show.legend = T)+
+  theme_min+theme(axis.title.x = element_blank(), axis.text.x=element_text(size=14, colour="black"), legend.position = c(0.8,0.8))+
   ylab(expression(paste("Microbial biomass carbon (", mu, "mol ", ml^{-1},")")))
 
 ###################################Data for modelling#########################################
@@ -485,7 +485,7 @@ mean(deb_pars$S_0)
 
 source("../deb_i_fix.R")
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 

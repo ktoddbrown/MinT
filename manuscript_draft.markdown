@@ -103,7 +103,7 @@ $R_{H}$ consists of two different processes, growth and maintenance respiration:
 [15] $~~~~~~~~~~R_{H}~=~R_{G}~+~R_{M}~=~~max\left\{f_{a}~\times~(1-Y_{S}),~0\right\}~+~m_{R}~\times~S$.
 
 ###Models evaluation
-All three models include parameters, whose value can be adjusted to maximize the correspondence between predictions and observations. Since the objective of microbial explicit biogeochmical models is to predict the rate of loss of organic C, we first calibrated the models against the measured respiration rate. Model parameters were adjusted so to minimize of the objective function $J$ using the Differential Evolution algorithm (@Mullen2011). The objective function $J$ was defined as:
+All three models include parameters, whose value can be adjusted to maximize the correspondence between predictions and observations. Since the objective of microbial explicit biogeochmical models is to predict the rate of loss of organic C, we first calibrated the models against the measured respiration rate. Model parameters were adjusted so to minimize the objective function $J$ using the Differential Evolution algorithm (@Mullen2011). The objective function $J$ was defined as:
 
 [16] $~~~~~~~~~~J~=~\sum\limits_{i=1}^{n}{(\frac{P_{i}~-~O_{i}}{\mu})^{2}}$,
 
