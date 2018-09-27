@@ -25,7 +25,7 @@ Microbial respiration rate was measured at the beginning of the experiment and e
 
 ###Cellular protein quantification
 To quantify microbial biomass in the microcosms, protein content of microbial cells was isolated on the first, second and last day of incubation. The sampling was destructive. The whole volume of microcosm was quantitatively transfered to 15 ml falcon tubes. Cell scraper was used to detach microbial cells from surface of vials or from glass beads/wool. Two ml of phosphate buffer was added and the final solution thoroughly mixed. The final solution was centrifuged at 4,700 g for ten minutes at 4&deg;C and pelet was separated from supernatant. Pellet was resuspended in 0.5 ml and kept deep frozen (-80&deg;C) until the assay was conducted.
-Cell pelet was bead beated in ethanol solution for 5 minutes to lyse the cells.Protein concentration was assesed in cell lysate by bicinchoninic acid assay. **_(specification of spectrophotometer)_** was used to measure protein concentration.
+Cell pelet was bead beated in ethanol solution for 5 minutes to lyse the cells.Protein concentration was assesed in cell lysate by bicinchoninic acid assay. **_(specification of spectrophotometer)_** was used to measure protein concentration. The concentration was expressed per C basis using the conversion factor 0.45 (@Vrede2004).
 
 
 ###Mathematical description
@@ -103,15 +103,23 @@ $R_{H}$ consists of two different processes, growth and maintenance respiration:
 [15] $~~~~~~~~~~R_{H}~=~R_{G}~+~R_{M}~=~~max\left\{f_{a}~\times~(1-Y_{S}),~0\right\}~+~m_{R}~\times~S$.
 
 ###Models evaluation
-All three models include parameters, whose value can be adjusted to maximize the correspondence between predictions and observations. Since the objective of microbial explicit biogeochmical models is to predict the rate of loss of organic C, we first calibrated the models against the measured respiration rate. Model parameters were adjusted to minimize of the objective function $J$ using the Global Optimization by Differential Evolution algorithm (@Mullen2011). The objective function $J$ was defined as:
+All three models include parameters, whose value can be adjusted to maximize the correspondence between predictions and observations. Since the objective of microbial explicit biogeochmical models is to predict the rate of loss of organic C, we first calibrated the models against the measured respiration rate. Model parameters were adjusted so to minimize of the objective function $J$ using the Differential Evolution algorithm (@Mullen2011). The objective function $J$ was defined as:
 
 [16] $~~~~~~~~~~J~=~\sum\limits_{i=1}^{n}{(\frac{P_{i}~-~O_{i}}{\mu})^{2}}$,
 
-where $O_{i}$ and $P_{i}$ stand for observation i and its corresponding value predicted by the model, and $\mu$ is the mean of all observations. Uncertainty of parameters estimates were determined by Constrained Markov Chain Monte Carlo simulation on 5000 iterations (@Soetaert2010). To evaluate goodness of correspondence between models predictions and observations, log likelihood, Akaike Information Criterion (AIC) and coeficient of determination ($R^{2}$) were calculated. To evaluate the effect of different experimental treatments 
+where $O_{i}$ and $P_{i}$ stand for observation i and its corresponding value predicted by the model, and $\mu$ is the mean of all observations. Uncertainty of parameters estimates were determined by Constrained Markov Chain Monte Carlo simulation on 5000 iterations (@Soetaert2010). To evaluate the goodness of correspondence between models predictions and observations, log likelihood, Akaike Information Criterion (AIC) and coeficient of determination ($R^{2}$) were calculated. To evaluate the effect of experimental treatments on models prediction capability, model parameters and corresponding goodness of fit were calculated across all treatments or for each substrate (glucose and cellobiose), each level of structural complexity (BROTH, GLASS, WOOL) or each experimetal treatment (combination of the substrate and level of structural complexity) separately.
+Second, models were calibrated against measured respiration rate and cellular protein concentration. In this case, the objective function $J$ was defined as a sum of $J$ calculated for respiration rate and cellular protein concentration. The protein concentration was either assumed to be 55% of $C_{MB}$ and 61 and 71% of $R$ and $S$ respectively, or its proportion to $C_{MB}$, $R$ and $S$ was estimated. All analyses were done in statistical program R (@RDevelopmentCoreTeam2014).
 
 ## Results
 
 ## Discussion
 
+## Figures
+![](assets/markdown-img-paste-20180926175020880.png)
 
+$~$
+$~$
+$~$
+
+![](assets/markdown-img-paste-20180926175259177.png)
 ##References
