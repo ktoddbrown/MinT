@@ -103,8 +103,11 @@ $R_{H}$ consists of two different processes, growth and maintenance respiration:
 [15] $~~~~~~~~~~R_{H}~=~R_{G}~+~R_{M}~=~~max\left\{f_{a}~\times~(1-Y_{S}),~0\right\}~+~m_{R}~\times~S$.
 
 ###Models evaluation
-Each model includes several parameters, whose value can vary across experimental groups. The parameters were estimated either across all experimental groups, for different substrates (glucose or cellobiose) separately, for different levels of microcosm complexity (BROTH, GLASS, WOOL) separately, or for all six experimental groups separately. The   
+All three models include parameters, whose value can be adjusted to maximize the correspondence between predictions and observations. Since the objective of microbial explicit biogeochmical models is to predict the rate of loss of organic C, we first calibrated the models against the measured respiration rate. Model parameters were adjusted to minimize of the objective function $J$ using the Global Optimization by Differential Evolution algorithm (@Mullen2011). The objective function $J$ was defined as:
 
+[16] $~~~~~~~~~~J~=~\sum\limits_{i=1}^{n}{(\frac{P_{i}~-~O_{i}}{\mu})^{2}}$,
+
+where $O_{i}$ and $P_{i}$ stand for observation i and its corresponding value predicted by the model, and $\mu$ is the mean of all observations. Uncertainty of parameters estimates were determined by Constrained Markov Chain Monte Carlo simulation on 5000 iterations (@Soetaert2010). To evaluate goodness of correspondence between models predictions and observations, log likelihood, Akaike Information Criterion (AIC) and coeficient of determination ($R^{2}$) were calculated. To evaluate the effect of different experimental treatments 
 
 ## Results
 
