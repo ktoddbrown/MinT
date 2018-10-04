@@ -10,6 +10,7 @@ library(foreach)
 library(doParallel)
 library(openxlsx)
 library(DEoptim)
+library(gridExtra)
 
 ##ggplot theme
 theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=14, colour="black"),
@@ -28,7 +29,7 @@ theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=14, colour="black"),
                  strip.background=element_rect(fill="grey98", colour="black"),
                  legend.key=element_rect(fill="white", size=1.2),
                  legend.spacing=unit(0.5, "cm"),
-                 plot.title=element_text(size=28, face="bold", hjust=-0.05))
+                 plot.title=element_text(size=16, face="bold", hjust=-0.05))
 
 #######################################################################################################
 
@@ -485,7 +486,7 @@ mean(deb_pars$S_0)
 
 source("../deb_i_fix.R")
 
-no_cors<-detectCores()
+no_cors<-detectCores()-1
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
@@ -494,4 +495,134 @@ deb_i4_fix$goodness
 
 stopImplicitCluster()
 
+#Show the parameters
+
+deb_fpars<-as.data.frame(rbind(deb_i4_fix[[1]]$pars, deb_i4_fix[[2]]$pars, deb_i4_fix[[3]]$pars,
+                               deb_i4_fix[[4]]$pars, deb_i4_fix[[5]]$pars, deb_i4_fix[[6]]$pars))
+deb_fpars$Substrate<-c(rep("Cellobiose", times=3),
+                      rep("Glucose", times=3))
+
+deb_fpars$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
+Deb_fpars<-melt(deb_fpars, id.vars=c("Substrate", "Structure"))
+
+deb_fpars_sd<-as.data.frame(rbind(summary(deb_i4_fix[[1]]$par_prof)[2,], summary(deb_i4_fix[[2]]$par_prof)[2,], 
+                                 summary(deb_i4_fix[[3]]$par_prof)[2,], summary(deb_i4_fix[[4]]$par_prof)[2,], 
+                                 summary(deb_i4_fix[[5]]$par_prof)[2,], summary(deb_i4_fix[[6]]$par_prof)[2,]))
+deb_fpars_sd$Substrate<-c(rep("Cellobiose", times=3),
+                         rep("Glucose", times=3))
+
+deb_fpars_sd$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
+
+Deb_fpars$sd<-melt(deb_fpars_sd, id.vars=c("Substrate", "Structure"))[,4]
+
+
+ggplot(Deb_fpars, aes(Substrate, value))+geom_point(cex=6, aes(colour=Structure))+
+  facet_wrap(~variable, scales="free")+geom_errorbar(aes(ymax=value+sd, ymin=value-sd, colour=Structure))
+
+
+#keep m0 fixed
+mean(deb_fpars$m0)
+
+source("../deb_i_fix2.R")
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+deb_i4_fix2<-deb_i_fix2(data=d,FACT = 3)
+deb_i4_fix2$goodness
+
+stopImplicitCluster()
+
+#Show the parameters
+
+deb_fpars2<-as.data.frame(rbind(deb_i4_fix2[[1]]$pars, deb_i4_fix2[[2]]$pars, deb_i4_fix2[[3]]$pars,
+                               deb_i4_fix2[[4]]$pars, deb_i4_fix2[[5]]$pars, deb_i4_fix2[[6]]$pars))
+deb_fpars2$Substrate<-c(rep("Cellobiose", times=3),
+                       rep("Glucose", times=3))
+
+deb_fpars2$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
+Deb_fpars2<-melt(deb_fpars2, id.vars=c("Substrate", "Structure"))
+
+deb_fpars2_sd<-as.data.frame(rbind(summary(deb_i4_fix2[[1]]$par_prof)[2,], summary(deb_i4_fix2[[2]]$par_prof)[2,], 
+                                  summary(deb_i4_fix2[[3]]$par_prof)[2,], summary(deb_i4_fix2[[4]]$par_prof)[2,], 
+                                  summary(deb_i4_fix2[[5]]$par_prof)[2,], summary(deb_i4_fix2[[6]]$par_prof)[2,]))
+deb_fpars2_sd$Substrate<-c(rep("Cellobiose", times=3),
+                          rep("Glucose", times=3))
+
+deb_fpars2_sd$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
+
+Deb_fpars2$sd<-melt(deb_fpars2_sd, id.vars=c("Substrate", "Structure"))[,4]
+
+
+ggplot(Deb_fpars2, aes(Substrate, value))+geom_point(cex=6, aes(colour=Structure))+
+  facet_wrap(~variable, scales="free")+geom_errorbar(aes(ymax=value+sd, ymin=value-sd, colour=Structure))
+
+
+################################################################################################
+#######################################Figures##################################################
+################################################################################################
+deb_fpars2
+
+#deb model
+deb_hard<-function(time, state, pars){
+  
+  with(as.list(c(state, pars)),{
+    
+    #Carbon uptake
+    Cu=Vmax*C*S/(Km+C)
+    
+    #maintnance
+    m=S*0.003121921
+    
+    #reserve mobilization rate for growth and enzyme production
+    an=f*R-m
+    
+    #calibrated variables
+    #protein abundance in reserves and structures is mean value reported 
+    #by Hanegraaf and Muller, 2001
+    r=m+pmax(an*(1-Yu), 0)-pmin(0, an)
+    
+    #Protc=0.7095*S+0.6085*R
+    Protc=fpr*R+fps*S
+    
+    dR<-Cu-f*R
+    dS<-pmax(an*Yu,0)+pmin(0, an)
+    dC<--Cu
+    
+    
+    return(list(c(dR, dS, dC), r=r, Protc=Protc))
+    
+  })
+}
+
+out<-as.data.frame(ode(y=c(R=0.02668775, S=0.4782267, C=25), 
+                       parms=c(Vmax=0.4341345, Km=8.1163958, f=0.2, Yu=0.2, fpr=0.97, fps=0.082), 
+         deb_hard, times=seq(0,170)))
+
+out2<-out[,c(1:3)]
+out2$Mic<-out2$R+out2$S
+Out2<-melt(out2, id.vars = c("time"))
+
+ggplot(Out2, aes(time, value))+geom_line(aes(colour=variable))+theme_min+
+  xlab("Time")+ylab("Microbial Biomass Pools")+
+  theme(legend.position = c(0.8,0.3),
+        legend.title = element_blank())+
+  ggtitle("a)")
+
+out3<-data.frame(time=out2$time, CFE=out2$R/out2$Mic, DNA=out2$S*0.1/out2$Mic)
+Out3<-melt(out3, id.vars = c("time"))
+colnames(Out3)<-c("time", "Method", "Yield")
+
+ggplot(Out3, aes(time, Yield))+geom_line(aes(colour=Method))+theme_min+
+  ggtitle("b)")+xlab("Time")+theme(legend.position = c(0.8,0.3))+ylim(0,0.7)
+
+grid.arrange(ggplot(Out2, aes(time, value))+geom_line(aes(colour=variable))+theme_min+
+               xlab("Time")+ylab("Microbial Biomass Pools")+
+               theme(legend.position = c(0.8,0.3),
+                     legend.title = element_blank())+
+               ggtitle("a)"),
+             ggplot(Out3, aes(time, Yield))+geom_line(aes(colour=Method))+theme_min+
+               ggtitle("b)")+xlab("Time")+theme(legend.position = c(0.8,0.8))+ylim(0,0.7),
+             ncol=2)
 
