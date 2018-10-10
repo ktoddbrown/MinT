@@ -179,7 +179,7 @@ monod_r4$goodness
 
 #Models comparison absed on Likelihood ratio test
 #this should be correct way
-#1-pchisq(-2*(-ll_model1--ll_model2), df=number of parameters difference)
+1-pchisq(-2*(as.numeric(monod_r1$goodness[1,4])-as.numeric(monod_r2$goodness[1,4])), df=10)
 
 ###############################################################################################
 ###########################################MEND model##########################################
@@ -360,6 +360,7 @@ deb4$goodness
 #####################################Monod growth##############################################
 ###############################################################################################
 source("../monod_i.R")
+source("../monod_i_alternative.R")
 
 #across all treatments
 monod_i1<-monod_i(data=d, FACT = 4)
@@ -381,6 +382,9 @@ monod_i3$goodness
 monod_i4<-monod_i(data=d, FACT = 3)
 monod_i4$goodness
 
+monod_i4_alternative<-monod_i_alternative(data=d, FACT = 3)
+monod_i4_alternative$goodness
+
 
 stopImplicitCluster()
 
@@ -397,6 +401,8 @@ monod_i4$goodness
 ###########################################MEND model##########################################
 ###############################################################################################
 source("../mend_i.R")
+source("../mend_i_alternative.R")
+
 
 #across all treatments
 mend_i1<-mend_i(data=d, FACT = 4)
@@ -418,6 +424,9 @@ mend_i3$goodness
 mend_i4<-mend_i(data=d, FACT = 3)
 mend_i4$goodness
 
+mend_i4_alternative<-mend_i_alternative(data=d, FACT = 3)
+mend_i4_alternative$goodness
+
 
 stopImplicitCluster()
 
@@ -429,6 +438,7 @@ mend_i4$goodness
 ###########################################DEB model###########################################
 ###############################################################################################
 source("../deb_i.R")
+source("../deb_i_alternative.R")
 
 #across all treatments
 deb_i1<-deb_i(data=d, FACT = 4)
@@ -449,6 +459,9 @@ deb_i3$goodness
 #for each separately 
 deb_i4<-deb_i(data=d, FACT = 3)
 deb_i4$goodness
+
+deb_i4_alternative<-deb_i_alternative(data=d, FACT = 3)
+deb_i4_alternative$goodness
 
 stopImplicitCluster()
 
@@ -555,8 +568,11 @@ deb_fpars2_sd$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
 Deb_fpars2$sd<-melt(deb_fpars2_sd, id.vars=c("Substrate", "Structure"))[,4]
 
 
-ggplot(Deb_fpars2, aes(Substrate, value))+geom_point(cex=6, aes(colour=Structure))+
-  facet_wrap(~variable, scales="free")+geom_errorbar(aes(ymax=value+sd, ymin=value-sd, colour=Structure))
+ggplot(Deb_fpars2, aes(Substrate, value))+
+  geom_point(cex=6, aes(colour=Structure), position = position_dodge(width = 1))+
+  facet_wrap(~variable, scales="free")+theme_min+
+  geom_errorbar(aes(ymax=value+sd, ymin=value-sd, colour=Structure), 
+                position = position_dodge(width = 1))
 
 
 ################################################################################################
@@ -591,31 +607,34 @@ deb_hard<-function(time, state, pars){
     dC<--Cu
     
     
-    return(list(c(dR, dS, dC), r=r, Protc=Protc))
+    return(list(c(dR, dS, dC), r=r, Protein=Protc))
     
   })
 }
 
 out<-as.data.frame(ode(y=c(R=0.02668775, S=0.4782267, C=25), 
-                       parms=c(Vmax=0.4341345, Km=8.1163958, f=0.2, Yu=0.2, fpr=0.97, fps=0.082), 
+                       parms=deb_fpars2[6, c(1:6)], 
          deb_hard, times=seq(0,170)))
 
-out2<-out[,c(1:3)]
-out2$Mic<-out2$R+out2$S
-Out2<-melt(out2, id.vars = c("time"))
 
-ggplot(Out2, aes(time, value))+geom_line(aes(colour=variable))+theme_min+
-  xlab("Time")+ylab("Microbial Biomass Pools")+
-  theme(legend.position = c(0.8,0.3),
+out2<-out
+ggplot(out, aes(R, r))+geom_point()
+
+out2$Mic<-out2$R+out2$S
+Out2<-melt(out2[, c(1,2,3,6,7)], id.vars = c("time"))
+
+ggplot(Out2, aes(time, value))+geom_line(lwd=1.2, aes(colour=variable))+theme_min+
+  xlab("Time")+ylab(expression(paste("Microbial Biomass Constituents (", mu, "mol ", ml^{-1}, ")")))+
+  theme(legend.position = c(0.8,0.4),
         legend.title = element_blank())+
   ggtitle("a)")
+  
 
-out3<-data.frame(time=out2$time, CFE=out2$R/out2$Mic, DNA=out2$S*0.1/out2$Mic)
-Out3<-melt(out3, id.vars = c("time"))
-colnames(Out3)<-c("time", "Method", "Yield")
+out3<-data.frame(time=out2$time, Conv=out2$Protein/out2$Mic)
 
-ggplot(Out3, aes(time, Yield))+geom_line(aes(colour=Method))+theme_min+
-  ggtitle("b)")+xlab("Time")+theme(legend.position = c(0.8,0.3))+ylim(0,0.7)
+
+ggplot(out3, aes(time, Conv))+geom_line(lwd=1.2)+theme_min+
+  ggtitle("b)")+xlab("Time")+ylab("Conversion Factor")+ylim(0,0.4)
 
 grid.arrange(ggplot(Out2, aes(time, value))+geom_line(aes(colour=variable))+theme_min+
                xlab("Time")+ylab("Microbial Biomass Pools")+
@@ -626,3 +645,188 @@ grid.arrange(ggplot(Out2, aes(time, value))+geom_line(aes(colour=variable))+them
                ggtitle("b)")+xlab("Time")+theme(legend.position = c(0.8,0.8))+ylim(0,0.7),
              ncol=2)
 
+#####all conversion factors
+#first one
+out<-as.data.frame(ode(y=c(R=0.02668775, S=0.4782267, C=25), 
+                       parms=deb_fpars2[1, c(1:6)], 
+                       deb_hard, times=seq(0,125)))
+out$Mic<-out$R+out$S
+out1<-data.frame(time=out$time, Conv=out$Protein/out$Mic, 
+                 Substrate=rep(deb_fpars2[1, 7], times=nrow(out)),
+                 Structure=rep(deb_fpars2[1, 8], times=nrow(out)))
+
+#the rest
+for(i in 2:nrow(deb_fpars2)){
+  out<-as.data.frame(ode(y=c(R=0.02668775, S=0.4782267, C=25), 
+                         parms=deb_fpars2[i, c(1:6)], 
+                         deb_hard, times=seq(0,125)))
+  out$Mic<-out$R+out$S
+  out.else<-data.frame(time=out$time, Conv=out$Protein/out$Mic, 
+                   Substrate=rep(deb_fpars2[i, 7], times=nrow(out)),
+                   Structure=rep(deb_fpars2[i, 8], times=nrow(out)))
+  
+  out1<-rbind(out1, out.else)
+}
+
+ggplot(subset(out1, time<60), aes(time, Conv))+geom_line(lwd=1.2, aes(colour=Structure, linetype=Substrate))+theme_min+
+  xlab("Time")+ylab("Conversion Factor")
+
+#all all
+#first one
+alal<-as.data.frame(ode(y=c(R=0.02668775, S=0.4782267, C=25), 
+                       parms=deb_fpars2[1, c(1:6)], 
+                       deb_hard, times=seq(0,125)))
+alal$Mic<-alal$R+alal$S
+alal$Substrate<-rep(deb_fpars2[1, 7], times=nrow(alal))
+alal$Structure<-rep(deb_fpars2[1, 8], times=nrow(alal))
+
+
+#the rest
+for(i in 2:nrow(deb_fpars2)){
+  alal2<-as.data.frame(ode(y=c(R=0.02668775, S=0.4782267, C=25), 
+                          parms=deb_fpars2[i, c(1:6)], 
+                          deb_hard, times=seq(0,125)))
+  alal2$Mic<-alal2$R+alal2$S
+  alal2$Substrate<-rep(deb_fpars2[i, 7], times=nrow(alal2))
+  alal2$Structure<-rep(deb_fpars2[i, 8], times=nrow(alal2))
+  
+  alal<-rbind(alal, alal2)
+}
+
+ggplot(alal, aes(Mic, r))+geom_point(cex=4, aes(colour=Structure, shape=Substrate))+theme_min+
+  ylab(expression(paste("Respiration Rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Microbial Biomass (", mu, "mol ", ml^{-1}, ")")))
+
+ggplot(alal, aes(S, r))+geom_point(cex=4, aes(colour=Structure, shape=Substrate))+theme_min+
+  ylab(expression(paste("Respiration Rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Structures (", mu, "mol ", ml^{-1}, ")")))
+
+ggplot(alal, aes(R, r))+geom_point(cex=4, aes(colour=Structure, shape=Substrate))+theme_min+
+  ylab(expression(paste("Respiration Rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Reserves (", mu, "mol ", ml^{-1}, ")")))
+
+#############################################OvP MONOD MEND R################################
+#Monod (4.5 to 6.5 inches - landscape)
+ggplot(subset(monod_r4$OvP, variable=="r"), aes(obs, value))+
+  geom_point(cex=4, aes(colour=Structure, shape=Substrate), alpha=0.8)+theme_min+
+  ylim(0,1)+xlim(0,1)+geom_abline(intercept = 0, slope=1, lwd=1.2, colour="grey", lty=2)+
+  ylab(expression(paste("Predicted Respiration Rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Measured Respiration Rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))
+
+#Mend (4.5 to 6.5 inches - landscape)
+ggplot(subset(mend_r4$OvP, variable=="r"), aes(obs, value))+
+  geom_point(cex=4, aes(colour=Structure, shape=Substrate), alpha=0.8)+theme_min+
+  ylim(0,1)+xlim(0,1)+geom_abline(intercept = 0, slope=1, lwd=1.2, colour="grey", lty=2)+
+  ylab(expression(paste("Predicted Respiration Rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Measured Respiration Rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))
+
+#############################################OvP MONOD MEND Cmic################################
+#Monod (4.5 to 6.5 inches - landscape)
+ggplot(subset(monod_r4$OvP, variable=="Protc"), aes(obs, value))+
+  geom_point(cex=4, aes(colour=Structure, shape=Substrate), alpha=0.8)+theme_min+
+  geom_abline(intercept = 0, slope=1, lwd=1.2, colour="grey", lty=2)+
+  ylab(expression(paste("Predicted Cellular Protein (", mu, "mol ", ml^{-1}, ")")))+
+  xlab(expression(paste("Measured Cellular Protein (", mu, "mol ", ml^{-1}, ")")))
+
+#Mend (4.5 to 6.5 inches - landscape)
+ggplot(subset(mend_r4$OvP, variable=="Protc"), aes(obs, value))+
+  geom_point(cex=4, aes(colour=Structure, shape=Substrate), alpha=0.8)+theme_min+
+  geom_abline(intercept = 0, slope=1, lwd=1.2, colour="grey", lty=2)+
+  ylab(expression(paste("Predicted Cellular Protein (", mu, "mol ", ml^{-1}, ")")))+
+  xlab(expression(paste("Measured Cellular Protein (", mu, "mol ", ml^{-1}, ")")))
+
+#############################################OvP MONOD MEND Cmic2################################
+#Monod (4.5 to 6.5 inches - landscape)
+ggplot(subset(monod4$OvP, variable=="Protc"), aes(obs, value))+
+  geom_point(cex=4, aes(colour=Structure, shape=Substrate), alpha=0.8)+theme_min+
+  geom_abline(intercept = 0, slope=1, lwd=1.2, colour="grey", lty=2)+
+  ylab(expression(paste("Predicted Cellular Protein (", mu, "mol ", ml^{-1}, ")")))+
+  xlab(expression(paste("Measured Cellular Protein (", mu, "mol ", ml^{-1}, ")")))
+
+#Mend (4.5 to 6.5 inches - landscape)
+ggplot(subset(mend4$OvP, variable=="Protc"), aes(obs, value))+
+  geom_point(cex=4, aes(colour=Structure, shape=Substrate), alpha=0.8)+theme_min+
+  geom_abline(intercept = 0, slope=1, lwd=1.2, colour="grey", lty=2)+
+  ylab(expression(paste("Predicted Cellular Protein (", mu, "mol ", ml^{-1}, ")")))+
+  xlab(expression(paste("Measured Cellular Protein (", mu, "mol ", ml^{-1}, ")")))
+
+#############################################OvP MONOD MEND Cmic3################################
+#Monod (4.5 to 6.5 inches - landscape)
+ggplot(subset(monod_i4$OvP, variable=="Protc"), aes(obs, value))+
+  geom_point(cex=4, aes(colour=Structure, shape=Substrate), alpha=0.8)+theme_min+
+  geom_abline(intercept = 0, slope=1, lwd=1.2, colour="grey", lty=2)+
+  ylab(expression(paste("Predicted Cellular Protein (", mu, "mol ", ml^{-1}, ")")))+
+  xlab(expression(paste("Measured Cellular Protein (", mu, "mol ", ml^{-1}, ")")))
+
+#Mend (4.5 to 6.5 inches - landscape)
+ggplot(subset(mend_i4$OvP, variable=="Protc"), aes(obs, value))+
+  geom_point(cex=4, aes(colour=Structure, shape=Substrate), alpha=0.8)+theme_min+
+  geom_abline(intercept = 0, slope=1, lwd=1.2, colour="grey", lty=2)+
+  ylab(expression(paste("Predicted Cellular Protein (", mu, "mol ", ml^{-1}, ")")))+
+  xlab(expression(paste("Measured Cellular Protein (", mu, "mol ", ml^{-1}, ")")))
+
+#############################################OvP DEB r Cmic################################
+#CO2 (4.5 to 6.5 inches - landscape)
+ggplot(subset(deb_i4$OvP, variable=="r"), aes(obs, value))+
+  geom_point(cex=4, aes(colour=Structure, shape=Substrate), alpha=0.8)+theme_min+
+  geom_abline(intercept = 0, slope=1, lwd=1.2, colour="grey", lty=2)+ylim(0,1)+xlim(0,1)+
+  ylab(expression(paste("Predicted Respiration Rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  xlab(expression(paste("Measured Respiration Rate (", mu, "mol ", ml^{-1}~h^{-1}, ")")))
+
+#Protc (4.5 to 6.5 inches - landscape)
+ggplot(subset(deb_i4$OvP, variable=="Protc"), aes(obs, value))+
+  geom_point(cex=4, aes(colour=Structure, shape=Substrate), alpha=0.8)+theme_min+
+  geom_abline(intercept = 0, slope=1, lwd=1.2, colour="grey", lty=2)+ylim(0.4,1.4)+xlim(0.4,1.4)+
+  ylab(expression(paste("Predicted Cellular Protein (", mu, "mol ", ml^{-1}, ")")))+
+  xlab(expression(paste("Measured Cellular Protein (", mu, "mol ", ml^{-1}, ")")))
+
+#DNAc (4.5 to 6.5 inches - landscape)
+ggplot(subset(deb_i4_alternative$OvP, variable=="DNAc"), aes(obs, value))+
+  geom_point(cex=4, aes(colour=Structure, shape=Substrate), alpha=0.8)+theme_min+
+  geom_abline(intercept = 0, slope=1, lwd=1.2, colour="grey", lty=2)+
+  ylab(expression(paste("Predicted DNA content (", mu, "mol ", ml^{-1}, ")")))+
+  xlab(expression(paste("Measured DNA content (", mu, "mol ", ml^{-1}, ")")))+
+  ylim(0, 0.1)+xlim(0,0.1)
+
+
+source("../deb_full_test.R")
+
+d_test<-subset(m0, Substrate=="Celluloze")
+#DEB require knowing only protein C concentration
+d_test$Protc<-d_test$Prot.in*0.46/12.01/4
+d_test$E<-d_test$Prot.out*0.46/12.01/4
+
+d_test$DNAc<-d_test$DNA*0.51/12.01/4
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+#for each separately 
+deb_full<-deb_full_test(data=d_test, FACT = 2)
+deb_full$goodness
+
+deb_celluloze<-deb_i_fix(data=d_test, FACT = 2)
+deb_celluloze$goodness
+
+stopImplicitCluster()
+
+d_test2<-subset(m0, Substrate=="Mix")
+#DEB require knowing only protein C concentration
+d_test2$Protc<-d_test2$Prot.in*0.46/12.01/4
+d_test2$E<-d_test2$Prot.out*0.46/12.01/4
+
+d_test2$DNAc<-d_test2$DNA*0.51/12.01/4
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+#for each separately 
+deb_full<-deb_full_test(data=d_test, FACT = 2)
+deb_full$goodness
+
+deb_mix<-deb_i_fix(data=d_test, FACT = 2)
+deb_mix$goodness
+
+stopImplicitCluster()

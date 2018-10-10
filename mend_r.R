@@ -140,7 +140,7 @@ mend_r<-function(data, FACT){
       #approximate parameter estimation is done by MCMC method
       par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, mr=0.01, Cmic_0=0.01), 
                           lower=c(Vmax=1e-3, Km=1e-3, CUE=0, mr=1e-5,  Cmic_0=1e-5),
-                          upper=c(Vmax=1, Km=10, CUE=1, mr=10, Cmic_0=5), niter=10000)
+                          upper=c(Vmax=10, Km=100, CUE=1, mr=10, Cmic_0=5), niter=10000)
       
       #lower and upper limits for parameters are extracted
       pl<-summary(par_mcmc)["min",]

@@ -131,7 +131,7 @@ monod<-function(data, FACT){
       #approximate parameter estimation is done by MCMC method
       par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, k=1e-3, Cmic_0=0.01), 
                         lower=c(Vmax=1e-6, Km=1e-3, CUE=0, k=1e-6, Cmic_0=0.0001),
-                        upper=c(Vmax=10, Km=100, CUE=1, k=1, Cmic_0=10), niter=10000)
+                        upper=c(Vmax=10, Km=100, CUE=1, k=10, Cmic_0=10), niter=10000)
       
       #lower and upper limits for parameters are extracted
       pl<-summary(par_mcmc)["min",]
