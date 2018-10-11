@@ -1,13 +1,11 @@
-deb_i_alternative2<-function(data, FACT){
+mend_i_DNA<-function(data, FACT){
   
   #FACT 1 = Substrate, 2=Structure, 3=Both, 4=No
   
-  
-  #if factor needs to be included, its levels are defined
   if(FACT==1){
     
     dat<-data
-    dat$id<-ifelse(data$Substrate=="Glucose", 1, 2)
+    dat$id<-ifelse(d$Substrate=="Glucose", 1, 2)
     
   }else{
     
@@ -40,40 +38,33 @@ deb_i_alternative2<-function(data, FACT){
     }
   }
   
-    #deb model
+    #mend model
     deriv<-function(time, state, pars){
       
       with(as.list(c(state, pars)),{
         
-        #Carbon uptake
-        Cu=Vmax*C*S/(Km+C)
+        #equations
+        #C uptake
+        F1=1/CUE*(Vmax+mr)*Cmic*C/(Km+C)
+        #growth respiration
+        F4=(1/CUE-1)*Vmax*Cmic*C/(Km+C)
+        #maintnance respiration
+        F5=(1/CUE-1)*mr*Cmic*C/(Km+C)
+        #microbial mortality
+        F8=mr*Cmic
         
-        #maintnance
-        m=S*m0
+        DNAc=fd*Cmic
         
-        #reserve mobilization rate for growth and enzyme production
-        an=f*R-m
+        #states
+        dCmic<-F1-(F4+F5)-F8
+        dC<--F1+F8
         
-        #calibrated variables
-        #protein abundance in reserves and structures is mean value reported 
-        #by Hanegraaf and Muller, 2001
-        r=m+pmax(an*(1-Yu), 0)
-        
-        #Protc=0.7095*S+0.6085*R
-        Protc=fpr*R+fps*S
-        DNAc=fds*S
-        
-        dR<-Cu-f*R
-        dS<-pmax(an*Yu,0)+pmin(0, an)-m
-        dC<--Cu
-        
-        
-        return(list(c(dR, dS, dC), r=r, Protc=Protc, DNAc=DNAc))
+        return(list(c(dCmic, dC), r=F4+F5, DNAc=DNAc))
         
       })
     }
     #define names of parameters
-    parnames<-c("Vmax", "Km", "m0", "f", "Yu", "fpr", "fps", "fds", "R_0", "S_0")
+    parnames<-c("Vmax", "Km", "CUE", "mr", "fd", "Cmic_0")
     
     #parameters estimation function
     estim<-function(odeset){
@@ -86,16 +77,16 @@ deb_i_alternative2<-function(data, FACT){
         names(par)<-parnames
         
         #first, pars dependent output from ode is matched with measured values
-        yhat_all<-as.data.frame(ode(y=c(R=par[["R_0"]], S=par[["S_0"]], C=25), parms=par, deriv, times=sort(odeset$Time)))
+        yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25), parms=par, deriv, times=sort(odeset$Time)))
         
         #select time and the measured variables 
-        yhat<-select(yhat_all, c("time", "r", "Protc", "DNAc"))
+        yhat<-select(yhat_all, c("time", "DNAc", "r"))
         
         #reformat to long format data frame
         Yhat<-melt(yhat, id.vars = "time")
         
         #add the measured data to a data frame
-        Yhat$obs<-c(odeset[order(odeset$Time), c("r")], odeset[order(odeset$Time), "Protc"], odeset[order(odeset$Time), "DNAc"])
+        Yhat$obs<-c(odeset[order(odeset$Time), "DNAc"], odeset[order(odeset$Time), c("r")])
         
         #add the weighting factor
         #I want to have the weighting factor to be proportional to mean of the given variable 
@@ -120,25 +111,25 @@ deb_i_alternative2<-function(data, FACT){
         names(par)<-parnames
         
         #first, pars dependent output from ode is matched with measured values
-        yhat_all<-as.data.frame(ode(y=c(R=par[["R_0"]], S=par[["S_0"]], C=25), parms=par, deriv, times=sort(odeset$Time)))
+        yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25), parms=par, deriv, times=sort(odeset$Time)))
         
         #select time and the measured variables 
-        yhat<-select(yhat_all, c("time", "r", "Protc", "DNAc"))
+        yhat<-select(yhat_all, c("time", "DNAc", "r"))
         
         #reformat to long format data frame
         Yhat<-melt(yhat, id.vars = "time")
         
         #add the measured data to a data frame
-        Yhat$obs<-c(odeset[order(odeset$Time), c("r")], odeset[order(odeset$Time), "Protc"], odeset[order(odeset$Time), "DNAc"])
-        Yhat$Substrate<-rep(odeset[order(odeset$Time), "Substrate"], times=3)
-        Yhat$Structure<-rep(odeset[order(odeset$Time), "Structure"], times=3)
+        Yhat$obs<-c(odeset[order(odeset$Time), "DNAc"], odeset[order(odeset$Time), c("r")])
+        Yhat$Substrate<-rep(odeset[order(odeset$Time), "Substrate"], times=2)
+        Yhat$Structure<-rep(odeset[order(odeset$Time), "Structure"], times=2)
         
         #rsquared calculation for each variable
         Gfit<-Yhat %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
                                                         SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                         ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
         Gfit$R2<-with(Gfit, 1-SSres/SStot)
-        Gfit$N<-c(10)
+        Gfit$N<-c(6)
         Gfit$AIC<-with(Gfit, 2*N-2*ll)
         
         rsq_out<-list(Yhat=Yhat, Gfit=Gfit)
@@ -148,9 +139,9 @@ deb_i_alternative2<-function(data, FACT){
       }
       
       #approximate parameter estimation is done by MCMC method
-      par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, m0=0.01, f=4, Yu=0.8, fpr=0.5, fps=0.5, fds=0.03, R_0=0.03483481, S_0=0.07661063), 
-                          lower=c(Vmax=1e-5, Km=1e-2, m0=1e-5, f=1e-3, Yu=0.01, fpr=0, fps=0, fds=0, R_0=1e-4, S_0=1e-4),
-                          upper=c(Vmax=1, Km=20, m0=1, f=100, Yu=0.8, fpr=1, fps=1, fds=1, R_0=2, S_0=2), niter=10000)
+      par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, mr=0.01, fp=0.5, Cmic_0=0.01), 
+                          lower=c(Vmax=1e-3, Km=1e-3, CUE=0, mr=1e-5, fp=0, Cmic_0=1e-5),
+                          upper=c(Vmax=10, Km=100, CUE=1, mr=10, fp=1, Cmic_0=5), niter=10000)
       
       #lower and upper limits for parameters are extracted
       pl<-summary(par_mcmc)["min",]
@@ -215,7 +206,7 @@ deb_i_alternative2<-function(data, FACT){
                                                                SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                                ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
         res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
-        res$goodness$N<-rep(length(parnames)*2, times=3)
+        res$goodness$N<-rep(length(parnames)*2, times=2)
         res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
         
         
@@ -230,7 +221,7 @@ deb_i_alternative2<-function(data, FACT){
                                                                  SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                                  ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
           res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
-          res$goodness$N<-rep(length(parnames)*3, times=3)
+          res$goodness$N<-rep(length(parnames)*3, times=2)
           res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
           
         }else{
@@ -242,7 +233,7 @@ deb_i_alternative2<-function(data, FACT){
                                                                  SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                                  ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
           res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
-          res$goodness$N<-rep(length(parnames)*6, times=3)
+          res$goodness$N<-rep(length(parnames)*6, times=2)
           res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
           
         }
