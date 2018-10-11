@@ -1,7 +1,7 @@
 ---
 layout: "post"
 ---
-## Variable Composition of Microbial Biomass Required
+## Variable Composition of Microbial Biomass affects the Performance of Microbial Explicit Models
 ^1^Petr Capek*, ^1^Katherine Todd-Brown, ^1^Natalie Sadler, ^1^Nancy Hess, ^1^Kirsten Hofmockel
 
 _^1^Pacific Northwest National Laboratory, Environmental Molecular Sciences Laboratory, Richland, WA USA_
@@ -9,6 +9,8 @@ _^1^Pacific Northwest National Laboratory, Environmental Molecular Sciences Labo
 ## Abstract
 
 ## Introduction
+In recet years, abrupt development of soil biogeochemical models have occured. Abstract models dominated by cohorts of organic carbon (C) pools with inherently different decay rates (e.g. @Parton1988, @Lawrence2011, @ISI:000285769100015, @Friedlingstein2006) have become replaced by microbial explicit models (@Schimel2003, @Wang2013, @Wieder2015a, @Wieder2014, @Wieder2014, @Huang2018). On one hand, several studies showed the superiror performance of microbial explicit models over classical cohort models (@Wieder2013, @Huang2018, @Hararuk2015, @He2014). On the other hand, other studies showed the tendency of these models to unrealistic temporal oscilations due to small perturbations suggesting the (@Sihi2016, @Wang2014, @Li2014).
+Microbial explicit models adopt the knowledge of general microbiology to explain coupled organic substrate - microbial dynamic.
 
 ## Material and Methods
 ###Experimental design
