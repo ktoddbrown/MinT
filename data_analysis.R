@@ -360,8 +360,8 @@ deb4$goodness
 #####################################Monod growth##############################################
 ###############################################################################################
 source("../monod_i.R")
-source("../monod_i_alternative.R")
 
+#Proteins
 #across all treatments
 monod_i1<-monod_i(data=d, FACT = 4)
 monod_i1$goodness
@@ -382,16 +382,41 @@ monod_i3$goodness
 monod_i4<-monod_i(data=d, FACT = 3)
 monod_i4$goodness
 
-monod_i4_alternative<-monod_i_alternative(data=d, FACT = 3)
-monod_i4_alternative$goodness
-
-
 stopImplicitCluster()
 
 monod_i1$goodness
 monod_i2$goodness
 monod_i3$goodness
 monod_i4$goodness
+
+#DNA
+source("../monod_i_DNA.R")
+#across all treatments
+monod_i1_DNA<-monod_i(data=d, FACT = 4)
+monod_i1_DNA$goodness
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+#for different structures
+monod_i2_DNA<-monod_i_DNA(data=d, FACT = 2)
+monod_i2_DNA$goodness
+
+#for different substrates
+monod_i3_DNA<-monod_i_DNA(data=d, FACT = 1)
+monod_i3_DNA$goodness
+
+#for each separately 
+monod_i4_DNA<-monod_i_DNA(data=d, FACT = 3)
+monod_i4_DNA$goodness
+
+stopImplicitCluster()
+
+monod_i1_DNA$goodness
+monod_i2_DNA$goodness
+monod_i3_DNA$goodness
+monod_i4_DNA$goodness
 
 #Models comparison absed on Likelihood ratio test
 #this should be correct way
@@ -401,9 +426,8 @@ monod_i4$goodness
 ###########################################MEND model##########################################
 ###############################################################################################
 source("../mend_i.R")
-source("../mend_i_alternative.R")
 
-
+#Proteins
 #across all treatments
 mend_i1<-mend_i(data=d, FACT = 4)
 mend_i1$goodness
@@ -424,51 +448,105 @@ mend_i3$goodness
 mend_i4<-mend_i(data=d, FACT = 3)
 mend_i4$goodness
 
-mend_i4_alternative<-mend_i_alternative(data=d, FACT = 3)
-mend_i4_alternative$goodness
-
-
 stopImplicitCluster()
 
 mend_i1$goodness
 mend_i2$goodness
 mend_i3$goodness
 mend_i4$goodness
-###############################################################################################
-###########################################DEB model###########################################
-###############################################################################################
-source("../deb_i.R")
-source("../deb_i_alternative.R")
+
+#DNA
+source("../mend_i_DNA.R")
 
 #across all treatments
-deb_i1<-deb_i(data=d, FACT = 4)
-deb_i1$goodness
+mend_i1_DNA<-mend_i_DNA(data=d, FACT = 4)
+mend_i1_DNA$goodness
 
 no_cors<-detectCores()-1
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
 #for different structures
-deb_i2<-deb_i(data=d, FACT = 2)
-deb_i2$goodness
+mend_i2_DNA<-mend_i_DNA(data=d, FACT = 2)
+mend_i2_DNA$goodness
 
 #for different substrates
-deb_i3<-deb_i(data=d, FACT = 1)
-deb_i3$goodness
+mend_i3_DNA<-mend_i_DNA(data=d, FACT = 1)
+mend_i3_DNA$goodness
 
 #for each separately 
-deb_i4<-deb_i(data=d, FACT = 3)
-deb_i4$goodness
-
-deb_i4_alternative<-deb_i_alternative(data=d, FACT = 3)
-deb_i4_alternative$goodness
+mend_i4_DNA<-mend_i_DNA(data=d, FACT = 3)
+mend_i4_DNA$goodness
 
 stopImplicitCluster()
 
-deb_i1$goodness
-deb_i2$goodness
-deb_i3$goodness
-deb_i4$goodness
+mend_i1_DNA$goodness
+mend_i2_DNA$goodness
+mend_i3_DNA$goodness
+mend_i4_DNA$goodness
+
+###############################################################################################
+###########################################DEB model###########################################
+###############################################################################################
+source("../deb_i_all.R")
+
+#across all treatments
+deb_i1_all<-deb_i_all(data=d, FACT = 4)
+deb_i1_all$goodness
+
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+
+#for different structures
+deb_i2_all<-deb_i_all(data=d, FACT = 2)
+deb_i2_all$goodness
+
+#for different substrates
+deb_i3_all<-deb_i_all(data=d, FACT = 1)
+deb_i3_all$goodness
+
+#for each separately 
+deb_i4_all<-deb_i_all(data=d, FACT = 3)
+deb_i4_all$goodness
+
+stopImplicitCluster()
+
+deb_i1_all$goodness
+deb_i2_all$goodness
+deb_i3_all$goodness
+deb_i4_all$goodness
+
+
+
+# source("../deb_i.R")
+# 
+# #across all treatments
+# deb_i1<-deb_i(data=d, FACT = 4)
+# deb_i1$goodness
+# 
+# no_cors<-detectCores()-1
+# cl<-makeCluster(no_cors)
+# registerDoParallel(cl)
+# 
+# #for different structures
+# deb_i2<-deb_i(data=d, FACT = 2)
+# deb_i2$goodness
+# 
+# #for different substrates
+# deb_i3<-deb_i(data=d, FACT = 1)
+# deb_i3$goodness
+# 
+# #for each separately 
+# deb_i4<-deb_i(data=d, FACT = 3)
+# deb_i4$goodness
+# 
+# stopImplicitCluster()
+# 
+# deb_i1$goodness
+# deb_i2$goodness
+# deb_i3$goodness
+# deb_i4$goodness
 
 ###########################################################################################
 ###########################################################################################
