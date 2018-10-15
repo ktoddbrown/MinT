@@ -116,6 +116,8 @@ ggplot(conversions, aes(Reference, Cmic))+geom_boxplot(cex=0.8, aes(fill=Organis
 d<-subset(m0, Substrate=="Glucose" | Substrate=="Cellobiose")
 summary(d)
 
+d2<-subset(m0, Substrate=="Glucose" | Substrate=="Cellobiose")
+
 #removing outliers
 #respiration rate
 ggplot(d, aes(Time, r))+geom_point(cex=6)+facet_wrap(Structure~Substrate, scales="free")
@@ -136,8 +138,10 @@ d$Cmic<-d$Prot.in/0.548*0.45/12.01/4
 
 #DEB require knowing only protein C concentration
 d$Protc<-d$Prot.in*0.46/12.01/4
+d2$Protc<-d2$Prot.in*0.46/12.01/4
 
 d$DNAc<-d$DNA*0.51/12.01/4
+d2$DNAc<-d2$DNA*0.51/12.01/4
 #############################################################################################
 #First, all models are calibrated against r only
 
@@ -391,6 +395,7 @@ monod_i4$goodness
 
 #DNA
 source("../monod_i_DNA.R")
+source("../monod_i_DNA_fixed.R")
 #across all treatments
 monod_i1_DNA<-monod_i(data=d, FACT = 4)
 monod_i1_DNA$goodness
@@ -402,6 +407,9 @@ registerDoParallel(cl)
 #for different structures
 monod_i2_DNA<-monod_i_DNA(data=d, FACT = 2)
 monod_i2_DNA$goodness
+
+monod_i2_DNA_fixed<-monod_i_DNA_fixed(data=d, FACT = 2)
+monod_i2_DNA_fixed$goodness
 
 #for different substrates
 monod_i3_DNA<-monod_i_DNA(data=d, FACT = 1)
@@ -417,6 +425,9 @@ monod_i1_DNA$goodness
 monod_i2_DNA$goodness
 monod_i3_DNA$goodness
 monod_i4_DNA$goodness
+
+monod_pars<-as.data.frame(rbind(monod_i4_DNA[[1]]$pars, monod_i4_DNA[[2]]$pars, monod_i4_DNA[[3]]$pars,
+                              monod_i4_DNA[[4]]$pars, monod_i4_DNA[[5]]$pars, monod_i4_DNA[[6]]$pars))
 
 #Models comparison absed on Likelihood ratio test
 #this should be correct way
@@ -462,7 +473,7 @@ source("../mend_i_DNA.R")
 mend_i1_DNA<-mend_i_DNA(data=d, FACT = 4)
 mend_i1_DNA$goodness
 
-no_cors<-detectCores()-1
+no_cors<-detectCores()
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 
@@ -489,6 +500,7 @@ mend_i4_DNA$goodness
 ###########################################DEB model###########################################
 ###############################################################################################
 source("../deb_i_all.R")
+source("../deb_i_all_fix.R")
 
 #across all treatments
 deb_i1_all<-deb_i_all(data=d, FACT = 4)
@@ -502,6 +514,9 @@ registerDoParallel(cl)
 deb_i2_all<-deb_i_all(data=d, FACT = 2)
 deb_i2_all$goodness
 
+deb_i2_all_fix<-deb_i_all_fix(data=d, FACT = 2)
+deb_i2_all_fix$goodness
+
 #for different substrates
 deb_i3_all<-deb_i_all(data=d, FACT = 1)
 deb_i3_all$goodness
@@ -509,6 +524,11 @@ deb_i3_all$goodness
 #for each separately 
 deb_i4_all<-deb_i_all(data=d, FACT = 3)
 deb_i4_all$goodness
+
+deb_i4_all_fix<-deb_i_all_fix(data=d, FACT = 3)
+deb_i4_all_fix$goodness
+
+
 
 stopImplicitCluster()
 
@@ -550,17 +570,21 @@ deb_i4_all$goodness
 
 ###########################################################################################
 ###########################################################################################
-deb_pars<-as.data.frame(rbind(deb_i4[[1]]$pars, deb_i4[[2]]$pars, deb_i4[[3]]$pars,
-                              deb_i4[[4]]$pars, deb_i4[[5]]$pars, deb_i4[[6]]$pars))
+
+
+
+
+deb_pars<-as.data.frame(rbind(deb_i4_all[[1]]$pars, deb_i4_all[[2]]$pars, deb_i4_all[[3]]$pars,
+                              deb_i4_all[[4]]$pars, deb_i4_all[[5]]$pars, deb_i4_all[[6]]$pars))
 deb_pars$Substrate<-c(rep("Cellobiose", times=3),
                        rep("Glucose", times=3))
 
 deb_pars$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
 Deb_pars<-melt(deb_pars, id.vars=c("Substrate", "Structure"))
 
-deb_pars_sd<-as.data.frame(rbind(summary(deb_i4[[1]]$par_prof)[2,], summary(deb_i4[[2]]$par_prof)[2,], 
-                                  summary(deb_i4[[3]]$par_prof)[2,], summary(deb_i4[[4]]$par_prof)[2,], 
-                                  summary(deb_i4[[5]]$par_prof)[2,], summary(deb_i4[[6]]$par_prof)[2,]))
+deb_pars_sd<-as.data.frame(rbind(summary(deb_i4_all[[1]]$par_prof)[2,], summary(deb_i4_all[[2]]$par_prof)[2,], 
+                                  summary(deb_i4_all[[3]]$par_prof)[2,], summary(deb_i4_all[[4]]$par_prof)[2,], 
+                                  summary(deb_i4_all[[5]]$par_prof)[2,], summary(deb_i4_all[[6]]$par_prof)[2,]))
 deb_pars_sd$Substrate<-c(rep("Cellobiose", times=3),
                           rep("Glucose", times=3))
 
@@ -574,6 +598,31 @@ ggplot(Deb_pars, aes(Substrate, value))+geom_point(cex=6, aes(colour=Structure))
 
 mean(deb_pars$R_0)
 mean(deb_pars$S_0)
+
+
+##############################################################################################
+deb_p<-as.data.frame(rbind(deb_i2_all_fix[[1]]$pars, deb_i2_all_fix[[2]]$pars, deb_i2_all_fix[[3]]$pars))
+
+deb_p$Structure<-c("Broth", "Glass wool", "Mixed glass")
+Deb_p<-melt(deb_p, id.vars=c("Structure"))
+
+deb_p_sd<-as.data.frame(rbind(summary(deb_i2_all_fix[[1]]$par_prof)[2,], summary(deb_i2_all_fix[[2]]$par_prof)[2,], 
+                                 summary(deb_i2_all_fix[[3]]$par_prof)[2,]))
+deb_p_sd$Substrate<-c(rep("Cellobiose", times=2),
+                         rep("Glucose", times=2))
+
+deb_pars_sd$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
+
+Deb_pars$sd<-melt(deb_pars_sd, id.vars=c("Substrate", "Structure"))[,4]
+
+
+ggplot(Deb_pars, aes(Substrate, value))+geom_point(cex=6, aes(colour=Structure))+
+  facet_wrap(~variable, scales="free")+geom_errorbar(aes(ymax=value+sd, ymin=value-sd, colour=Structure))
+
+mean(deb_pars$R_0)
+mean(deb_pars$S_0)
+
+##############################################################################################
 
 source("../deb_i_fix.R")
 
