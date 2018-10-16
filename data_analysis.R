@@ -517,6 +517,12 @@ deb_i2_all$goodness
 deb_i2_all_fix<-deb_i_all_fix(data=d, FACT = 2)
 deb_i2_all_fix$goodness
 
+#fixing m0
+source("../deb_i_all_fix_Yu.R")
+deb_i2_all_fix_Yu<-deb_i_all_fix_Yu(data=d, FACT = 2)
+deb_i2_all_fix_Yu$goodness
+
+################################################################################################
 #for different substrates
 deb_i3_all<-deb_i_all(data=d, FACT = 1)
 deb_i3_all$goodness
@@ -608,19 +614,15 @@ Deb_p<-melt(deb_p, id.vars=c("Structure"))
 
 deb_p_sd<-as.data.frame(rbind(summary(deb_i2_all_fix[[1]]$par_prof)[2,], summary(deb_i2_all_fix[[2]]$par_prof)[2,], 
                                  summary(deb_i2_all_fix[[3]]$par_prof)[2,]))
-deb_p_sd$Substrate<-c(rep("Cellobiose", times=2),
-                         rep("Glucose", times=2))
+deb_p_sd$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"))
 
-deb_pars_sd$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
-
-Deb_pars$sd<-melt(deb_pars_sd, id.vars=c("Substrate", "Structure"))[,4]
+Deb_p$sd<-melt(deb_p_sd, id.vars=c("Structure"))[,3]
 
 
-ggplot(Deb_pars, aes(Substrate, value))+geom_point(cex=6, aes(colour=Structure))+
+ggplot(Deb_p, aes(Structure, value))+geom_point(cex=6)+
   facet_wrap(~variable, scales="free")+geom_errorbar(aes(ymax=value+sd, ymin=value-sd, colour=Structure))
 
-mean(deb_pars$R_0)
-mean(deb_pars$S_0)
+mean(deb_p$m0)
 
 ##############################################################################################
 
