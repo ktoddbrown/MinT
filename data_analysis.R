@@ -13,11 +13,11 @@ library(DEoptim)
 library(gridExtra)
 
 ##ggplot theme
-theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=14, colour="black"),
-                 axis.text.y=element_text(hjust=0.2, size=14, colour="black"),
-                 axis.title=element_text(size=14, colour="black"),
+theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=18, colour="black"),
+                 axis.text.y=element_text(hjust=0.2, size=18, colour="black"),
+                 axis.title=element_text(size=18, colour="black"),
                  axis.line=element_line(size=0.5, colour="black"),
-                 strip.text=element_text(size=16, face="bold"),
+                 strip.text=element_text(size=18, face="bold"),
                  axis.ticks=element_line(size=1, colour="black"),
                  axis.ticks.length=unit(-0.05, "cm"),
                  panel.background=element_rect(colour="black", fill="white"),
@@ -29,7 +29,7 @@ theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=14, colour="black"),
                  strip.background=element_rect(fill="grey98", colour="black"),
                  legend.key=element_rect(fill="white", size=1.2),
                  legend.spacing=unit(0.5, "cm"),
-                 plot.title=element_text(size=16, face="bold", hjust=-0.05))
+                 plot.title=element_text(size=18, face="bold", hjust=-0.05))
 
 #######################################################################################################
 
@@ -517,10 +517,15 @@ deb_i2_all$goodness
 deb_i2_all_fix<-deb_i_all_fix(data=d, FACT = 2)
 deb_i2_all_fix$goodness
 
-#fixing m0
+#fixing Yu
 source("../deb_i_all_fix_Yu.R")
 deb_i2_all_fix_Yu<-deb_i_all_fix_Yu(data=d, FACT = 2)
 deb_i2_all_fix_Yu$goodness
+
+#fixing Km
+source("../deb_i_all_fix_YuKm.R")
+deb_i2_all_fix_YuKm<-deb_i_all_fix_YuKm(data=d, FACT = 2)
+deb_i2_all_fix_YuKm$goodness
 
 ################################################################################################
 #for different substrates
@@ -622,91 +627,461 @@ Deb_p$sd<-melt(deb_p_sd, id.vars=c("Structure"))[,3]
 ggplot(Deb_p, aes(Structure, value))+geom_point(cex=6)+
   facet_wrap(~variable, scales="free")+geom_errorbar(aes(ymax=value+sd, ymin=value-sd, colour=Structure))
 
-mean(deb_p$m0)
-
-##############################################################################################
-
-source("../deb_i_fix.R")
-
-no_cors<-detectCores()-1
-cl<-makeCluster(no_cors)
-registerDoParallel(cl)
-
-deb_i4_fix<-deb_i_fix(data=d,FACT = 3)
-deb_i4_fix$goodness
-
-stopImplicitCluster()
-
-#Show the parameters
-
-deb_fpars<-as.data.frame(rbind(deb_i4_fix[[1]]$pars, deb_i4_fix[[2]]$pars, deb_i4_fix[[3]]$pars,
-                               deb_i4_fix[[4]]$pars, deb_i4_fix[[5]]$pars, deb_i4_fix[[6]]$pars))
-deb_fpars$Substrate<-c(rep("Cellobiose", times=3),
-                      rep("Glucose", times=3))
-
-deb_fpars$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
-Deb_fpars<-melt(deb_fpars, id.vars=c("Substrate", "Structure"))
-
-deb_fpars_sd<-as.data.frame(rbind(summary(deb_i4_fix[[1]]$par_prof)[2,], summary(deb_i4_fix[[2]]$par_prof)[2,], 
-                                 summary(deb_i4_fix[[3]]$par_prof)[2,], summary(deb_i4_fix[[4]]$par_prof)[2,], 
-                                 summary(deb_i4_fix[[5]]$par_prof)[2,], summary(deb_i4_fix[[6]]$par_prof)[2,]))
-deb_fpars_sd$Substrate<-c(rep("Cellobiose", times=3),
-                         rep("Glucose", times=3))
-
-deb_fpars_sd$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
-
-Deb_fpars$sd<-melt(deb_fpars_sd, id.vars=c("Substrate", "Structure"))[,4]
+mean(c(deb_i2_all_fix[[1]]$par_prof$pars[,"Yu"],
+       deb_i2_all_fix[[2]]$par_prof$pars[,"Yu"],
+       deb_i2_all_fix[[3]]$par_prof$pars[,"Yu"]))
+sd(c(deb_i2_all_fix[[1]]$par_prof$pars[,"Yu"],
+       deb_i2_all_fix[[2]]$par_prof$pars[,"Yu"],
+       deb_i2_all_fix[[3]]$par_prof$pars[,"Yu"]))
 
 
-ggplot(Deb_fpars, aes(Substrate, value))+geom_point(cex=6, aes(colour=Structure))+
+###
+
+deb_p2<-as.data.frame(rbind(deb_i2_all_fix_Yu[[1]]$pars, deb_i2_all_fix_Yu[[2]]$pars, deb_i2_all_fix_Yu[[3]]$pars))
+
+deb_p2$Structure<-c("Broth", "Glass wool", "Mixed glass")
+Deb_p2<-melt(deb_p2, id.vars=c("Structure"))
+
+deb_p_sd2<-as.data.frame(rbind(summary(deb_i2_all_fix_Yu[[1]]$par_prof)[2,], 
+                               summary(deb_i2_all_fix_Yu[[2]]$par_prof)[2,], 
+                               summary(deb_i2_all_fix_Yu[[3]]$par_prof)[2,]))
+deb_p_sd2$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"))
+
+Deb_p2$sd<-melt(deb_p_sd2, id.vars=c("Structure"))[,3]
+
+
+ggplot(Deb_p2, aes(Structure, value))+geom_point(cex=6)+
   facet_wrap(~variable, scales="free")+geom_errorbar(aes(ymax=value+sd, ymin=value-sd, colour=Structure))
 
-
-#keep m0 fixed
-mean(deb_fpars$m0)
-
-source("../deb_i_fix2.R")
-
-no_cors<-detectCores()-1
-cl<-makeCluster(no_cors)
-registerDoParallel(cl)
-
-deb_i4_fix2<-deb_i_fix2(data=d,FACT = 3)
-deb_i4_fix2$goodness
-
-stopImplicitCluster()
-
-#Show the parameters
-
-deb_fpars2<-as.data.frame(rbind(deb_i4_fix2[[1]]$pars, deb_i4_fix2[[2]]$pars, deb_i4_fix2[[3]]$pars,
-                               deb_i4_fix2[[4]]$pars, deb_i4_fix2[[5]]$pars, deb_i4_fix2[[6]]$pars))
-deb_fpars2$Substrate<-c(rep("Cellobiose", times=3),
-                       rep("Glucose", times=3))
-
-deb_fpars2$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
-Deb_fpars2<-melt(deb_fpars2, id.vars=c("Substrate", "Structure"))
-
-deb_fpars2_sd<-as.data.frame(rbind(summary(deb_i4_fix2[[1]]$par_prof)[2,], summary(deb_i4_fix2[[2]]$par_prof)[2,], 
-                                  summary(deb_i4_fix2[[3]]$par_prof)[2,], summary(deb_i4_fix2[[4]]$par_prof)[2,], 
-                                  summary(deb_i4_fix2[[5]]$par_prof)[2,], summary(deb_i4_fix2[[6]]$par_prof)[2,]))
-deb_fpars2_sd$Substrate<-c(rep("Cellobiose", times=3),
-                          rep("Glucose", times=3))
-
-deb_fpars2_sd$Structure<-rep(c("Broth", "Glass wool", "Mixed glass"), times=2)
-
-Deb_fpars2$sd<-melt(deb_fpars2_sd, id.vars=c("Substrate", "Structure"))[,4]
-
-
-ggplot(Deb_fpars2, aes(Substrate, value))+
-  geom_point(cex=6, aes(colour=Structure), position = position_dodge(width = 1))+
-  facet_wrap(~variable, scales="free")+theme_min+
-  geom_errorbar(aes(ymax=value+sd, ymin=value-sd, colour=Structure), 
-                position = position_dodge(width = 1))
+Deb_p2[Deb_p2$variable=="Vmax", c("Structure", "value", "sd")]
+Deb_p2[Deb_p2$variable=="Km", c("Structure", "value", "sd")]
+Deb_p2[Deb_p2$variable=="f", c("Structure", "value", "sd")]
+Deb_p2[Deb_p2$variable=="m0", c("Structure", "value", "sd")]
+Deb_p2[Deb_p2$variable=="fpr", c("Structure", "value", "sd")]
+Deb_p2[Deb_p2$variable=="fps", c("Structure", "value", "sd")]
+Deb_p2[Deb_p2$variable=="fds", c("Structure", "value", "sd")]
 
 
 ################################################################################################
 #######################################Figures##################################################
 ################################################################################################
+###Fig. 2 - time course of Proteins and DNA with DEB simulation
+f2<-d2[,c(2, 3, 4, 14, 15)]
+f2.2<-f2 %>% group_by(Day, Substrate, Structure) %>% summarize(prot.mean=mean(Protc, na.rm = T),
+                                                               prot.sd=sd(Protc, na.rm = T), 
+                                                               dna.mean=mean(DNAc, na.rm = T),
+                                                               dna.sd=sd(DNAc, na.rm = T))
+f2.2$Structure<-recode(f2.2$Structure, "Broth" = "BROTH",
+                       "Glass wool" = "WOOL",
+                       "Mixed glass" = "GLASS")
+
+#deb_model
+deb_model<-function(time, state, pars){
+  with(as.list(c(state, pars)),{
+    Cu=Vmax*C*S/(Km+C)
+    m=S*m0
+    an=f*R-m
+    r=m+pmax(an*(1-0.6944324), 0)
+    Protc=fpr*R+fps*S
+    DNAc=fds*S
+    dR<-Cu-f*R
+    dS<-pmax(an*0.6944324,0)+pmin(0, an)
+    dC<--Cu
+    return(list(c(dR, dS, dC), r=r, Protc=Protc, DNAc=DNAc))
+  })
+}
+
+
+#DEB simulation
+deb_broth<-as.data.frame(ode(y=c(R=0.02988069, S=0.4958934, C=25), 
+                                 parms=c(deb_p2[1,-8]), func=deb_model, times=seq(1,125)))
+deb_broth$Structure<-rep("BROTH", times=nrow(deb_broth))
+
+deb_wool<-as.data.frame(ode(y=c(R=0.02988069, S=0.4958934, C=25), 
+                             parms=c(deb_p2[2,-8]), func=deb_model, times=seq(1,125)))
+deb_wool$Structure<-rep("WOOL", times=nrow(deb_broth))
+
+deb_glass<-as.data.frame(ode(y=c(R=0.02988069, S=0.4958934, C=25), 
+                            parms=c(deb_p2[3,-8]), func=deb_model, times=seq(1,125)))
+deb_glass$Structure<-rep("GLASS", times=nrow(deb_broth))
+
+deb_f2<-rbind(deb_broth, deb_wool, deb_glass)
+
+####################################################
+
+#Monod simulation
+monod_model<-function(time, state, pars){
+  with(as.list(c(state, pars)),{
+    Protc=fp*Cmic
+    dCmic<--k*Cmic+CUE*Vmax*Cmic*C/(Km+C)
+    dC<-k*Cmic-Vmax*Cmic*C/(Km+C)
+    return(list(c(dCmic, dC), r=(1-CUE)*Vmax*Cmic*C/(Km+C), Protc=Protc))
+    
+  })
+}
+
+monod_model_DNA<-function(time, state, pars){
+  with(as.list(c(state, pars)),{
+    DNAc=fd*Cmic
+    dCmic<--k*Cmic+CUE*Vmax*Cmic*C/(Km+C)
+    dC<-k*Cmic-Vmax*Cmic*C/(Km+C)
+    return(list(c(dCmic, dC), r=(1-CUE)*Vmax*Cmic*C/(Km+C), DNAc=DNAc))
+    
+  })
+}
+
+monod_broth<-as.data.frame(ode(y=c(Cmic=monod_i2[[1]]$pars[["Cmic_0"]], C=25), 
+                             parms=monod_i2[[1]]$pars, func=monod_model, times=seq(1,125)))
+monod_broth$Structure<-rep("BROTH", times=nrow(monod_broth))
+
+monod_broth$DNAc<-as.data.frame(ode(y=c(Cmic=monod_i2_DNA[[1]]$pars[["Cmic_0"]], C=25), 
+                  parms=monod_i2_DNA[[1]]$pars, func=monod_model_DNA, times=seq(1,125)))[,4]
+
+monod_wool<-as.data.frame(ode(y=c(Cmic=monod_i2[[2]]$pars[["Cmic_0"]], C=25), 
+                               parms=monod_i2[[2]]$pars, func=monod_model, times=seq(1,125)))
+monod_wool$Structure<-rep("WOOL", times=nrow(monod_wool))
+
+monod_wool$DNAc<-as.data.frame(ode(y=c(Cmic=monod_i2_DNA[[2]]$pars[["Cmic_0"]], C=25), 
+                                    parms=monod_i2_DNA[[2]]$pars, func=monod_model_DNA, times=seq(1,125)))[,4]
+
+monod_glass<-as.data.frame(ode(y=c(Cmic=monod_i2[[3]]$pars[["Cmic_0"]], C=25), 
+                              parms=monod_i2[[3]]$pars, func=monod_model, times=seq(1,125)))
+monod_glass$Structure<-rep("GLASS", times=nrow(monod_glass))
+
+monod_glass$DNAc<-as.data.frame(ode(y=c(Cmic=monod_i2_DNA[[3]]$pars[["Cmic_0"]], C=25), 
+                                   parms=monod_i2_DNA[[3]]$pars, func=monod_model_DNA, times=seq(1,125)))[,4]
+
+monod_f2<-rbind(monod_broth, monod_wool, monod_glass)
+############################################################
+
+#MEND simulation
+mend_model<-function(time, state, pars){
+  with(as.list(c(state, pars)),{
+    F1=1/CUE*(Vmax+mr)*Cmic*C/(Km+C)
+    F4=(1/CUE-1)*Vmax*Cmic*C/(Km+C)
+    F5=(1/CUE-1)*mr*Cmic*C/(Km+C)
+    F8=mr*Cmic
+    Protc=fp*Cmic
+    dCmic<-F1-(F4+F5)-F8
+    dC<--F1+F8
+    return(list(c(dCmic, dC), r=F4+F5, Protc=Protc))
+    })
+}
+
+mend_model_DNA<-function(time, state, pars){
+  with(as.list(c(state, pars)),{
+    F1=1/CUE*(Vmax+mr)*Cmic*C/(Km+C)
+    F4=(1/CUE-1)*Vmax*Cmic*C/(Km+C)
+    F5=(1/CUE-1)*mr*Cmic*C/(Km+C)
+    F8=mr*Cmic
+    DNAc=fd*Cmic
+    dCmic<-F1-(F4+F5)-F8
+    dC<--F1+F8
+    return(list(c(dCmic, dC), r=F4+F5, DNAc=DNAc))
+    })
+}
+
+mend_broth<-as.data.frame(ode(y=c(Cmic=mend_i2[[1]]$pars[["Cmic_0"]], C=25), 
+                               parms=mend_i2[[1]]$pars, func=mend_model, times=seq(1,125)))
+mend_broth$Structure<-rep("BROTH", times=nrow(monod_broth))
+
+mend_broth$DNAc<-as.data.frame(ode(y=c(Cmic=mend_i2_DNA[[1]]$pars[["Cmic_0"]], C=25), 
+                                    parms=mend_i2_DNA[[1]]$pars, func=mend_model_DNA, times=seq(1,125)))[,4]
+
+mend_wool<-as.data.frame(ode(y=c(Cmic=mend_i2[[2]]$pars[["Cmic_0"]], C=25), 
+                              parms=mend_i2[[2]]$pars, func=mend_model, times=seq(1,125)))
+mend_wool$Structure<-rep("WOOL", times=nrow(monod_wool))
+
+mend_wool$DNAc<-as.data.frame(ode(y=c(Cmic=mend_i2_DNA[[2]]$pars[["Cmic_0"]], C=25), 
+                                   parms=mend_i2_DNA[[2]]$pars, func=mend_model_DNA, times=seq(1,125)))[,4]
+
+mend_glass<-as.data.frame(ode(y=c(Cmic=mend_i2[[3]]$pars[["Cmic_0"]], C=25), 
+                               parms=mend_i2[[3]]$pars, func=mend_model, times=seq(1,125)))
+mend_glass$Structure<-rep("GLASS", times=nrow(monod_glass))
+
+mend_glass$DNAc<-as.data.frame(ode(y=c(Cmic=mend_i2_DNA[[3]]$pars[["Cmic_0"]], C=25), 
+                                    parms=mend_i2_DNA[[3]]$pars, func=mend_model_DNA, times=seq(1,125)))[,4]
+
+mend_f2<-rbind(mend_broth, mend_wool, mend_glass)
+############################################################
+
+#7 to 7 inches frame when exported to pdf
+
+#DEB simulation
+ggplot(f2.2, aes(x=Day*24))+
+  geom_point(cex=6, aes(y=prot.mean, colour="Cellular Proteins", shape=Substrate))+
+  geom_errorbar(width=0.1, aes(ymax=prot.mean+prot.sd, ymin=prot.mean-prot.sd, colour="Cellular Proteins"))+
+  geom_point(cex=6, aes(y=dna.mean*30, colour="DNA", shape=Substrate))+
+  facet_wrap(~Structure, dir="v", strip.position="top")+
+  geom_errorbar(width=0.1, aes(ymax=dna.mean*30+dna.sd*30, ymin=dna.mean*30-dna.sd*30, colour="DNA"))+
+  geom_line(lwd=0.8, data=deb_f2, aes(x=time, y=Protc, colour="Cellular Proteins"))+
+  geom_line(lwd=0.8, data=deb_f2, aes(x=time, y=DNAc*30, colour="DNA"))+
+  scale_y_continuous(sec.axis = sec_axis(~./30, 
+                                         name = expression(paste("DNA (", mu, "mol " (C[DNA])~ml^{-1}, ")"))))+
+  scale_colour_manual(values = c("black", "grey"))+
+  labs(y = expression(paste("Cellular Proteins (", mu, "mol " (C[Proteins])~ml^{-1}, ")")),
+       x = "Time (h)",
+       colour = "Legend")+theme_min+theme(strip.background = element_blank(),
+                                          legend.title = element_blank(),
+                                          legend.key.height = unit(0.01, "in"),
+                                          legend.margin = margin(0,0,0,0, unit="in"),
+                                          legend.direction = c("horizontal"),
+                                          legend.position = c(0.70,0.58),
+                                          axis.title.x = element_text(size=18),
+                                          axis.title.y = element_text(size=18),
+                                          axis.text.x = element_text(size=18),
+                                          axis.text.y = element_text(size=18))+
+  scale_x_continuous(expand = c(0,0))
+
+#Monod simulation
+ggplot(f2.2, aes(x=Day*24))+
+  geom_point(cex=6, aes(y=prot.mean, colour="Cellular Proteins", shape=Substrate))+
+  geom_errorbar(width=0.1, aes(ymax=prot.mean+prot.sd, ymin=prot.mean-prot.sd, colour="Cellular Proteins"))+
+  geom_point(cex=6, aes(y=dna.mean*30, colour="DNA", shape=Substrate))+
+  facet_wrap(~Structure, dir="v", strip.position="top")+
+  geom_errorbar(width=0.1, aes(ymax=dna.mean*30+dna.sd*30, ymin=dna.mean*30-dna.sd*30, colour="DNA"))+
+  geom_line(lwd=0.8, data=monod_f2, aes(x=time, y=Protc, colour="Cellular Proteins"))+
+  geom_line(lwd=0.8, data=monod_f2, aes(x=time, y=DNAc*30, colour="DNA"))+
+  scale_y_continuous(sec.axis = sec_axis(~./30, 
+                                         name = expression(paste("DNA (", mu, "mol " (C[DNA])~ml^{-1}, ")"))))+
+  scale_colour_manual(values = c("black", "grey"))+
+  labs(y = expression(paste("Cellular Proteins (", mu, "mol " (C[Proteins])~ml^{-1}, ")")),
+       x = "Time (h)",
+       colour = "Legend")+theme_min+theme(strip.background = element_blank(),
+                                          legend.title = element_blank(),
+                                          legend.key.height = unit(0.01, "in"),
+                                          legend.margin = margin(0,0,0,0, unit="in"),
+                                          legend.direction = c("horizontal"),
+                                          legend.position = c(0.70,0.58),
+                                          axis.title.x = element_text(size=18),
+                                          axis.title.y = element_text(size=18),
+                                          axis.text.x = element_text(size=18),
+                                          axis.text.y = element_text(size=18))+
+  scale_x_continuous(expand = c(0,0))
+
+#MEND simulation
+ggplot(f2.2, aes(x=Day*24))+
+  geom_point(cex=6, aes(y=prot.mean, colour="Cellular Proteins", shape=Substrate))+
+  geom_errorbar(width=0.1, aes(ymax=prot.mean+prot.sd, ymin=prot.mean-prot.sd, colour="Cellular Proteins"))+
+  geom_point(cex=6, aes(y=dna.mean*30, colour="DNA", shape=Substrate))+
+  facet_wrap(~Structure, dir="v", strip.position="top")+
+  geom_errorbar(width=0.1, aes(ymax=dna.mean*30+dna.sd*30, ymin=dna.mean*30-dna.sd*30, colour="DNA"))+
+  geom_line(lwd=0.8, data=mend_f2, aes(x=time, y=Protc, colour="Cellular Proteins"))+
+  geom_line(lwd=0.8, data=mend_f2, aes(x=time, y=DNAc*30, colour="DNA"))+
+  scale_y_continuous(sec.axis = sec_axis(~./30, 
+                                         name = expression(paste("DNA (", mu, "mol " (C[DNA])~ml^{-1}, ")"))))+
+  scale_colour_manual(values = c("black", "grey"))+
+  labs(y = expression(paste("Cellular Proteins (", mu, "mol " (C[Proteins])~ml^{-1}, ")")),
+       x = "Time (h)",
+       colour = "Legend")+theme_min+theme(strip.background = element_blank(),
+                                          legend.title = element_blank(),
+                                          legend.key.height = unit(0.01, "in"),
+                                          legend.margin = margin(0,0,0,0, unit="in"),
+                                          legend.direction = c("horizontal"),
+                                          legend.position = c(0.70,0.58),
+                                          axis.title.x = element_text(size=18),
+                                          axis.title.y = element_text(size=18),
+                                          axis.text.x = element_text(size=18),
+                                          axis.text.y = element_text(size=18))+
+  scale_x_continuous(expand = c(0,0))
+
+
+
+############Fig. 3
+#monod and mend model parameters as affected by the variables being used for calibration
+#monod parameters are monod_i2, monod_i2_DNA and monod_r2
+#mend parameters are mend_i2, mend_i2_DNA and mend_r2
+
+monod_r_par<-as.data.frame(rbind(monod_r2[[1]]$pars[-5], 
+                                 monod_r2[[2]]$pars[-5], 
+                                 monod_r2[[3]]$pars[-5]))
+monod_r_par$Structure<-c("BROTH", "WOOL", "GLASS")
+monod_r_par$Legend<-c("Respiration")
+
+monod_p_par<-as.data.frame(rbind(monod_i2[[1]]$pars[-c(5,6)], 
+                                 monod_i2[[2]]$pars[-c(5,6)], 
+                                 monod_i2[[3]]$pars[-c(5,6)]))
+monod_p_par$Structure<-c("BROTH", "WOOL", "GLASS")
+monod_p_par$Legend<-c("Respiration & Cellular Proteins")
+
+monod_d_par<-as.data.frame(rbind(monod_i2_DNA[[1]]$pars[-c(5,6)], 
+                                 monod_i2_DNA[[2]]$pars[-c(5,6)], 
+                                 monod_i2_DNA[[3]]$pars[-c(5,6)]))
+monod_d_par$Structure<-c("BROTH", "WOOL", "GLASS")
+monod_d_par$Legend<-c("Respiration & DNA")
+
+
+monod_par<-rbind(monod_r_par, monod_p_par, monod_d_par)
+Monod_par<-melt(monod_par, id.vars = c("Structure", "Legend"))
+Monod_par$Model<-c("Monod")
+
+#parameters differencess
+#Vmax
+anova(lm(value~Legend+Structure, subset(Monod_par, variable=="Vmax"),
+           weights = sd^2))
+#Km
+anova(lm(value~Structure+Legend, subset(Monod_par, variable=="Km"),
+         weights = sd^2))
+#CUE
+anova(lm(value~Legend+Structure, subset(Monod_par, variable=="CUE"),
+         weights = sd^2))
+#k
+anova(lm(value~Legend+Structure, subset(Monod_par, variable=="k"),
+         weights = sd^2))
+
+monod_r_sd<-as.data.frame(rbind(summary(monod_r2[[1]]$par_prof)[2,c(1:4)], 
+                                 summary(monod_r2[[2]]$par_prof)[2,c(1:4)], 
+                                 summary(monod_r2[[3]]$par_prof)[2,c(1:4)]))
+monod_r_sd$Structure<-c("BROTH", "WOOL", "GLASS")
+monod_r_sd$Legend<-c("Respiration")
+
+monod_p_sd<-as.data.frame(rbind(summary(monod_i2[[1]]$par_prof)[2,c(1:4)], 
+                                summary(monod_i2[[2]]$par_prof)[2,c(1:4)], 
+                                summary(monod_i2[[3]]$par_prof)[2,c(1:4)]))
+monod_p_sd$Structure<-c("BROTH", "WOOL", "GLASS")
+monod_p_sd$Legend<-c("Respiration & Cellular Proteins")
+
+monod_d_sd<-as.data.frame(rbind(summary(monod_i2_DNA[[1]]$par_prof)[2,c(1:4)], 
+                                summary(monod_i2_DNA[[2]]$par_prof)[2,c(1:4)], 
+                                summary(monod_i2_DNA[[3]]$par_prof)[2,c(1:4)]))
+monod_d_sd$Structure<-c("BROTH", "WOOL", "GLASS")
+monod_d_sd$Legend<-c("Respiration & DNA")
+
+
+monod_sd<-rbind(monod_r_sd, monod_p_sd, monod_d_sd)
+Monod_par$sd<-melt(monod_sd, id.vars = c("Structure", "Legend"))[,4]
+
+mend_r_par<-as.data.frame(rbind(mend_r2[[1]]$pars[-5], 
+                                mend_r2[[2]]$pars[-5], 
+                                mend_r2[[3]]$pars[-5]))
+mend_r_par$Structure<-c("BROTH", "WOOL", "GLASS")
+mend_r_par$Legend<-c("Respiration")
+
+mend_p_par<-as.data.frame(rbind(mend_i2[[1]]$pars[-c(5,6)], 
+                                mend_i2[[2]]$pars[-c(5,6)], 
+                                mend_i2[[3]]$pars[-c(5,6)]))
+mend_p_par$Structure<-c("BROTH", "WOOL", "GLASS")
+mend_p_par$Legend<-c("Respiration & Cellular Proteins")
+
+mend_d_par<-as.data.frame(rbind(mend_i2_DNA[[1]]$pars[-c(5,6)], 
+                                mend_i2_DNA[[2]]$pars[-c(5,6)], 
+                                mend_i2_DNA[[3]]$pars[-c(5,6)]))
+mend_d_par$Structure<-c("BROTH", "WOOL", "GLASS")
+mend_d_par$Legend<-c("Respiration & DNA")
+
+
+mend_par<-rbind(mend_r_par, mend_p_par, mend_d_par)
+Mend_par<-melt(mend_par, id.vars = c("Structure", "Legend"))
+Mend_par$Model<-c("MEND")
+
+mend_r_sd<-as.data.frame(rbind(summary(mend_r2[[1]]$par_prof)[2,c(1:4)], 
+                                summary(mend_r2[[2]]$par_prof)[2,c(1:4)], 
+                                summary(mend_r2[[3]]$par_prof)[2,c(1:4)]))
+mend_r_sd$Structure<-c("BROTH", "WOOL", "GLASS")
+mend_r_sd$Legend<-c("Respiration")
+
+mend_p_sd<-as.data.frame(rbind(summary(mend_i2[[1]]$par_prof)[2,c(1:4)], 
+                                summary(mend_i2[[2]]$par_prof)[2,c(1:4)], 
+                                summary(mend_i2[[3]]$par_prof)[2,c(1:4)]))
+mend_p_sd$Structure<-c("BROTH", "WOOL", "GLASS")
+mend_p_sd$Legend<-c("Respiration & Cellular Proteins")
+
+mend_d_sd<-as.data.frame(rbind(summary(mend_i2_DNA[[1]]$par_prof)[2,c(1:4)], 
+                                summary(mend_i2_DNA[[2]]$par_prof)[2,c(1:4)], 
+                                summary(mend_i2_DNA[[3]]$par_prof)[2,c(1:4)]))
+mend_d_sd$Structure<-c("BROTH", "WOOL", "GLASS")
+mend_d_sd$Legend<-c("Respiration & DNA")
+
+
+mend_sd<-rbind(mend_r_sd, mend_p_sd, mend_d_sd)
+Mend_par$sd<-melt(mend_sd, id.vars = c("Structure", "Legend"))[,4]
+
+Monod_par$Variable<-Monod_par$variable
+levels(Monod_par$Variable)<-c("V[MAX]", "K[M]", "CUE", "k[MB]")
+
+f3a<-ggplot(Monod_par, aes(x=Structure, y=value))+
+  geom_point(cex=6, aes(shape=Legend, colour=Legend), position = position_dodge(width = 1), show.legend = T)+
+  geom_errorbar(width=0.1, aes(ymin=value-sd, ymax=value+sd, colour=Legend),
+                position = position_dodge(width = 1), show.legend = T)+
+  facet_wrap(~Variable, scales="free", nrow=1, strip.position = "top", labeller = label_parsed)+theme_min+
+  scale_shape_manual(values=c(16, 16, 1))+
+  scale_colour_manual(values = c("black", "grey", "black"))+
+  theme(strip.background = element_blank(),
+        axis.title.x = element_blank(),
+        strip.text = element_text(size=18, face=c("bold.italic")),
+        legend.position = c("bottom"),
+        legend.title = element_blank())+
+  ylab("Parameter Value")+ggtitle("(a)")
+
+Mend_par$Variable<-Mend_par$variable
+levels(Mend_par$Variable)<-c("V[MAX]", "K[M]", "CUE", "m[R]")
+
+f3b<-ggplot(Mend_par, aes(x=Structure, y=value))+
+  geom_point(cex=6, aes(shape=Legend, colour=Legend), position = position_dodge(width = 1), show.legend = T)+
+  geom_errorbar(width=0.1, aes(ymin=value-sd, ymax=value+sd, colour=Legend),
+                position = position_dodge(width = 1), show.legend = T)+
+  facet_wrap(~Variable, scales="free", nrow=1, strip.position = "top", labeller = label_parsed)+theme_min+
+  scale_shape_manual(values=c(16, 16, 1))+
+  scale_colour_manual(values = c("black", "grey", "black"))+
+  theme(strip.background = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = c("bottom"),
+        legend.title = element_blank())+
+  ylab("Parameter Value")+ggtitle("(b)")
+
+#8 per 14 inches
+grid.arrange(f3a, f3b, nrow=2)
+
+###Fig 4 
+#respiration rate as a function of Cmic and R
+f4a<-ggplot(deb_f2, aes(R+S, r))+geom_point(cex=6, aes(colour=Structure, shape=Structure), show.legend = F)+
+  theme_min+scale_shape_manual(values=c(16, 16, 1))+
+  scale_colour_manual(values = c("black", "grey", "black"))+
+  xlab(expression(paste(C[MB], " (", mu, "mol ", ml^{-1}, ")")))+
+  ylab(expression(paste(R[H], " (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  ggtitle("(a)")
+  
+f4b<-ggplot(deb_f2, aes(R, r))+geom_point(cex=6, aes(colour=Structure, shape=Structure), 
+                                     show.legend = T)+
+  theme_min+scale_shape_manual(values=c(16, 16, 1))+
+  scale_colour_manual(values = c("black", "grey", "black"))+
+  xlab(expression(paste("R (", mu, "mol ", ml^{-1}, ")")))+
+  ylab(expression(paste(R[H], " (", mu, "mol ", ml^{-1}~h^{-1}, ")")))+
+  ggtitle("(b)")+
+  theme(legend.title = element_blank(),
+        legend.position = c(0.8, 0.2))
+
+#5 per 10 inches
+grid.arrange(f4a, f4b, nrow=1)
+
+###Fig 5
+#conversion factors
+ggplot(deb_f2, aes(x=time))+
+  facet_wrap(~Structure, dir="v", strip.position="top")+
+  geom_line(lwd=0.8, aes(y=Protc/(R+S)*100, colour="Cellular Proteins"))+
+  geom_line(lwd=0.8, aes(x=time, y=DNAc/(R+S)*15*100, colour="DNA"))+
+  scale_y_continuous(sec.axis = sec_axis(~./15, 
+                                         name = expression(paste(frac(C[DNA], C[MB])%*%100))))+
+  scale_colour_manual(values = c("black", "grey"))+
+  labs(y = expression(paste(frac(C[Proteins], C[MB])%*%100)),
+       x = "Time (h)",
+       colour = "Legend")+theme_min+theme(strip.background = element_blank(),
+                                          legend.title = element_blank(),
+                                          legend.key.height = unit(0.01, "in"),
+                                          legend.margin = margin(0,0,0,0, unit="in"),
+                                          legend.direction = c("horizontal"),
+                                          legend.position = c(0.50,0.58),
+                                          axis.title.x = element_text(size=18),
+                                          axis.title.y = element_text(size=18),
+                                          axis.text.x = element_text(size=18),
+                                          axis.text.y = element_text(size=18),
+                                          plot.margin = unit(c(0.05, 0.2, 0.05, 0.05), "in"))+
+  scale_x_continuous(expand = c(0,0))
+
+
+#################################################################################################
+#################################################################################################
+#################################################################################################
 deb_fpars2
 
 #deb model
