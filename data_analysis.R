@@ -522,6 +522,18 @@ source("../deb_i_all_fix_Yu.R")
 deb_i2_all_fix_Yu<-deb_i_all_fix_Yu(data=d, FACT = 2)
 deb_i2_all_fix_Yu$goodness
 
+plot(c(deb_i2_all_fix_Yu[[1]]$par_prof$pars[,"fpr"],
+       deb_i2_all_fix_Yu[[2]]$par_prof$pars[,"fpr"],
+       deb_i2_all_fix_Yu[[3]]$par_prof$pars[,"fpr"])~c(deb_i2_all_fix_Yu[[1]]$par_prof$pars[,"fps"],
+                                                        deb_i2_all_fix_Yu[[2]]$par_prof$pars[,"fps"],
+                                                        deb_i2_all_fix_Yu[[3]]$par_prof$pars[,"fps"]))
+
+anova(lm(c(deb_i2_all_fix_Yu[[1]]$par_prof$pars[,"Vmax"],
+       deb_i2_all_fix_Yu[[2]]$par_prof$pars[,"Vmax"],
+       deb_i2_all_fix_Yu[[3]]$par_prof$pars[,"Vmax"])~c(deb_i2_all_fix_Yu[[1]]$par_prof$pars[,"Km"],
+                                                       deb_i2_all_fix_Yu[[2]]$par_prof$pars[,"Km"],
+                                                       deb_i2_all_fix_Yu[[3]]$par_prof$pars[,"Km"])))
+
 ################################################################################################
 #for different substrates
 deb_i3_all<-deb_i_all(data=d, FACT = 1)
