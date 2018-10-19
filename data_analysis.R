@@ -522,11 +522,6 @@ source("../deb_i_all_fix_Yu.R")
 deb_i2_all_fix_Yu<-deb_i_all_fix_Yu(data=d, FACT = 2)
 deb_i2_all_fix_Yu$goodness
 
-#fixing Km
-source("../deb_i_all_fix_YuKm.R")
-deb_i2_all_fix_YuKm<-deb_i_all_fix_YuKm(data=d, FACT = 2)
-deb_i2_all_fix_YuKm$goodness
-
 ################################################################################################
 #for different substrates
 deb_i3_all<-deb_i_all(data=d, FACT = 1)
@@ -1334,3 +1329,71 @@ deb_mix<-deb_i_fix(data=d_test, FACT = 2)
 deb_mix$goodness
 
 stopImplicitCluster()
+
+######################################community data##########################################
+#bacteria
+bac<-t(read.xlsx(xlsxFile=c("C:/Users/cape159/Documents/pracovni/data_statistika/minT/CSUB3_NOR16S_whid_ncs (002).xlsx"),
+              1, colNames = F))
+na<-as.vector(bac[1,])
+bac<-bac[-1,]
+
+colnames(bac)<-na
+library(vegan)
+
+bac.dat<-bac[, -c(1:4)]
+bac.dat<-apply(bac.dat, 2, as.numeric)
+bac.env<-bac[, c(1:4)]
+bac.env<-as.data.frame(bac.env)
+bac.env<-apply(bac.env, 2, as.factor)
+
+
+bac.dat2<-decostand(bac.dat, method=c("normalize"))
+
+bac.dist<-vegdist(bac.dat2)
+
+bac.aov<-adonis(bac.dat2~Day, bac.env)
+
+bac.aov$aov
+
+#pca analysis and scores extraction
+
+bac.pca<-rda(bac.dat2)
+
+summary(bac.pca)
+
+ordixyplot(bac.pca, cex=3, groups=bac.env$Structure, pch=16)
+
+bac.sc<-scores(bac.pca, choices=c(1:3), display="species")
+summary(bac)
+
+#fungi
+fu<-t(read.xlsx(xlsxFile=c("C:/Users/cape159/Documents/pracovni/data_statistika/minT/CSUB3_NormITS_whid_NCS.xlsx"),
+                 1, colNames = F))
+naf<-as.vector(fu[1,])
+fu<-fu[-1,]
+
+colnames(fu)<-naf
+
+fu.dat<-fu[, -c(1:4)]
+fu.dat<-apply(fu.dat, 2, as.numeric)
+fu.env<-fu[, c(1:4)]
+fu.env<-as.data.frame(fu.env)
+fu.env<-apply(bac.env, 2, as.factor)
+
+
+fu.dat2<-decostand(fu.dat, method=c("normalize"))
+
+fu.dist<-vegdist(fu.dat2)
+
+fu.aov<-adonis(fu.dat2~Substrate, fu.env)
+
+fu.aov$aov
+
+#pca analysis and scores extraction
+
+fu.pca<-rda(fu.dat)
+
+ordixyplot(fu.pca, cex=3, groups=fu.env$Structure, pch=16)
+
+bac.sc<-scores(bac.pca, choices=c(1:3), display="species")
+summary(bac)
