@@ -1409,3 +1409,17 @@ ordixyplot(fu.pca, cex=3, groups=fu.env$Structure, pch=16)
 
 bac.sc<-scores(bac.pca, choices=c(1:3), display="species")
 summary(bac)
+
+
+##########################################marstrop data#####################################
+mar<-read.xlsx(xlsxFile = c("C:/Users/cape159/Documents/pracovni/data_statistika/minT/marstrop.xlsx"),
+               2)
+source("../deb_mar.R")
+
+deb_mar_res<-deb_mar(data=mar)
+deb_mar_res$fit$Gfit
+deb_mar_res$pars
+
+ggplot(deb_mar_res$fit$Yhat, aes(time, obs))+geom_point(cex=6)+
+  facet_wrap(~variable, scales = "free")+
+  geom_line(aes(x=time, y=value), lwd=1.5)
