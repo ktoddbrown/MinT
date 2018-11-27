@@ -1,0 +1,181 @@
+Sample,Substrate,Structure,Prot.in,DNA,Prot.out,Prot.in.gapfilled,Day,DNA.init
+B_A_5,Avicel,Broth,,1.15,6.44,15.15,1,2.01
+B_A_6,Avicel,Broth,,1.06,11.97,13.07,1,2.01
+B_A_7,Avicel,Broth,,1.13,11.11,14.69,1,2.01
+B_A_8,Avicel,Broth,,1.23,2.91,16.99,1,2.01
+B_CF_5,Carbon Free,Broth,,0.97,26.61,10.95,1,2.01
+B_CF_6,Carbon Free,Broth,,1.58,47.80,24.76,1,2.01
+B_CF_7,Carbon Free,Broth,,1.32,42.88,19.02,1,2.01
+B_CF_8,Carbon Free,Broth,,1.25,1.17,17.44,1,2.01
+B_C_5,Cellobiose,Broth,99.90,5.59,1.15,99.90,1,2.01
+B_C_6,Cellobiose,Broth,90.30,6.06,11.39,90.30,1,2.01
+B_C_7,Cellobiose,Broth,80.40,5.07,40.42,80.40,1,2.01
+B_C_8,Cellobiose,Broth,90.00,5.53,9.48,90.00,1,2.01
+B_GCA_5,Mixed Carbon ,Broth,102.90,7.06,23.97,102.90,1,2.01
+B_GCA_6,Mixed Carbon ,Broth,87.30,6.22,49.17,87.30,1,2.01
+B_GCA_7,Mixed Carbon ,Broth,109.80,6.55,17.42,109.80,1,2.01
+B_GCA_8,Mixed Carbon ,Broth,120.30,6.00,13.97,120.30,1,2.01
+B_G_5,Glucose,Broth,126.60,3.30,17.27,126.60,1,2.01
+B_G_6,Glucose,Broth,123.60,6.29,40.00,123.60,1,2.01
+B_G_7,Glucose,Broth,90.60,6.36,81.57,90.60,1,2.01
+B_G_8,Glucose,Broth,105.60,5.12,30.20,105.60,1,2.01
+GW_A_5,Avicel,Glass Wool,,,9.59,,1,2.01
+GW_A_6,Avicel,Glass Wool,,3.83,17.96,65.14,1,2.01
+GW_A_7,Avicel,Glass Wool,,0.32,5.58,,1,2.01
+GW_A_8,Avicel,Glass Wool,,2.71,13.56,47.11,1,2.01
+GW_CF_5,Carbon Free,Glass Wool,,1.64,33.71,26.05,1,2.01
+GW_CF_6,Carbon Free,Glass Wool,,1.18,1.42,15.84,1,2.01
+GW_CF_7,Carbon Free,Glass Wool,,1.00,1.44,11.66,1,2.01
+GW_CF_8,Carbon Free,Glass Wool,,0.99,12.23,11.42,1,2.01
+GW_C_5,Cellobiose,Glass Wool,,6.39,,90.88,1,2.01
+GW_C_6,Cellobiose,Glass Wool,142.80,,24.65,142.80,1,2.01
+GW_C_7,Cellobiose,Glass Wool,125.40,7.30,1.13,125.40,1,2.01
+GW_C_8,Cellobiose,Glass Wool,113.10,6.13,16.50,113.10,1,2.01
+GW_GCA_5,Mixed Carbon ,Glass Wool,,,,,1,2.01
+GW_GCA_6,Mixed Carbon ,Glass Wool,,0.62,78.58,2.48,1,2.01
+GW_GCA_7,Mixed Carbon ,Glass Wool,65.70,6.24,65.22,65.70,1,2.01
+GW_GCA_8,Mixed Carbon ,Glass Wool,76.50,5.24,30.47,76.50,1,2.01
+GW_G_5,Glucose,Glass Wool,65.10,1.24,34.51,65.10,1,2.01
+GW_G_6,Glucose,Glass Wool,65.10,5.37,42.39,65.10,1,2.01
+GW_G_7,Glucose,Glass Wool,84.00,6.11,29.33,84.00,1,2.01
+GW_G_8,Glucose,Glass Wool,82.80,6.12,41.33,82.80,1,2.01
+MG_A_5,Avicel,Mixed Glass,5.40,0.85,29.04,5.40,1,2.01
+MG_A_6,Avicel,Mixed Glass,8.40,0.99,4.63,8.40,1,2.01
+MG_A_7,Avicel,Mixed Glass,2.70,0.93,26.55,2.70,1,2.01
+MG_A_8,Avicel,Mixed Glass,,0.55,34.01,0.73,1,2.01
+MG_CF_5,Carbon Free,Mixed Glass,3.60,0.56,70.98,3.60,1,2.01
+MG_CF_6,Carbon Free,Mixed Glass,4.50,0.75,30.03,4.50,1,2.01
+MG_CF_7,Carbon Free,Mixed Glass,3.90,0.81,49.74,3.90,1,2.01
+MG_CF_8,Carbon Free,Mixed Glass,4.80,1.06,30.35,4.80,1,2.01
+MG_C_5,Cellobiose,Mixed Glass,72.00,2.17,35.70,72.00,1,2.01
+MG_C_6,Cellobiose,Mixed Glass,107.10,3.89,10.72,107.10,1,2.01
+MG_C_7,Cellobiose,Mixed Glass,76.50,4.30,20.69,76.50,1,2.01
+MG_C_8,Cellobiose,Mixed Glass,72.00,3.60,23.91,72.00,1,2.01
+MG_GCA_5,Mixed Carbon ,Mixed Glass,63.30,4.16,19.92,63.30,1,2.01
+MG_GCA_6,Mixed Carbon ,Mixed Glass,36.30,2.90,11.94,36.30,1,2.01
+MG_GCA_7,Mixed Carbon ,Mixed Glass,48.30,3.75,18.33,48.30,1,2.01
+MG_GCA_8,Mixed Carbon ,Mixed Glass,,0.46,39.75,,1,2.01
+MG_G_5,Glucose,Mixed Glass,,1.61,116.11,25.41,1,2.01
+MG_G_6,Glucose,Mixed Glass,72.30,3.40,42.71,72.30,1,2.01
+MG_G_7,Glucose,Mixed Glass,59.70,4.01,24.86,59.70,1,2.01
+MG_G_8,Glucose,Mixed Glass,38.10,2.43,81.10,38.10,1,2.01
+B_A_9,Avicel,Broth,,1.55,34.95,24.11,2,2.01
+B_A_10,Avicel,Broth,,1.14,27.89,14.92,2,2.01
+B_A_11,Avicel,Broth,,1.06,52.77,13.07,2,2.01
+B_A_12,Avicel,Broth,2.40,1.92,27.05,2.40,2,2.01
+B_CF_9,Carbon Free,Broth,0.30,1.15,7.89,0.30,2,2.01
+B_CF_10,Carbon Free,Broth,1.50,1.35,22.44,1.50,2,2.01
+B_CF_11,Carbon Free,Broth,0.60,2.28,49.99,0.60,2,2.01
+B_CF_12,Carbon Free,Broth,,1.43,31.53,21.48,2,2.01
+B_C_9,Cellobiose,Broth,80.70,6.12,77.91,80.70,2,2.01
+B_C_10,Cellobiose,Broth,75.00,6.24,26.98,75.00,2,2.01
+B_C_11,Cellobiose,Broth,67.50,7.23,75.33,67.50,2,2.01
+B_C_12,Cellobiose,Broth,81.30,9.25,19.59,81.30,2,2.01
+B_GCA_9,Mixed Carbon ,Broth,54.30,6.70,15.42,54.30,2,2.01
+B_GCA_10,Mixed Carbon ,Broth,49.50,6.20,10.07,49.50,2,2.01
+B_GCA_11,Mixed Carbon ,Broth,44.10,6.70,2.79,44.10,2,2.01
+B_GCA_12,Mixed Carbon ,Broth,68.70,6.43,79.36,68.70,2,2.01
+B_G_9,Glucose,Broth,64.20,6.92,25.78,64.20,2,2.01
+B_G_10,Glucose,Broth,79.80,6.48,15.17,79.80,2,2.01
+B_G_11,Glucose,Broth,64.80,8.30,12.28,64.80,2,2.01
+B_G_12,Glucose,Broth,58.50,6.78,28.48,58.50,2,2.01
+GW_A_9,Avicel,Glass Wool,1.50,0.40,17.76,1.50,2,2.01
+GW_A_10,Avicel,Glass Wool,,1.08,7.51,13.53,2,2.01
+GW_A_11,Avicel,Glass Wool,1.20,2.50,2.89,1.20,2,2.01
+GW_A_12,Avicel,Glass Wool,0.60,1.20,7.92,0.60,2,2.01
+GW_CF_9,Carbon Free,Glass Wool,0.30,0.79,,0.30,2,2.01
+GW_CF_10,Carbon Free,Glass Wool,0.60,0.92,1.48,0.60,2,2.01
+GW_CF_11,Carbon Free,Glass Wool,,1.05,33.29,12.83,2,2.01
+GW_CF_12,Carbon Free,Glass Wool,,1.39,115.96,20.59,2,2.01
+GW_C_9,Cellobiose,Glass Wool,131.40,3.67,27.28,131.40,2,2.01
+GW_C_10,Cellobiose,Glass Wool,123.30,5.63,16.01,123.30,2,2.01
+GW_C_11,Cellobiose,Glass Wool,118.50,7.31,55.35,118.50,2,2.01
+GW_C_12,Cellobiose,Glass Wool,117.30,6.74,35.67,117.30,2,2.01
+GW_GCA_9,Mixed Carbon ,Glass Wool,86.40,3.96,36.58,86.40,2,2.01
+GW_GCA_10,Mixed Carbon ,Glass Wool,87.30,4.26,29.61,87.30,2,2.01
+GW_GCA_11,Mixed Carbon ,Glass Wool,50.10,3.77,87.03,50.10,2,2.01
+GW_GCA_12,Mixed Carbon ,Glass Wool,66.00,5.70,84.29,66.00,2,2.01
+GW_G_9,Glucose,Glass Wool,115.80,6.14,,115.80,2,2.01
+GW_G_10,Glucose,Glass Wool,125.10,7.03,21.40,125.10,2,2.01
+GW_G_11,Glucose,Glass Wool,79.20,4.11,6.08,79.20,2,2.01
+GW_G_12,Glucose,Glass Wool,82.80,5.99,80.38,82.80,2,2.01
+MG_A_9,Avicel,Mixed Glass,2.10,1.05,27.67,2.10,2,2.01
+MG_A_10,Avicel,Mixed Glass,6.90,0.72,9.20,6.90,2,2.01
+MG_A_11,Avicel,Mixed Glass,1.50,0.45,47.94,1.50,2,2.01
+MG_A_12,Avicel,Mixed Glass,1.80,0.64,51.91,1.80,2,2.01
+MG_CF_9,Carbon Free,Mixed Glass,7.80,1.10,16.32,7.80,2,2.01
+MG_CF_10,Carbon Free,Mixed Glass,4.80,0.63,10.91,4.80,2,2.01
+MG_CF_11,Carbon Free,Mixed Glass,5.40,1.15,100.24,5.40,2,2.01
+MG_CF_12,Carbon Free,Mixed Glass,4.20,0.77,30.81,4.20,2,2.01
+MG_C_9,Cellobiose,Mixed Glass,59.10,7.23,5.89,59.10,2,2.01
+MG_C_10,Cellobiose,Mixed Glass,35.40,2.37,20.28,35.40,2,2.01
+MG_C_11,Cellobiose,Mixed Glass,69.90,4.13,33.08,69.90,2,2.01
+MG_C_12,Cellobiose,Mixed Glass,49.80,3.76,1.90,49.80,2,2.01
+MG_GCA_9,Mixed Carbon ,Mixed Glass,53.40,5.72,37.58,53.40,2,2.01
+MG_GCA_10,Mixed Carbon ,Mixed Glass,40.50,3.06,73.64,40.50,2,2.01
+MG_GCA_11,Mixed Carbon ,Mixed Glass,37.50,3.39,31.12,37.50,2,2.01
+MG_GCA_12,Mixed Carbon ,Mixed Glass,29.70,3.43,19.11,29.70,2,2.01
+MG_G_9,Glucose,Mixed Glass,80.70,8.23,42.50,80.70,2,2.01
+MG_G_10,Glucose,Mixed Glass,52.20,3.00,35.82,52.20,2,2.01
+MG_G_11,Glucose,Mixed Glass,57.30,4.69,45.68,57.30,2,2.01
+MG_G_12,Glucose,Mixed Glass,73.50,6.52,31.69,73.50,2,2.01
+B_A_1,Avicel,Broth,0.60,0.90,47.60,0.60,5,2.01
+B_A_2,Avicel,Broth,,1.06,0.71,13.07,5,2.01
+B_A_3,Avicel,Broth,,0.78,35.09,6.40,5,2.01
+B_A_4,Avicel,Broth,,1.12,5.31,14.46,5,2.01
+B_CF_1,Carbon Free,Broth,0.90,0.85,45.44,0.90,5,2.01
+B_CF_2,Carbon Free,Broth,,0.16,28.16,,5,2.01
+B_CF_3,Carbon Free,Broth,,0.79,54.78,6.64,5,2.01
+B_CF_4,Carbon Free,Broth,,0.34,30.12,,5,2.01
+B_C_1,Cellobiose,Broth,127.50,6.72,50.25,127.50,5,2.01
+B_C_2,Cellobiose,Broth,129.30,5.70,24.39,129.30,5,2.01
+B_C_3,Cellobiose,Broth,99.90,4.27,66.31,99.90,5,2.01
+B_C_4,Cellobiose,Broth,118.20,6.01,90.51,118.20,5,2.01
+B_GCA_1,Mixed Carbon ,Broth,21.90,0.52,28.26,21.90,5,2.01
+B_GCA_2,Mixed Carbon ,Broth,76.50,4.82,75.00,76.50,5,2.01
+B_GCA_3,Mixed Carbon ,Broth,96.30,7.83,39.77,96.30,5,2.01
+B_GCA_4,Mixed Carbon ,Broth,93.60,5.13,49.41,93.60,5,2.01
+B_G_1,Glucose,Broth,124.80,10.73,51.50,124.80,5,2.01
+B_G_2,Glucose,Broth,91.20,6.80,24.00,91.20,5,2.01
+B_G_3,Glucose,Broth,82.50,6.02,32.75,82.50,5,2.01
+B_G_4,Glucose,Broth,95.40,6.99,5.50,95.40,5,2.01
+GW_A_1,Avicel,Glass Wool,0.90,1.11,26.78,0.90,5,2.01
+GW_A_2,Avicel,Glass Wool,,0.74,16.52,5.43,5,2.01
+GW_A_3,Avicel,Glass Wool,0.90,1.30,13.73,0.90,5,2.01
+GW_A_4,Avicel,Glass Wool,1.50,1.03,32.72,1.50,5,2.01
+GW_CF_1,Carbon Free,Glass Wool,0.30,1.04,35.16,0.30,5,2.01
+GW_CF_2,Carbon Free,Glass Wool,0.90,0.54,20.59,0.90,5,2.01
+GW_CF_3,Carbon Free,Glass Wool,0.60,1.50,20.09,0.60,5,2.01
+GW_CF_4,Carbon Free,Glass Wool,0.00,0.76,37.88,0.00,5,2.01
+GW_C_1,Cellobiose,Glass Wool,78.60,4.39,54.11,78.60,5,2.01
+GW_C_2,Cellobiose,Glass Wool,86.40,5.07,22.49,86.40,5,2.01
+GW_C_3,Cellobiose,Glass Wool,75.60,4.25,32.14,75.60,5,2.01
+GW_C_4,Cellobiose,Glass Wool,,9.43,17.46,93.53,5,2.01
+GW_GCA_1,Mixed Carbon ,Glass Wool,27.30,2.18,66.59,27.30,5,2.01
+GW_GCA_2,Mixed Carbon ,Glass Wool,26.40,2.13,82.78,26.40,5,2.01
+GW_GCA_3,Mixed Carbon ,Glass Wool,64.20,4.60,56.46,64.20,5,2.01
+GW_GCA_4,Mixed Carbon ,Glass Wool,45.30,3.62,104.75,45.30,5,2.01
+GW_G_1,Glucose,Glass Wool,86.40,6.62,33.74,86.40,5,2.01
+GW_G_2,Glucose,Glass Wool,52.20,4.21,33.98,52.20,5,2.01
+GW_G_3,Glucose,Glass Wool,84.00,6.37,44.82,84.00,5,2.01
+GW_G_4,Glucose,Glass Wool,77.40,4.62,10.70,77.40,5,2.01
+MG_A_1,Avicel,Mixed Glass,24.90,0.77,71.05,24.90,5,2.01
+MG_A_2,Avicel,Mixed Glass,17.10,0.50,15.79,17.10,5,2.01
+MG_A_3,Avicel,Mixed Glass,16.80,1.17,35.06,16.80,5,2.01
+MG_A_4,Avicel,Mixed Glass,17.70,0.91,27.71,17.70,5,2.01
+MG_CF_1,Carbon Free,Mixed Glass,18.90,1.20,12.19,18.90,5,2.01
+MG_CF_2,Carbon Free,Mixed Glass,16.50,0.40,13.94,16.50,5,2.01
+MG_CF_3,Carbon Free,Mixed Glass,15.90,0.64,10.59,15.90,5,2.01
+MG_CF_4,Carbon Free,Mixed Glass,16.20,0.90,15.26,16.20,5,2.01
+MG_C_1,Cellobiose,Mixed Glass,61.50,2.31,40.63,61.50,5,2.01
+MG_C_2,Cellobiose,Mixed Glass,80.70,2.84,40.68,80.70,5,2.01
+MG_C_3,Cellobiose,Mixed Glass,72.60,4.71,13.33,72.60,5,2.01
+MG_C_4,Cellobiose,Mixed Glass,67.20,3.37,39.25,67.20,5,2.01
+MG_GCA_1,Mixed Carbon ,Mixed Glass,41.40,1.80,43.76,41.40,5,2.01
+MG_GCA_2,Mixed Carbon ,Mixed Glass,33.60,1.65,41.07,33.60,5,2.01
+MG_GCA_3,Mixed Carbon ,Mixed Glass,38.70,2.67,44.97,38.70,5,2.01
+MG_GCA_4,Mixed Carbon ,Mixed Glass,33.90,2.44,96.20,33.90,5,2.01
+MG_G_1,Glucose,Mixed Glass,58.20,3.37,33.08,58.20,5,2.01
+MG_G_2,Glucose,Mixed Glass,50.10,3.31,26.59,50.10,5,2.01
+MG_G_3,Glucose,Mixed Glass,75.30,3.57,50.52,75.30,5,2.01
+MG_G_4,Glucose,Mixed Glass,54.60,2.53,33.36,54.60,5,2.01

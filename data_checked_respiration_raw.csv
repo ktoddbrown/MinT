@@ -1,0 +1,479 @@
+Sample,Structure,Substrate,r,Time,Day,Cinit,DOCinit
+CSub3_B_G_1,Broth,Glucose,0.02,4.6,0,25,25
+CSub3_GW_G_1,Glass wool,Glucose,0.02,4.6,0,25,25
+CSub3_B_G_2,Broth,Glucose,0.03,4.6,0,25,25
+CSub3_MG_G_1,Mixed glass,Glucose,0.05,4.6,0,25,25
+CSub3_GW_G_2,Glass wool,Glucose,0.02,4.6,0,25,25
+CSub3_MG_G_2,Mixed glass,Glucose,0.03,4.6,0,25,25
+CSub3_B_G_3,Broth,Glucose,0.03,4.7,0,25,25
+CSub3_GW_G_3,Glass wool,Glucose,0.02,4.7,0,25,25
+CSub3_B_G_4,Broth,Glucose,0.03,4.7,0,25,25
+CSub3_MG_G_3,Mixed glass,Glucose,0.04,4.7,0,25,25
+CSub3_GW_G_4,Glass wool,Glucose,0.02,4.7,0,25,25
+CSub3_B_C_1,Broth,Cellobiose,0.00,4.7,0,25,25
+CSub3_MG_G_4,Mixed glass,Cellobiose,0.08,4.7,0,25,25
+CSub3_B_C_2,Broth,Cellobiose,0.00,4.8,0,25,25
+CSub3_GW_C_1,Glass wool,Cellobiose,0.02,4.7,0,25,25
+CSub3_MG_C_1,Mixed glass,Cellobiose,0.05,4.7,0,25,25
+CSub3_GW_C_2,Glass wool,Cellobiose,0.01,4.8,0,25,25
+CSub3_MG_C_2,Mixed glass,Cellobiose,0.03,4.8,0,25,25
+CSub3_B_C_3,Broth,Cellobiose,0.00,4.8,0,25,25
+CSub3_GW_C_3,Glass wool,Cellobiose,0.01,4.8,0,25,25
+CSub3_B_C_4,Broth,Cellobiose,0.00,4.8,0,25,25
+CSub3_MG_C_3,Mixed glass,Cellobiose,0.06,4.8,0,25,25
+CSub3_GW_C_4,Glass wool,Cellobiose,0.02,4.9,0,25,25
+CSub3_MG_C_4,Mixed glass,Cellobiose,0.06,4.9,0,25,25
+CSub3_B_A_1,Broth,Celluloze,0.00,4.9,0,25,25
+CSub3_GW_A_1,Glass wool,Celluloze,0.01,4.9,0,25,25
+CSub3_MG_A_1,Mixed glass,Celluloze,0.04,4.9,0,25,25
+CSub3_B_A_2,Broth,Celluloze,0.00,5.0,0,25,25
+CSub3_GW_A_2,Glass wool,Celluloze,0.00,5.0,0,25,25
+CSub3_MG_A_2,Mixed glass,Celluloze,0.04,5.0,0,25,25
+CSub3_B_A_3,Broth,Celluloze,,5.0,0,25,25
+CSub3_GW_A_3,Glass wool,Celluloze,0.01,5.0,0,25,25
+CSub3_MG_A_3,Mixed glass,Celluloze,0.04,5.0,0,25,25
+CSub3_B_A_4,Broth,Celluloze,,5.0,0,25,25
+CSub3_GW_A_4,Glass wool,Celluloze,0.01,5.0,0,25,25
+CSub3_MG_A_4,Mixed glass,Celluloze,0.03,5.0,0,25,25
+CSub3_B_GCA_1,Broth,Mix,0.08,5.1,0,25,16.5
+CSub3_GW_GCA_1,Glass wool,Mix,0.06,5.1,0,25,16.5
+CSub3_MG_GCA_1,Mixed glass,Mix,0.09,5.1,0,25,16.5
+CSub3_B_GCA_2,Broth,Mix,0.08,5.1,0,25,16.5
+CSub3_GW_GCA_2,Glass wool,Mix,0.06,5.1,0,25,16.5
+CSub3_MG_GCA_2,Mixed glass,Mix,0.10,5.1,0,25,16.5
+CSub3_B_GCA_3,Broth,Mix,0.08,5.2,0,25,16.5
+CSub3_GW_GCA_3,Glass wool,Mix,0.04,5.2,0,25,16.5
+CSub3_B_GCA_4,Broth,Mix,0.07,5.2,0,25,16.5
+CSub3_MG_GCA_3,Mixed glass,Mix,0.09,5.2,0,25,16.5
+CSub3_GW_GCA_4,Glass wool,Mix,0.05,5.2,0,25,16.5
+CSub3_MG_GCA_4,Mixed glass,Mix,0.06,5.2,0,25,16.5
+CSub3_B_CF_1,Broth,Free,,5.3,0,0,0
+CSub3_GW_CF_1,Glass wool,Free,0.01,5.3,0,0,0
+CSub3_MG_CF_1,Mixed glass,Free,0.05,5.3,0,0,0
+CSub3_B_CF_2,Broth,Free,,5.3,0,0,0
+CSub3_GW_CF_2,Glass wool,Free,0.03,5.3,0,0,0
+CSub3_MG_CF_2,Mixed glass,Free,0.06,5.3,0,0,0
+CSub3_B_CF_3,Broth,Free,,5.3,0,0,0
+CSub3_GW_CF_3,Glass wool,Free,0.01,5.3,0,0,0
+CSub3_MG_CF_3,Mixed glass,Free,0.04,5.3,0,0,0
+CSub3_B_CF_4,Broth,Free,,5.4,0,0,0
+CSub3_GW_CF_4,Glass wool,Free,0.01,5.4,0,0,0
+CSub3_MG_CF_4,Mixed glass,Free,0.03,5.4,0,0,0
+CSub3_B_G_5,Broth,Glucose,0.61,23.97,1,25,25
+CSub3_B_G_6,Broth,Glucose,0.60,23.97,1,25,25
+CSub3_B_G_7,Broth,Glucose,0.62,23.98,1,25,25
+CSub3_B_G_8,Broth,Glucose,0.62,24.01,1,25,25
+CSub3_B_C_5,Broth,Cellobiose,0.44,24.09,1,25,25
+CSub3_B_C_6,Broth,Cellobiose,0.31,24.10,1,25,25
+CSub3_B_C_7,Broth,Cellobiose,0.45,24.11,1,25,25
+CSub3_B_C_8,Broth,Cellobiose,0.44,24.14,1,25,25
+CSub3_B_A_5,Broth,Celluloze,0.00,24.21,1,25,25
+CSub3_B_A_6,Broth,Celluloze,0.00,24.23,1,25,25
+CSub3_B_A_7,Broth,Celluloze,0.00,24.23,1,25,25
+CSub3_B_A_8,Broth,Celluloze,,24.23,1,25,25
+CSub3_B_A_8,Broth,Celluloze,,24.23,1,25,25
+CSub3_B_GCA_5,Broth,Mix,0.36,24.35,1,25,16.5
+CSub3_B_GCA_6,Broth,Mix,0.38,24.36,1,25,16.5
+CSub3_B_GCA_7,Broth,Mix,0.39,24.36,1,25,16.5
+CSub3_B_GCA_8,Broth,Mix,0.54,24.39,1,25,16.5
+CSub3_B_CF_5,Broth,Free,0.01,24.45,1,0,0
+CSub3_B_CF_6,Broth,Free,0.01,24.48,1,0,0
+CSub3_B_CF_7,Broth,Free,0.00,24.49,1,0,0
+CSub3_B_CF_8,Broth,Free,0.00,24.49,1,0,0
+CSub3_GW_G_7,Glass wool,Glucose,0.82,24.23,1,25,25
+CSub3_GW_G_6,Glass wool,Glucose,0.79,24.28,1,25,25
+CSub3_GW_G_8,Glass wool,Glucose,0.67,24.25,1,25,25
+CSub3_GW_C_6,Glass wool,Cellobiose,0.67,24.38,1,25,25
+CSub3_GW_C_7,Glass wool,Cellobiose,0.99,24.38,1,25,25
+CSub3_GW_C_8,Glass wool,Cellobiose,0.69,24.43,1,25,25
+CSub3_GW_A_5,Glass wool,Celluloze,0.01,24.50,1,25,0
+CSub3_GW_A_6,Glass wool,Celluloze,0.01,24.51,1,25,0
+CSub3_GW_A_7,Glass wool,Celluloze,0.01,24.52,1,25,0
+CSub3_GW_A_8,Glass wool,Celluloze,0.00,24.55,1,25,0
+CSub3_GW_GCA_6,Glass wool,Mix,0.12,24.65,1,25,16.5
+CSub3_GW_GCA_7,Glass wool,Mix,0.15,24.67,1,25,16.5
+CSub3_GW_GCA_8,Glass wool,Mix,0.06,24.69,1,25,16.5
+CSub3_GW_CF_6,Glass wool,Free,0.07,24.79,1,0,0
+CSub3_GW_CF_7,Glass wool,Free,0.00,24.79,1,0,0
+CSub3_GW_CF_8,Glass wool,Free,0.01,24.79,1,0,0
+CSub3_GW_CF_6,Glass wool,Free,0.06,24.82,1,0,0
+CSub3_MG_G_6,Mixed glass,Glucose,0.81,24.60,1,25,25
+CSub3_MG_G_7,Mixed glass,Glucose,0.77,24.62,1,25,25
+CSub3_MG_G_8,Mixed glass,Glucose,0.56,24.68,1,25,25
+CSub3_MG_C_5,Mixed glass,Cellobiose,,24.78,1,25,25
+CSub3_MG_C_6,Mixed glass,Cellobiose,0.77,24.79,1,25,25
+CSub3_MG_C_7,Mixed glass,Cellobiose,0.71,25.11,1,25,25
+CSub3_MG_C_8,Mixed glass,Cellobiose,0.56,25.11,1,25,25
+CSub3_MG_A_5,Mixed glass,Celluloze,0.01,25.12,1,25,0
+CSub3_MG_A_6,Mixed glass,Celluloze,0.02,25.20,1,25,0
+CSub3_MG_GCA_7,Mixed glass,Mix,0.41,25.20,1,25,16.5
+CSub3_MG_A_7,Mixed glass,Celluloze,0.01,25.34,1,25,0
+CSub3_MG_A_8,Mixed glass,Celluloze,0.01,25.24,1,25,0
+CSub3_MG_GCA_5,Mixed glass,Mix,0.26,25.24,1,25,16.5
+CSub3_MG_GCA_6,Mixed glass,Mix,0.27,25.33,1,25,16.5
+CSub3_MG_GCA_8,Mixed glass,Mix,0.32,25.33,1,25,16.5
+CSub3_MG_CF_5,Mixed glass,Free,0.01,25.37,1,0,0
+CSub3_MG_CF_6,Mixed glass,Free,0.01,25.46,1,0,0
+CSub3_MG_CF_7,Mixed glass,Free,0.01,25.46,1,0,0
+CSub3_MG_CF_8,Mixed glass,Free,0.01,25.49,1,0,0
+CSub3_B_G_1,Broth,Glucose,0.69,25.49,1,25,25
+CSub3_B_G_2,Broth,Glucose,0.53,25.52,1,25,25
+CSub3_B_G_3,Broth,Glucose,0.54,25.54,1,25,25
+CSub3_B_G_4,Broth,Glucose,0.57,25.55,1,25,25
+CSub3_B_C_1,Broth,Cellobiose,0.44,25.56,1,25,25
+CSub3_B_C_2,Broth,Cellobiose,0.43,25.63,1,25,25
+CSub3_B_C_3,Broth,Cellobiose,0.43,25.67,1,25,25
+CSub3_B_C_4,Broth,Cellobiose,0.44,25.67,1,25,25
+CSub3_B_A_1,Broth,Celluloze,0.01,25.68,1,25,0
+CSub3_B_A_2,Broth,Celluloze,0.01,25.74,1,25,0
+CSub3_B_A_3,Broth,Celluloze,0.00,25.75,1,25,0
+CSub3_B_A_4,Broth,Celluloze,0.00,25.78,1,25,0
+CSub3_B_GCA_1,Broth,Mix,0.36,25.79,1,25,16.5
+CSub3_B_GCA_2,Broth,Mix,0.39,25.88,1,25,16.5
+CSub3_B_GCA_3,Broth,Mix,0.39,25.91,1,25,16.5
+CSub3_B_GCA_4,Broth,Mix,0.35,25.91,1,25,16.5
+CSub3_B_CF_1,Broth,Free,0.00,25.92,1,0,0
+CSub3_B_CF_2,Broth,Free,0.01,25.99,1,0,0
+CSub3_B_CF_3,Broth,Free,0.00,26.01,1,0,0
+CSub3_B_CF_4,Broth,Free,0.00,26.02,1,0,0
+CSub3_GW_G_1,Glass wool,Glucose,0.75,26.03,1,25,25
+CSub3_GW_G_2,Glass wool,Glucose,0.31,25.71,1,25,25
+CSub3_GW_G_3,Glass wool,Glucose,0.72,25.72,1,25,25
+CSub3_GW_G_4,Glass wool,Glucose,,25.72,1,25,25
+CSub3_GW_C_1,Glass wool,Cellobiose,0.66,25.74,1,25,25
+CSub3_GW_C_2,Glass wool,Cellobiose,0.92,25.81,1,25,25
+CSub3_GW_C_3,Glass wool,Cellobiose,0.84,25.83,1,25,25
+CSub3_GW_C_4,Glass wool,Cellobiose,0.78,25.83,1,25,25
+CSub3_GW_A_1,Glass wool,Celluloze,0.02,25.83,1,25,0
+CSub3_GW_A_2,Glass wool,Celluloze,0.01,25.94,1,25,0
+CSub3_GW_A_3,Glass wool,Celluloze,0.01,25.95,1,25,0
+CSub3_GW_A_4,Glass wool,Celluloze,0.01,25.95,1,25,0
+CSub3_GW_GCA_1,Glass wool,Mix,0.17,25.98,1,25,16.5
+CSub3_GW_GCA_2,Glass wool,Mix,0.09,26.06,1,25,16.5
+CSub3_GW_GCA_3,Glass wool,Mix,0.10,26.07,1,25,16.5
+CSub3_GW_GCA_4,Glass wool,Mix,0.11,26.07,1,25,16.5
+CSub3_GW_CF_1,Glass wool,Free,0.01,26.09,1,0,0
+CSub3_GW_CF_2,Glass wool,Free,0.01,26.18,1,0,0
+CSub3_GW_CF_3,Glass wool,Free,0.01,26.18,1,0,0
+CSub3_GW_CF_4,Glass wool,Free,0.01,26.18,1,0,0
+CSub3_MG_G_1,Mixed glass,Glucose,0.72,26.20,1,25,25
+CSub3_MG_G_2,Mixed glass,Glucose,0.66,25.86,1,25,25
+CSub3_MG_G_3,Mixed glass,Glucose,0.60,26.63,1,25,25
+CSub3_MG_G_4,Mixed glass,Glucose,0.57,26.67,1,25,25
+CSub3_MG_C_1,Mixed glass,Cellobiose,0.42,26.68,1,25,25
+CSub3_MG_C_3,Mixed glass,Cellobiose,0.41,26.75,1,25,25
+CSub3_MG_C_2,Mixed glass,Cellobiose,0.73,26.78,1,25,25
+CSub3_MG_C_4,Mixed glass,Cellobiose,0.52,26.78,1,25,25
+CSub3_MG_A_1,Mixed glass,Celluloze,0.01,26.83,1,25,0
+CSub3_MG_A_2,Mixed glass,Celluloze,0.01,26.90,1,25,0
+CSub3_MG_A_3,Mixed glass,Celluloze,0.01,26.93,1,25,0
+CSub3_MG_GCA_1,Mixed glass,Mix,0.34,26.95,1,25,16.5
+CSub3_MG_GCA_2,Mixed glass,Mix,0.35,27.03,1,25,16.5
+CSub3_MG_A_4,Mixed glass,Celluloze,0.01,27.03,1,25,0
+CSub3_MG_GCA_3,Mixed glass,Mix,0.24,26.98,1,25,16.5
+CSub3_MG_GCA_4,Mixed glass,Mix,0.26,27.09,1,25,16.5
+CSub3_MG_CF_1,Mixed glass,Free,0.01,27.10,1,0,0
+CSub3_MG_CF_2,Mixed glass,Free,0.01,27.18,1,0,0
+CSub3_MG_CF_3,Mixed glass,Free,0.01,27.18,1,0,0
+CSub3_MG_CF_4,Mixed glass,Free,0.01,27.22,1,0,0
+CSub3_B_G_9,Broth,Glucose,0.04,48.37,2,25,25
+CSub3_B_G_10,Broth,Glucose,0.04,48.38,2,25,25
+CSub3_B_G_11,Broth,Glucose,0.04,48.38,2,25,25
+CSub3_B_G_12,Broth,Glucose,0.04,48.42,2,25,25
+CSub3_B_C_9,Broth,Cellobiose,0.16,48.47,2,25,25
+CSub3_B_C_10,Broth,Cellobiose,0.08,48.48,2,25,25
+CSub3_B_C_11,Broth,Cellobiose,0.08,48.49,2,25,25
+CSub3_B_C_12,Broth,Cellobiose,0.17,48.49,2,25,25
+CSub3_B_A_9,Broth,Celluloze,0.00,48.56,2,25,0
+CSub3_B_A_10,Broth,Celluloze,0.00,48.57,2,25,0
+CSub3_B_A_11,Broth,Celluloze,0.00,48.58,2,25,0
+CSub3_B_A_12,Broth,Celluloze,0.00,48.59,2,25,0
+CSub3_B_GCA_9,Broth,Mix,0.02,48.65,2,25,16.5
+CSub3_B_GCA_10,Broth,Mix,0.02,48.66,2,25,16.5
+CSub3_B_GCA_11,Broth,Mix,0.02,48.68,2,25,16.5
+CSub3_B_GCA_12,Broth,Mix,0.02,48.68,2,25,16.5
+CSub3_B_CF_9,Broth,Free,0.00,48.77,2,0,0
+CSub3_B_CF_10,Broth,Free,0.00,48.78,2,0,0
+CSub3_B_CF_11,Broth,Free,0.00,48.79,2,0,0
+CSub3_B_CF_12,Broth,Free,0.00,48.80,2,0,0
+CSub3_GW_G_9,Glass wool,Glucose,0.03,48.55,2,25,25
+CSub3_GW_G_10,Glass wool,Glucose,0.04,48.58,2,25,25
+CSub3_GW_G_11,Glass wool,Glucose,0.04,48.59,2,25,25
+CSub3_GW_G_12,Glass wool,Glucose,0.03,48.59,2,25,25
+CSub3_GW_C_9,Glass wool,Cellobiose,0.03,48.64,2,25,25
+CSub3_GW_C_10,Glass wool,Cellobiose,0.03,48.67,2,25,25
+CSub3_GW_C_11,Glass wool,Cellobiose,0.03,48.67,2,25,25
+CSub3_GW_C_12,Glass wool,Cellobiose,0.03,48.68,2,25,25
+CSub3_GW_A_9,Glass wool,Celluloze,0.01,48.75,2,25,0
+CSub3_GW_A_10,Glass wool,Celluloze,0.00,48.76,2,25,0
+CSub3_GW_A_11,Glass wool,Celluloze,0.00,48.76,2,25,0
+CSub3_GW_A_12,Glass wool,Celluloze,0.01,48.78,2,25,0
+CSub3_GW_GCA_9,Glass wool,Mix,0.02,48.83,2,25,16.5
+CSub3_GW_GCA_10,Glass wool,Mix,0.02,48.86,2,25,16.5
+CSub3_GW_GCA_11,Glass wool,Mix,0.02,48.86,2,25,16.5
+CSub3_GW_GCA_12,Glass wool,Mix,0.02,48.87,2,25,16.5
+CSub3_GW_CF_9,Glass wool,Free,0.00,48.96,2,0,0
+CSub3_GW_CF_10,Glass wool,Free,0.00,48.96,2,0,0
+CSub3_GW_CF_11,Glass wool,Free,0.00,48.97,2,0,0
+CSub3_GW_CF_12,Glass wool,Free,0.00,48.99,2,0,0
+CSub3_MG_G_9,Mixed glass,Glucose,0.03,48.73,2,25,25
+CSub3_MG_G_10,Mixed glass,Glucose,0.10,48.74,2,25,25
+CSub3_MG_G_11,Mixed glass,Glucose,0.03,48.75,2,25,25
+CSub3_MG_G_12,Mixed glass,Glucose,0.03,48.77,2,25,25
+CSub3_MG_C_9,Mixed glass,Cellobiose,0.05,48.83,2,25,25
+CSub3_MG_C_10,Mixed glass,Cellobiose,0.06,48.83,2,25,25
+CSub3_MG_C_11,Mixed glass,Cellobiose,0.04,48.84,2,25,25
+CSub3_MG_C_12,Mixed glass,Cellobiose,,48.88,2,25,25
+CSub3_MG_A_9,Mixed glass,Celluloze,0.01,48.93,2,25,0
+CSub3_MG_A_10,Mixed glass,Celluloze,0.00,48.93,2,25,0
+CSub3_MG_A_11,Mixed glass,Celluloze,0.00,48.95,2,25,0
+CSub3_MG_A_12,Mixed glass,Celluloze,0.00,48.96,2,25,0
+CSub3_MG_GCA_9,Mixed glass,Mix,0.03,49.03,2,25,16.5
+CSub3_MG_GCA_10,Mixed glass,Mix,0.03,49.03,2,25,16.5
+CSub3_MG_GCA_11,Mixed glass,Mix,0.03,49.04,2,25,16.5
+CSub3_MG_GCA_12,Mixed glass,Mix,0.03,49.07,2,25,16.5
+CSub3_MG_CF_9,Mixed glass,Free,0.00,49.14,2,0,0
+CSub3_MG_CF_10,Mixed glass,Free,0.00,49.15,2,0,0
+CSub3_MG_CF_11,Mixed glass,Free,0.00,49.15,2,0,0
+CSub3_MG_CF_12,Mixed glass,Free,0.00,49.18,2,0,0
+CSub3_B_G_1,Broth,Glucose,0.05,49.26,2,25,25
+CSub3_B_G_2,Broth,Glucose,0.05,49.27,2,25,25
+CSub3_B_G_3,Broth,Glucose,0.04,49.28,2,25,25
+CSub3_B_G_4,Broth,Glucose,0.06,49.28,2,25,25
+CSub3_B_C_1,Broth,Cellobiose,0.14,49.43,2,25,25
+CSub3_B_C_2,Broth,Cellobiose,0.16,49.44,2,25,25
+CSub3_B_C_3,Broth,Cellobiose,0.14,49.46,2,25,25
+CSub3_B_C_4,Broth,Cellobiose,0.15,49.47,2,25,25
+CSub3_B_A_1,Broth,Celluloze,0.00,49.53,2,25,0
+CSub3_B_A_2,Broth,Celluloze,0.00,49.53,2,25,0
+CSub3_B_A_3,Broth,Celluloze,0.00,49.55,2,25,0
+CSub3_B_A_4,Broth,Celluloze,0.00,49.56,2,25,0
+CSub3_B_GCA_1,Broth,Mix,0.02,49.63,2,25,16.5
+CSub3_B_GCA_2,Broth,Mix,0.00,49.64,2,25,16.5
+CSub3_B_GCA_3,Broth,Mix,0.02,49.67,2,25,16.5
+CSub3_B_GCA_4,Broth,Mix,,49.67,2,25,16.5
+CSub3_B_CF_1,Broth,Free,0.00,49.73,2,0,0
+CSub3_B_CF_2,Broth,Free,0.00,49.76,2,0,0
+CSub3_B_CF_3,Broth,Free,0.00,49.77,2,0,0
+CSub3_B_CF_4,Broth,Free,,49.78,2,0,0
+CSub3_GW_G_1,Glass wool,Glucose,0.03,49.50,2,25,25
+CSub3_GW_G_2,Glass wool,Glucose,0.04,49.51,2,25,25
+CSub3_GW_G_3,Glass wool,Glucose,0.04,49.52,2,25,25
+CSub3_GW_G_4,Glass wool,Glucose,0.03,49.54,2,25,25
+CSub3_GW_C_1,Glass wool,Cellobiose,0.05,49.59,2,25,25
+CSub3_GW_C_2,Glass wool,Cellobiose,0.04,49.62,2,25,25
+CSub3_GW_C_3,Glass wool,Cellobiose,0.03,49.63,2,25,25
+CSub3_GW_C_4,Glass wool,Cellobiose,0.04,49.63,2,25,25
+CSub3_GW_A_1,Glass wool,Celluloze,0.01,49.71,2,25,0
+CSub3_GW_A_2,Glass wool,Celluloze,0.00,49.72,2,25,0
+CSub3_GW_A_3,Glass wool,Celluloze,0.00,49.72,2,25,0
+CSub3_GW_A_4,Glass wool,Celluloze,0.01,49.74,2,25,0
+CSub3_GW_GCA_1,Glass wool,Mix,0.02,49.81,2,25,16.5
+CSub3_GW_GCA_2,Glass wool,Mix,0.02,49.82,2,25,16.5
+CSub3_GW_GCA_3,Glass wool,Mix,0.02,49.83,2,25,16.5
+CSub3_GW_GCA_4,Glass wool,Mix,0.02,49.85,2,25,16.5
+CSub3_GW_CF_1,Glass wool,Free,0.00,49.93,2,0,0
+CSub3_GW_CF_2,Glass wool,Free,0.00,49.94,2,0,0
+CSub3_GW_CF_3,Glass wool,Free,0.00,49.94,2,0,0
+CSub3_GW_CF_4,Glass wool,Free,0.00,49.97,2,0,0
+CSub3_MG_G_1,Mixed glass,Glucose,0.04,49.70,2,25,25
+CSub3_MG_G_2,Mixed glass,Glucose,0.10,49.71,2,25,25
+CSub3_MG_G_3,Mixed glass,Glucose,0.09,49.73,2,25,25
+CSub3_MG_G_4,Mixed glass,Glucose,0.07,49.74,2,25,25
+CSub3_MG_C_1,Mixed glass,Cellobiose,0.15,49.81,2,25,25
+CSub3_MG_C_2,Mixed glass,Cellobiose,,49.81,2,25,25
+CSub3_MG_C_3,Mixed glass,Cellobiose,0.13,49.81,2,25,25
+CSub3_MG_C_4,Mixed glass,Cellobiose,0.10,49.84,2,25,25
+CSub3_MG_A_1,Mixed glass,Celluloze,0.00,49.90,2,25,0
+CSub3_MG_A_2,Mixed glass,Celluloze,0.00,49.91,2,25,0
+CSub3_MG_A_3,Mixed glass,Celluloze,0.00,49.91,2,25,0
+CSub3_MG_A_4,Mixed glass,Celluloze,0.00,49.94,2,25,0
+CSub3_MG_GCA_1,Mixed glass,Mix,0.04,50.00,2,25,16.5
+CSub3_MG_GCA_2,Mixed glass,Mix,0.03,50.00,2,25,16.5
+CSub3_MG_GCA_3,Mixed glass,Mix,0.02,50.03,2,25,16.5
+CSub3_MG_GCA_3,Mixed glass,Mix,0.02,50.04,2,25,16.5
+CSub3_MG_GCA_4,Mixed glass,Free,0.06,50.04,2,0,0
+CSub3_MG_CF_1,Mixed glass,Free,0.00,50.12,2,0,0
+CSub3_MG_CF_2,Mixed glass,Free,0.00,50.12,2,0,0
+CSub3_MG_CF_3,Mixed glass,Free,0.00,50.15,2,0,0
+CSub3_MG_CF_4,Mixed glass,Free,0.00,50.15,2,0,0
+CSub3_B_G_1,Broth,Glucose,0.02,71.08,3,25,25
+CSub3_B_G_2,Broth,Glucose,0.02,71.09,3,25,25
+CSub3_B_G_3,Broth,Glucose,0.02,71.09,3,25,25
+CSub3_B_G_4,Broth,Glucose,0.02,71.12,3,25,25
+CSub3_B_C_1,Broth,Cellobiose,0.02,71.21,3,25,25
+CSub3_B_C_2,Broth,Cellobiose,0.02,71.22,3,25,25
+CSub3_B_C_3,Broth,Cellobiose,0.03,71.23,3,25,25
+CSub3_B_C_4,Broth,Cellobiose,0.02,71.25,3,25,25
+CSub3_B_A_1,Broth,Celluloze,0.00,71.31,3,25,0
+CSub3_B_A_2,Broth,Celluloze,0.00,71.34,3,25,0
+CSub3_B_A_3,Broth,Celluloze,0.00,71.34,3,25,0
+CSub3_B_A_4,Broth,Celluloze,0.00,71.36,3,25,0
+CSub3_B_GCA_1,Broth,Mix,0.01,71.43,3,25,16.5
+CSub3_B_GCA_2,Broth,Mix,0.02,71.43,3,25,16.5
+CSub3_B_GCA_3,Broth,Mix,0.02,71.45,3,25,16.5
+CSub3_B_GCA_4,Broth,Mix,0.02,71.46,3,25,16.5
+CSub3_B_CF_1,Broth,Free,0.00,71.53,3,0,0
+CSub3_B_CF_2,Broth,Free,0.00,71.54,3,0,0
+CSub3_B_CF_3,Broth,Free,0.00,71.55,3,0,0
+CSub3_B_CF_4,Broth,Free,0.00,71.56,3,0,0
+CSub3_GW_G_1,Glass wool,Glucose,0.02,71.32,3,25,25
+CSub3_GW_G_2,Glass wool,Glucose,0.03,71.33,3,25,25
+CSub3_GW_G_3,Glass wool,Glucose,0.02,71.35,3,25,25
+CSub3_GW_G_4,Glass wool,Glucose,0.02,71.36,3,25,25
+CSub3_GW_C_1,Glass wool,Cellobiose,0.02,71.44,3,25,25
+CSub3_GW_C_2,Glass wool,Cellobiose,0.02,71.45,3,25,25
+CSub3_GW_C_3,Glass wool,Cellobiose,0.02,71.46,3,25,25
+CSub3_GW_C_4,Glass wool,Cellobiose,0.02,71.47,3,25,25
+CSub3_GW_A_1,Glass wool,Celluloze,0.00,71.54,3,25,0
+CSub3_GW_A_2,Glass wool,Celluloze,0.00,71.55,3,25,0
+CSub3_GW_A_3,Glass wool,Celluloze,0.00,71.57,3,25,0
+CSub3_GW_A_4,Glass wool,Celluloze,0.00,71.58,3,25,0
+CSub3_GW_GCA_1,Glass wool,Mix,0.02,71.65,3,25,16.5
+CSub3_GW_GCA_2,Glass wool,Mix,0.03,71.67,3,25,16.5
+CSub3_GW_GCA_3,Glass wool,Mix,0.02,71.67,3,25,16.5
+CSub3_GW_GCA_4,Glass wool,Mix,0.02,71.68,3,25,16.5
+CSub3_GW_CF_1,Glass wool,Free,0.00,71.74,3,0,0
+CSub3_GW_CF_2,Glass wool,Free,0.00,71.76,3,0,0
+CSub3_GW_CF_3,Glass wool,Free,0.01,71.77,3,0,0
+CSub3_GW_CF_4,Glass wool,Free,0.00,71.78,3,0,0
+CSub3_MG_G_1,Mixed glass,Glucose,0.02,71.72,3,25,25
+CSub3_MG_G_2,Mixed glass,Glucose,0.03,71.73,3,25,25
+CSub3_MG_G_3,Mixed glass,Glucose,0.03,71.74,3,25,25
+CSub3_MG_G_4,Mixed glass,Glucose,0.03,71.76,3,25,25
+CSub3_MG_C_1,Mixed glass,Cellobiose,0.04,71.83,3,25,25
+CSub3_MG_C_2,Mixed glass,Cellobiose,0.03,71.83,3,25,25
+CSub3_MG_C_3,Mixed glass,Cellobiose,0.03,71.84,3,25,25
+CSub3_MG_C_4,Mixed glass,Cellobiose,0.03,71.87,3,25,25
+CSub3_MG_A_1,Mixed glass,Celluloze,0.00,71.93,3,25,0
+CSub3_MG_A_2,Mixed glass,Celluloze,0.00,71.93,3,25,0
+CSub3_MG_A_3,Mixed glass,Celluloze,0.00,71.95,3,25,0
+CSub3_MG_A_4,Mixed glass,Celluloze,0.00,71.97,3,25,0
+CSub3_MG_GCA_1,Mixed glass,Mix,0.03,72.03,3,25,16.5
+CSub3_MG_GCA_2,Mixed glass,Mix,0.02,72.04,3,25,16.5
+CSub3_MG_GCA_3,Mixed glass,Mix,0.02,72.05,3,25,16.5
+CSub3_MG_GCA_4,Mixed glass,Mix,0.03,72.08,3,25,16.5
+CSub3_MG_CF_1,Mixed glass,Free,0.00,72.14,3,0,0
+CSub3_MG_CF_2,Mixed glass,Free,0.00,72.14,3,0,0
+CSub3_MG_CF_3,Mixed glass,Free,0.00,72.16,3,0,0
+CSub3_MG_CF_4,Mixed glass,Free,0.00,72.18,3,0,0
+CSub3_B_G_1,Broth,Glucose,0.01,95.49,4,25,25
+CSub3_B_G_2,Broth,Glucose,0.01,95.49,4,25,25
+CSub3_B_G_3,Broth,Glucose,0.02,95.50,4,25,25
+CSub3_B_G_4,Broth,Glucose,0.02,95.52,4,25,25
+CSub3_B_C_1,Broth,Cellobiose,0.01,95.58,4,25,25
+CSub3_B_C_2,Broth,Cellobiose,0.02,95.59,4,25,25
+CSub3_B_C_3,Broth,Cellobiose,0.02,95.60,4,25,25
+CSub3_B_C_4,Broth,Cellobiose,0.01,95.62,4,25,25
+CSub3_B_A_1,Broth,Celluloze,0.00,95.67,4,25,0
+CSub3_B_A_2,Broth,Celluloze,0.08,95.69,4,25,0
+CSub3_B_A_3,Broth,Celluloze,0.00,95.70,4,25,0
+CSub3_B_A_4,Broth,Celluloze,0.00,95.73,4,25,0
+CSub3_B_GCA_1,Broth,Mix,0.05,95.78,4,25,16.5
+CSub3_B_GCA_2,Broth,Mix,0.02,95.80,4,25,16.5
+CSub3_B_GCA_3,Broth,Mix,0.02,95.81,4,25,16.5
+CSub3_B_GCA_4,Broth,Mix,0.02,95.81,4,25,16.5
+CSub3_B_CF_1,Broth,Free,0.00,95.88,4,0,0
+CSub3_B_CF_2,Broth,Free,0.00,95.90,4,0,0
+CSub3_B_CF_3,Broth,Free,0.00,95.90,4,0,0
+CSub3_B_CF_4,Broth,Free,0.00,95.93,4,0,0
+CSub3_GW_G_1,Glass wool,Glucose,0.03,95.67,4,25,25
+CSub3_GW_G_2,Glass wool,Glucose,0.02,95.67,4,25,25
+CSub3_GW_G_3,Glass wool,Glucose,0.01,95.46,4,25,25
+CSub3_GW_G_4,Glass wool,Glucose,0.02,95.70,4,25,25
+CSub3_GW_C_1,Glass wool,Cellobiose,0.03,95.77,4,25,25
+CSub3_GW_C_2,Glass wool,Cellobiose,0.03,95.77,4,25,25
+CSub3_GW_C_3,Glass wool,Cellobiose,0.03,95.78,4,25,25
+CSub3_GW_C_4,Glass wool,Cellobiose,0.02,95.79,4,25,25
+CSub3_GW_A_1,Glass wool,Celluloze,0.00,95.87,4,25,0
+CSub3_GW_A_2,Glass wool,Celluloze,0.00,95.87,4,25,0
+CSub3_GW_A_3,Glass wool,Celluloze,0.00,95.88,4,25,0
+CSub3_GW_A_4,Glass wool,Celluloze,0.00,95.89,4,25,0
+CSub3_GW_GCA_1,Glass wool,Mix,0.03,95.96,4,25,16.5
+CSub3_GW_GCA_2,Glass wool,Mix,0.03,95.97,4,25,16.5
+CSub3_GW_GCA_3,Glass wool,Mix,0.02,95.98,4,25,16.5
+CSub3_GW_GCA_4,Glass wool,Mix,0.03,95.99,4,25,16.5
+CSub3_GW_CF_1,Glass wool,Free,0.00,96.07,4,0,0
+CSub3_GW_CF_2,Glass wool,Free,0.00,96.08,4,0,0
+CSub3_GW_CF_3,Glass wool,Free,0.00,96.08,4,0,0
+CSub3_GW_CF_4,Glass wool,Free,0.00,96.10,4,0,0
+CSub3_MG_G_1,Mixed glass,Glucose,0.03,95.83,4,25,25
+CSub3_MG_G_2,Mixed glass,Glucose,0.02,95.85,4,25,25
+CSub3_MG_G_3,Mixed glass,Glucose,0.02,95.86,4,25,25
+CSub3_MG_G_4,Mixed glass,Glucose,0.02,95.88,4,25,25
+CSub3_MG_C_1,Mixed glass,Cellobiose,0.04,95.93,4,25,25
+CSub3_MG_C_2,Mixed glass,Cellobiose,0.03,95.94,4,25,25
+CSub3_MG_C_3,Mixed glass,Cellobiose,0.03,95.95,4,25,25
+CSub3_MG_C_4,Mixed glass,Cellobiose,0.03,95.98,4,25,25
+CSub3_MG_A_1,Mixed glass,Celluloze,0.00,96.03,4,25,0
+CSub3_MG_A_2,Mixed glass,Celluloze,0.00,96.04,4,25,0
+CSub3_MG_A_3,Mixed glass,Celluloze,0.00,96.05,4,25,0
+CSub3_MG_A_4,Mixed glass,Celluloze,0.00,96.07,4,25,0
+CSub3_MG_GCA_1,Mixed glass,Mix,0.03,96.13,4,25,16.5
+CSub3_MG_GCA_2,Mixed glass,Mix,0.03,96.13,4,25,16.5
+CSub3_MG_GCA_3,Mixed glass,Mix,0.03,96.16,4,25,16.5
+CSub3_MG_GCA_4,Mixed glass,Mix,0.02,96.18,4,25,16.5
+CSub3_MG_CF_1,Mixed glass,Free,0.00,96.23,4,0,0
+CSub3_MG_CF_2,Mixed glass,Free,,96.24,4,0,0
+CSub3_MG_CF_3,Mixed glass,Free,0.00,96.27,4,0,0
+CSub3_MG_CF_4,Mixed glass,Free,0.00,96.28,4,0,0
+CSub3_MG_G_1,Mixed glass,Glucose,0.02,118.45,5,25,25
+CSub3_MG_G_2,Mixed glass,Glucose,0.01,118.46,5,25,25
+CSub3_MG_G_3,Mixed glass,Glucose,0.02,118.47,5,25,25
+CSub3_MG_G_4,Mixed glass,Glucose,0.03,118.51,5,25,25
+CSub3_MG_C_1,Mixed glass,Cellobiose,0.04,118.52,5,25,25
+CSub3_MG_C_2,Mixed glass,Cellobiose,0.03,118.53,5,25,25
+CSub3_MG_C_3,Mixed glass,Cellobiose,0.02,118.57,5,25,25
+CSub3_MG_C_4,Mixed glass,Cellobiose,0.03,118.58,5,25,25
+CSub3_MG_A_1,Mixed glass,Celluloze,0.00,118.58,5,25,0
+CSub3_MG_A_2,Mixed glass,Celluloze,0.00,118.63,5,25,0
+CSub3_MG_A_3,Mixed glass,Celluloze,0.00,118.64,5,25,0
+CSub3_MG_A_4,Mixed glass,Celluloze,0.00,118.66,5,25,0
+CSub3_MG_GCA_1,Mixed glass,Mix,0.02,118.71,5,25,16.5
+CSub3_MG_GCA_2,Mixed glass,Mix,0.02,118.71,5,25,16.5
+CSub3_MG_GCA_3,Mixed glass,Mix,0.02,118.72,5,25,16.5
+CSub3_MG_GCA_4,Mixed glass,Mix,0.02,118.77,5,25,16.5
+CSub3_MG_CF_1,Mixed glass,Free,0.00,118.78,5,0,0
+CSub3_MG_CF_2,Mixed glass,Free,0.00,118.79,5,0,0
+CSub3_MG_CF_3,Mixed glass,Free,0.00,118.83,5,0,0
+CSub3_MG_CF_4,Mixed glass,Free,0.00,118.84,5,0,0
+CSub3_GW_G_1,Glass wool,Glucose,0.04,118.98,5,25,25
+CSub3_GW_G_2,Glass wool,Glucose,0.02,118.99,5,25,25
+CSub3_GW_G_3,Glass wool,Glucose,0.01,119.00,5,25,25
+CSub3_GW_G_4,Glass wool,Glucose,0.02,119.04,5,25,25
+CSub3_GW_C_1,Glass wool,Cellobiose,0.03,119.08,5,25,25
+CSub3_GW_C_2,Glass wool,Cellobiose,0.02,119.08,5,25,25
+CSub3_GW_C_3,Glass wool,Cellobiose,0.03,119.13,5,25,25
+CSub3_GW_C_4,Glass wool,Cellobiose,0.03,119.14,5,25,25
+CSub3_GW_A_1,Glass wool,Celluloze,0.00,119.15,5,25,0
+CSub3_GW_A_2,Glass wool,Celluloze,0.00,119.19,5,25,0
+CSub3_GW_A_3,Glass wool,Celluloze,0.00,119.20,5,25,0
+CSub3_GW_A_4,Glass wool,Celluloze,0.00,119.21,5,25,0
+CSub3_GW_GCA_1,Glass wool,Mix,0.02,119.26,5,25,16.5
+CSub3_GW_GCA_2,Glass wool,Mix,0.02,119.27,5,25,16.5
+CSub3_GW_GCA_3,Glass wool,Mix,0.02,119.28,5,25,16.5
+CSub3_GW_GCA_4,Glass wool,Mix,0.02,119.33,5,25,16.5
+CSub3_GW_CF_1,Glass wool,Free,0.00,119.33,5,0,0
+CSub3_GW_CF_2,Glass wool,Free,0.00,119.34,5,0,0
+CSub3_GW_CF_3,Glass wool,Free,0.00,119.38,5,0,0
+CSub3_GW_CF_4,Glass wool,Free,0.00,119.39,5,0,0
+CSub3_B_G_1,Broth,Glucose,0.01,119.50,5,25,25
+CSub3_B_G_2,Broth,Glucose,0.01,119.51,5,25,25
+CSub3_B_G_3,Broth,Glucose,0.01,119.51,5,25,25
+CSub3_B_G_4,Broth,Glucose,0.01,119.55,5,25,25
+CSub3_B_C_1,Broth,Cellobiose,0.01,119.56,5,25,25
+CSub3_B_C_2,Broth,Cellobiose,0.01,119.57,5,25,25
+CSub3_B_C_3,Broth,Cellobiose,0.07,119.62,5,25,25
+CSub3_B_C_4,Broth,Cellobiose,0.02,119.63,5,25,25
+CSub3_B_A_1,Broth,Celluloze,0.00,119.64,5,25,0
+CSub3_B_A_2,Broth,Celluloze,0.00,119.69,5,25,0
+CSub3_B_A_3,Broth,Celluloze,0.00,119.69,5,25,0
+CSub3_B_A_4,Broth,Celluloze,0.00,119.70,5,25,0
+CSub3_B_GCA_1,Broth,Mix,0.02,119.75,5,25,16.5
+CSub3_B_GCA_2,Broth,Mix,0.01,119.76,5,25,16.5
+CSub3_B_GCA_3,Broth,Mix,0.01,119.78,5,25,16.5
+CSub3_B_GCA_4,Broth,Mix,0.02,119.83,5,25,16.5
+CSub3_B_CF_1,Broth,Free,0.00,119.83,5,0,0
+CSub3_B_CF_2,Broth,Free,0.00,119.84,5,0,0
+CSub3_B_CF_3,Broth,Free,0.00,119.88,5,0,0
+CSub3_B_CF_4,Broth,Free,0.00,119.89,5,0,0

@@ -43,5 +43,3 @@ FIGURES/
 R/
 OLD/
 
-#for now, data files
-*.csv
