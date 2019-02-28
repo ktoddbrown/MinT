@@ -31,6 +31,9 @@ library(openxlsx)
 library(DEoptim)
 library(gridExtra)
 library(kableExtra)
+library(lmerTest)
+library(psycho)
+library(ggeffects)
 ```
 
 Data are available at https://github.com/petacapek/MinT.
@@ -88,8 +91,12 @@ d$DNAc<-d$DNA*0.51/12.01/4
 
 ```
 ##Statistical analysis
-###Respiration
-Cumulative respiration is calculated from the measured respiration rate using the local polynomial regression.
+Linear Mixed-Effect models are used to evaluate the effect of substrate and the type of physical barrier on measured respiration rate, DNA and protein concentration. Becuase all three variables display significant variability over time, the time of measurement is treated as a random effect. Type of the barrier is nested within the substrate. 
+
+```{r lme analysis}
+
+```
+
 
 
 ###All models are first calibrated against respiration rate
