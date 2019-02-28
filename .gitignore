@@ -45,5 +45,6 @@ rsconnect/
 FIGURES/
 R/
 OLD/
+Rscripts/
 
 *.html
