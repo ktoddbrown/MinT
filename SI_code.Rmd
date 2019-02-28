@@ -87,6 +87,10 @@ d$Protc<-d$Prot.in*0.46/12.01/4
 d$DNAc<-d$DNA*0.51/12.01/4
 
 ```
+##Statistical analysis
+###Respiration
+Cumulative respiration is calculated from the measured respiration rate using the local polynomial regression.
+
 
 ###All models are first calibrated against respiration rate
 Calibration of each model is done in four steps. First, the model is calibrated against data across all treatments. Second, the model is calibrated for each level of incubation system complexity separately. Third, the model is calibrated for Glucose and Cellobiose treatments separately. Fourth, the model is calibrated for each experimental treatment separately. 
@@ -388,10 +392,10 @@ t.s1.1<-data.frame(Vmax=monod_r_results_par[,1],
                  CUE=monod_r_results_par[,3],
                  k=monod_r_results_par[,4])
 row.names(t.s1.1)<-c("All", "Broth", "Glass", "Wool",
-                    "Celluloze", "Glucose",
-                    "Broth - Celluloze", "Broth - Glucose",
-                    "Glass - Celluloze", "Glass - Glucose",
-                    "Wool - Celluloze", "Wool - Glucose")
+                    "Cellobiose", "Glucose",
+                    "Broth - Cellobiose", "Broth - Glucose",
+                    "Glass - Cellobiose", "Glass - Glucose",
+                    "Wool - Cellobiose", "Wool - Glucose")
 
 options(knitr.kable.NA = '')
 
@@ -715,9 +719,9 @@ t.s2.1<-data.frame(Vmax=mend_r_results_par[,1],
                  mr=mend_r_results_par[,4])
 row.names(t.s2.1)<-c("All", "Broth", "Glass", "Wool",
                     "Celluloze", "Glucose",
-                    "Broth - Celluloze", "Broth - Glucose",
-                    "Glass - Celluloze", "Glass - Glucose",
-                    "Wool - Celluloze", "Wool - Glucose")
+                    "Broth - Cellobiose", "Broth - Glucose",
+                    "Glass - Cellobiose", "Glass - Glucose",
+                    "Wool - Cellobiose", "Wool - Glucose")
 
 options(knitr.kable.NA = '')
 
@@ -1051,10 +1055,10 @@ t.s3.1<-data.frame(Vmax=deb_r_results_par[,1],
                  f=deb_r_results_par[,4],
                  Yu=deb_r_results_par[,5])
 row.names(t.s3.1)<-c("All", "Broth", "Glass", "Wool",
-                    "Celluloze", "Glucose",
-                    "Broth - Celluloze", "Broth - Glucose",
-                    "Glass - Celluloze", "Glass - Glucose",
-                    "Wool - Celluloze", "Wool - Glucose")
+                    "Cellobiose", "Glucose",
+                    "Broth - Cellobiose", "Broth - Glucose",
+                    "Glass - Cellobiose", "Glass - Glucose",
+                    "Wool - Cellobiose", "Wool - Glucose")
 
 options(knitr.kable.NA = '')
 
@@ -1658,10 +1662,10 @@ monod_all_results_good<-read.csv("monod_all_results_good.csv")
 
 
 t.s4.1<-data.frame(Name=rep(c("All", "Broth", "Glass", "Wool",
-                    "Celluloze", "Glucose",
-                    "Broth - Celluloze", "Broth - Glucose",
-                    "Glass - Celluloze", "Glass - Glucose",
-                    "Wool - Celluloze", "Wool - Glucose"), each =2),
+                    "Cellobiose", "Glucose",
+                    "Broth - Cellobiose", "Broth - Glucose",
+                    "Glass - Cellobiose", "Glass - Glucose",
+                    "Wool - Cellobiose", "Wool - Glucose"), each =2),
                    Parameter=rep(c("Protein", "DNA"), times=12),
                    Vmax=monod_all_results_par[,1],
                    Km=monod_all_results_par[,2],
@@ -2281,10 +2285,10 @@ mend_all_results_good<-read.csv("mend_all_results_good.csv")
 
 
 t.s5.1<-data.frame(Name=rep(c("All", "Broth", "Glass", "Wool",
-                    "Celluloze", "Glucose",
-                    "Broth - Celluloze", "Broth - Glucose",
-                    "Glass - Celluloze", "Glass - Glucose",
-                    "Wool - Celluloze", "Wool - Glucose"), each =2),
+                    "Cellobiose", "Glucose",
+                    "Broth - Cellobiose", "Broth - Glucose",
+                    "Glass - Cellobiose", "Glass - Glucose",
+                    "Wool - Cellobiose", "Wool - Glucose"), each =2),
                    Parameter=rep(c("Protein", "DNA"), times=12),
                    Vmax=mend_all_results_par[,1],
                    Km=mend_all_results_par[,2],
@@ -2645,10 +2649,10 @@ deb_all_results_good<-read.csv("deb_all_results_good")
 
 
 t.s6.1<-data.frame(Name=c("All", "Broth", "Glass", "Wool",
-                    "Celluloze", "Glucose",
-                    "Broth - Celluloze", "Broth - Glucose",
-                    "Glass - Celluloze", "Glass - Glucose",
-                    "Wool - Celluloze", "Wool - Glucose"),
+                    "Cellobiose", "Glucose",
+                    "Broth - Cellobiose", "Broth - Glucose",
+                    "Glass - Cellobiose", "Glass - Glucose",
+                    "Wool - Cellobiose", "Wool - Glucose"),
                    Vmax=deb_all_results_par[,1],
                    Km=deb_all_results_par[,2],
                    m0=deb_all_results_par[,3],

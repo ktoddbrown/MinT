@@ -5,6 +5,9 @@
 # Session Data files
 .RData
 
+#scripts for parameters estimation
+*.R
+
 # Example code in package build process
 *-Ex.R
 
