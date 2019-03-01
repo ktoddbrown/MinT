@@ -34,6 +34,26 @@ library(kableExtra)
 library(lmerTest)
 library(psycho)
 library(ggeffects)
+library(rcompanion)
+
+##ggplot theme
+theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=18, colour="black"),
+                 axis.text.y=element_text(hjust=0.2, size=18, colour="black"),
+                 axis.title=element_text(size=18, colour="black"),
+                 axis.line=element_line(size=0.5, colour="black"),
+                 strip.text=element_text(size=18, face="bold"),
+                 axis.ticks=element_line(size=1, colour="black"),
+                 axis.ticks.length=unit(-0.05, "cm"),
+                 panel.background=element_rect(colour="black", fill="white"),
+                 panel.grid=element_line(linetype=0),
+                 legend.text=element_text(size=14, colour="black"),
+                 legend.title=element_text(size=14, colour="black"),
+                 legend.position=c("right"),
+                 legend.key.size=unit(1, "cm"),
+                 strip.background=element_rect(fill="grey98", colour="black"),
+                 legend.key=element_rect(fill="white", size=1.2),
+                 legend.spacing=unit(0.5, "cm"),
+                 plot.title=element_text(size=18, face="bold", hjust=-0.05))
 ```
 
 Data are available at https://github.com/petacapek/MinT.
@@ -82,7 +102,7 @@ d[(d$Substrate=="Cellobiose" & d$Structure=="Glass wool" & d$Time>75 & d$Prot.in
 
 ```
 
-DNA and protein concentrations are in $mu$grams per incubation vial. Both values are recalculated to unit of carbon per one ml of media in the vial (4 ml) using the conversion factors reported in Vrede et al. (2004).
+DNA and protein concentrations are in $\mu$grams per incubation vial. Both values are recalculated to unit of carbon per one ml of media in the vial (4 ml) using the conversion factors reported in Vrede et al. (2004).
 
 ```{r conversions}
 
@@ -93,12 +113,103 @@ d$DNAc<-d$DNA*0.51/12.01/4
 ##Statistical analysis
 Linear Mixed-Effect models are used to evaluate the effect of substrate and the type of physical barrier on measured respiration rate, DNA and protein concentration. Becuase all three variables display significant variability over time, the time of measurement is treated as a random effect. Type of the barrier is nested within the substrate. 
 
-```{r lme analysis}
+```{r lme analysis, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+#respiration rate
+lme1<-lmer(r~Substrate+Structure/Substrate + (1|Day), d)
+#Proteins
+lme2<-lmer(Protc~Substrate+Structure/Substrate + (1|Day), d)
+#DNA
+lme3<-lmer(DNAc~Substrate+Structure/Substrate + (1|Day), d)
+
+t.s0<-as.data.frame(cbind(anova(lme1)[c(5,3,6)], anova(lme3)[c(5,3,6)], anova(lme3)[c(5,3,6)]))
+
+row.names(t.s0)<-c("Substrate", "Structure", "Substrate*Structure")
+
+kable(t.s0, digits = c(2, 1, 3, 2, 1, 3, 2, 1, 3), align = 'c', "html", booktabs=T, col.names = c("F", "df", "p", "F", "df", "p", "F", "df", "p"), row.names=T, caption = "_**Table S1:** Results of linear mixed-effects model analysis. Effect of substrate, the type physical barrier (Structure) and their interaction was evaluated. Statistical analysis was conducted for measured respiration rate, cellular protien concentration and DNA. F values, degrees of freedom (df) and the probabality (p) are reported._") %>% 
+  kable_styling() %>% 
+  add_header_above(c(" " = 1, "Respiration rate" = 3, "Cellular Proteins" = 3, "DNA" = 3),
+                   italic=T)
+
+
+```
+$~$
+$~$
+$~$
+$~$
+$~$
+$~$
+
+```{r lme effects, echo=FALSE, fig.height=5, fig.width=15, message=FALSE, paged.print=FALSE, fig.cap="Fig. S1: Marginal effects of the substrate (Glucose or Cellobiose) and the type of physical barrier (BROTH, GLASS, WOOL) on the respiration rate (a), cellular proteins (b) and DNA concentration (c) estimated by the linear mixed-effect model."}
+#respiration
+lme1_contr<-get_contrasts(lme1)
+lme1_effects<-ggpredict(lme1, c("Substrate", "Structure"), type="fe")
+lme1_effects$x<-c(rep("Cellobiose", 3), rep("Glucose", 3))
+lme1_effects$group<-c(rep(c("BROTH", "WOOL", "GLASS"), 2))
+lme1_effects<-lme1_effects[order(lme1_effects$group), ]
+lme1_effects$letters<-c(as.character(cldList(p ~ Contrast, data      = lme1_contr, threshold = 0.05)[[2]])[c(1:2, 5:6)], as.character(cldList(p ~ Contrast, data      = lme1_contr, threshold = 0.05)[[2]])[c(3:4)])
+#Proteins
+lme2_contr<-get_contrasts(lme2)
+lme2_effects<-ggpredict(lme2, c("Substrate", "Structure"), type="fe")
+lme2_effects$x<-c(rep("Cellobiose", 3), rep("Glucose", 3))
+lme2_effects$group<-c(rep(c("BROTH", "WOOL", "GLASS"), 2))
+lme2_effects<-lme2_effects[order(lme2_effects$group), ]
+lme2_effects$letters<-c(as.character(cldList(p ~ Contrast, data      = lme2_contr, threshold = 0.05)[[2]])[c(1:2, 5:6)], as.character(cldList(p ~ Contrast, data      = lme2_contr, threshold = 0.05)[[2]])[c(3:4)])
+#DNA
+lme3_contr<-get_contrasts(lme3)
+lme3_effects<-ggpredict(lme3, c("Substrate", "Structure"), type="fe")
+lme3_effects$x<-c(rep("Cellobiose", 3), rep("Glucose", 3))
+lme3_effects$group<-c(rep(c("BROTH", "WOOL", "GLASS"), 2))
+lme3_effects<-lme3_effects[order(lme3_effects$group), ]
+lme3_effects$letters<-c(as.character(cldList(p ~ Contrast, data      = lme3_contr, threshold = 0.05)[[2]])[c(1:2, 5:6)], as.character(cldList(p ~ Contrast, data      = lme3_contr, threshold = 0.05)[[2]])[c(3:4)])
+
+p1<-ggplot(lme1_effects, aes(x, predicted))+
+    geom_point(position = position_dodge(width = 0.5), aes(fill=group), shape=21, cex=6, show.legend = F)+
+    scale_fill_manual(values = c("black", "grey", "white"))+
+    scale_colour_manual(values = c("black", "black", "black"))+
+    geom_errorbar(aes(ymin=predicted-std.error, ymax=predicted+std.error, colour=group),
+                  position=position_dodge(width = 0.5), width=0.1, show.legend = F)+
+    ylab(expression(paste("Respiration rate (", mu, "mol",(C-CO[2])~ml^{-1}~h^{-1}, ")")))+
+    ggtitle("a)")+
+    geom_text(aes(label=letters, colour=group, vjust=-10, fontface="bold.italic"),
+              cex=5, position=position_dodge(width = 0.5), show.legend = F)+
+    ylim(-0.01,0.3)+
+    theme_min+theme(axis.title.x = element_blank(),
+                    legend.title = element_blank())
+p2<-ggplot(lme2_effects, aes(x, predicted))+
+    geom_point(position = position_dodge(width = 0.5), aes(fill=group), shape=21, cex=6, show.legend = F)+
+    scale_fill_manual(values = c("black", "grey", "white"))+
+    scale_colour_manual(values = c("black", "black", "black"))+
+    geom_errorbar(aes(ymin=predicted-std.error, ymax=predicted+std.error, colour=group),
+                  position=position_dodge(width = 0.5), width=0.1, show.legend = F)+
+    ylab(expression(paste("Cellular Proteins (", mu, "mol",(C[Proteins])~ml^{-1}, ")")))+
+    ggtitle("b)")+
+    geom_text(aes(label=letters, colour=group, vjust=-3, fontface="bold.italic"),
+              cex=5, position=position_dodge(width = 0.5), show.legend = F)+
+    ylim(0,1.2)+
+    theme_min+theme(axis.title.x = element_blank(),
+                    legend.title = element_blank())
+p3<-ggplot(lme3_effects, aes(x, predicted))+
+    geom_point(position = position_dodge(width = 0.5), aes(fill=group), shape=21, cex=6)+
+    scale_fill_manual(values = c("black", "grey", "white"))+
+    scale_colour_manual(values = c("black", "black", "black"))+
+    geom_errorbar(aes(ymin=predicted-std.error, ymax=predicted+std.error, colour=group),
+                  position=position_dodge(width = 0.5), width=0.1)+
+    ylab(expression(paste("DNA (", mu, "mol",(C[DNA])~ml^{-1}, ")")))+
+    ggtitle("c)")+
+    geom_text(aes(label=letters, colour=group, vjust=-3, fontface="bold.italic"),
+              cex=5, position=position_dodge(width = 0.5), show.legend = F)+
+    ylim(0,0.08)+
+    theme_min+theme(axis.title.x = element_blank(),
+                    legend.title = element_blank(),
+                    legend.position = c(0.25,0.2))
+
+
+grid.arrange(p1, p2, p3, nrow=1)
 
 ```
 
 
-
+##Microbial-explicit models analysis
 ###All models are first calibrated against respiration rate
 Calibration of each model is done in four steps. First, the model is calibrated against data across all treatments. Second, the model is calibrated for each level of incubation system complexity separately. Third, the model is calibrated for Glucose and Cellobiose treatments separately. Fourth, the model is calibrated for each experimental treatment separately. 
 Goodness of correspondence between measurements and model simulations are calculated across all treatments. By doing so, the effect of experimental treatment is evaluated. If the model simulation fits the data significantly better when model parameters are estimated for different treatments separately, effect of this treatment is significant.
@@ -407,14 +518,14 @@ row.names(t.s1.1)<-c("All", "Broth", "Glass", "Wool",
 options(knitr.kable.NA = '')
 
 
-kable(t.s1.1, digits = c(2, 2, 2, 3), align = 'c', "html", booktabs=T, col.names = c('$\\V_{MAX}$', '$\\K_{M}$', 'CUE', '$\\k_{MB}$'), row.names=T, caption = "_**Table S1:** Monod model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(t.s1.1, digits = c(2, 2, 2, 3), align = 'c', "html", booktabs=T, col.names = c('$\\V_{MAX}$', '$\\K_{M}$', 'CUE', '$\\k_{MB}$'), row.names=T, caption = "_**Table S2:** Monod model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 1) %>%
   group_rows("Structure", 2, 4) %>%
   group_rows("Substrate", 5, 6) %>%
   group_rows("Each", 7, 12) 
 
-kable(monod_r_results_good, digits = c(2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S2:** Goodness of fit of monod model calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(monod_r_results_good, digits = c(2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S3:** Goodness of fit of monod model calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 1) %>%
   group_rows("Structure", 2, 2) %>%
@@ -733,14 +844,14 @@ row.names(t.s2.1)<-c("All", "Broth", "Glass", "Wool",
 options(knitr.kable.NA = '')
 
 
-kable(t.s2.1, digits = c(2, 2, 2, 3), align = 'c', "html", booktabs=T, col.names = c('$\\V_{MAX}$', '$\\K_{M}$', 'CUE', '$\\m_{R}$'), row.names=T, caption = "_**Table S3:** MEND model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(t.s2.1, digits = c(2, 2, 2, 3), align = 'c', "html", booktabs=T, col.names = c('$\\V_{MAX}$', '$\\K_{M}$', 'CUE', '$\\m_{R}$'), row.names=T, caption = "_**Table S4:** MEND model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 1) %>%
   group_rows("Structure", 2, 4) %>%
   group_rows("Substrate", 5, 6) %>%
   group_rows("Each", 7, 12) 
 
-kable(mend_r_results_good, digits = c(2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S4:** Goodness of fit of MEND model calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(mend_r_results_good, digits = c(2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S5:** Goodness of fit of MEND model calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 1) %>%
   group_rows("Structure", 2, 2) %>%
@@ -1070,14 +1181,14 @@ row.names(t.s3.1)<-c("All", "Broth", "Glass", "Wool",
 options(knitr.kable.NA = '')
 
 
-kable(t.s3.1, digits = c(2, 2, 3, 2, 2), align = 'c', "html", booktabs=T, col.names = c('$\\V_{MAX}$', '$\\K_{M}$', '$\\m_{R}$', '$\\f_{0}$', '$\\Y_{S}$'), row.names=T, caption = "_**Table S5:** DEB model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(t.s3.1, digits = c(2, 2, 3, 2, 2), align = 'c', "html", booktabs=T, col.names = c('$\\V_{MAX}$', '$\\K_{M}$', '$\\m_{R}$', '$\\f_{0}$', '$\\Y_{S}$'), row.names=T, caption = "_**Table S6:** DEB model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 1) %>%
   group_rows("Structure", 2, 4) %>%
   group_rows("Substrate", 5, 6) %>%
   group_rows("Each", 7, 12) 
 
-kable(deb_r_results_good, digits = c(2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S6:** Goodness of fit of DEB model calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(deb_r_results_good, digits = c(2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S7:** Goodness of fit of DEB model calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 1) %>%
   group_rows("Structure", 2, 2) %>%
@@ -1683,14 +1794,14 @@ t.s4.1<-data.frame(Name=rep(c("All", "Broth", "Glass", "Wool",
 options(knitr.kable.NA = '')
 
 
-kable(t.s4.1, digits = c(0, 0, 2, 2, 2, 3, 3), align = 'c', "html", booktabs=T, col.names = c(" "," ", '$\\V_{MAX}$', '$\\K_{M}$', 'CUE', '$\\k_{MB}$', 'Conversion factor'), row.names=F, caption = "_**Table S7:** Monod model parameters calibrated against respiration rate and protein/DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(t.s4.1, digits = c(0, 0, 2, 2, 2, 3, 3), align = 'c', "html", booktabs=T, col.names = c(" "," ", '$\\V_{MAX}$', '$\\K_{M}$', 'CUE', '$\\k_{MB}$', 'Conversion factor'), row.names=F, caption = "_**Table S8:** Monod model parameters calibrated against respiration rate and protein/DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 2) %>%
   group_rows("Structure", 3, 8) %>%
   group_rows("Substrate", 9, 12) %>%
   group_rows("Each", 13, 24) 
 
-kable(monod_all_results_good, digits = c(0, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S8:** Goodness of fit of Monod model calibrated against respiration rate and protein/DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(monod_all_results_good, digits = c(0, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S9:** Goodness of fit of Monod model calibrated against respiration rate and protein/DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("Protein", 1, 8, label_row_css = "background-color: #666; color: #fff;") %>%
   group_rows("All", 1, 2) %>%
@@ -2306,14 +2417,14 @@ t.s5.1<-data.frame(Name=rep(c("All", "Broth", "Glass", "Wool",
 options(knitr.kable.NA = '')
 
 
-kable(t.s5.1, digits = c(0, 0, 2, 2, 2, 3, 2), align = 'c', "html", booktabs=T, col.names = c(" "," ", '$\\V_{MAX}$', '$\\K_{M}$', 'CUE', '$\\m_{R}$', 'Conversion factor'), row.names=F, caption = "_**Table S9:** MEND model parameters calibrated against respiration rate and protein/DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(t.s5.1, digits = c(0, 0, 2, 2, 2, 3, 2), align = 'c', "html", booktabs=T, col.names = c(" "," ", '$\\V_{MAX}$', '$\\K_{M}$', 'CUE', '$\\m_{R}$', 'Conversion factor'), row.names=F, caption = "_**Table S10:** MEND model parameters calibrated against respiration rate and protein/DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 2) %>%
   group_rows("Structure", 3, 8) %>%
   group_rows("Substrate", 9, 12) %>%
   group_rows("Each", 13, 24) 
 
-kable(mend_all_results_good, digits = c(0, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S10:** Goodness of fit of MEND model calibrated against respiration rate and protein/DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(mend_all_results_good, digits = c(0, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S11:** Goodness of fit of MEND model calibrated against respiration rate and protein/DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("Protein", 1, 8, label_row_css = "background-color: #666; color: #fff;") %>%
   group_rows("All", 1, 2) %>%
@@ -2651,8 +2762,8 @@ deb_i4_all$goodness
 # write.csv(deb_all_results_par, file = c("../deb_all_results_par.csv"), row.names = F)
 # write.csv(deb_all_results_good, file = c("../deb_all_results_good.csv"), row.names = F)
 
-deb_all_results_par<-read.csv("deb_all_results_par")
-deb_all_results_good<-read.csv("deb_all_results_good")
+deb_all_results_par<-read.csv("deb_all_results_par.csv")
+deb_all_results_good<-read.csv("deb_all_results_good.csv")
 
 
 t.s6.1<-data.frame(Name=c("All", "Broth", "Glass", "Wool",
@@ -2672,14 +2783,14 @@ t.s6.1<-data.frame(Name=c("All", "Broth", "Glass", "Wool",
 options(knitr.kable.NA = '')
 
 
-kable(t.s6.1, digits = c(0, 2, 2, 3, 2, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c(" ",'$\\V_{MAX}$', '$\\K_{M}$', '$\\m_{R}$', '$\\f_{0}$', '$\\Y_{S}$', '$\\R_{Proteins}$', '$\\R_{DNA}$', '$\\"S"_{DNA}$'), row.names=F, caption = "_**Table S11:** DEB model parameters calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(t.s6.1, digits = c(0, 2, 2, 3, 2, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c(" ",'$\\V_{MAX}$', '$\\K_{M}$', '$\\m_{R}$', '$\\f_{0}$', '$\\Y_{S}$', '$\\R_{Proteins}$', '$\\S_{Proteins}$', '$\\S_{DNA}$'), row.names=F, caption = "_**Table S12:** DEB model parameters calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 1) %>%
   group_rows("Structure", 2, 4) %>%
   group_rows("Substrate", 5, 6) %>%
   group_rows("Each", 7, 12) 
 
-kable(deb_all_results_good, digits = c(0, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S12:** Goodness of fit of DEB model calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(deb_all_results_good, digits = c(0, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S13:** Goodness of fit of DEB model calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 3) %>%
   group_rows("Structure", 4, 6) %>%
