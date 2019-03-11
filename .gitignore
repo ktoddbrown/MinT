@@ -47,4 +47,5 @@ R/
 OLD/
 Rscripts/
 
+#html output
 *.html
