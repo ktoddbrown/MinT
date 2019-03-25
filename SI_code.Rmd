@@ -731,19 +731,18 @@ mend_r<-function(data, FACT){
         
         #equations
         #C uptake
-        F1=1/CUE*(Vmax+mr)*Cmic*C/(Km+C)
-        #growth respiration
-        F4=(1/CUE-1)*Vmax*Cmic*C/(Km+C)
-        #maintnance respiration
-        F5=(1/CUE-1)*mr*Cmic*C/(Km+C)
-        #microbial mortality
-        F8=mr*Cmic
+        Cu=Vmax*Cmic*C/(Km+C)
+        #respiration
+        r=mr*Cmic+(1-CUE)*Cu
+        
+        #Protc=Cmic*fp
+        #DNAc=Cmic*fd
         
         #states
-        dCmic<-F1-(F4+F5)-F8
-        dC<--F1+F8
+        dCmic<-CUE*Cu-mr*Cmic
+        dC<--Cu
         
-        return(list(c(dCmic, dC), r=F4+F5, Protc=0.548*Cmic))
+        return(list(c(dCmic, dC), r=r))
         
       })
     }
@@ -764,25 +763,26 @@ mend_r<-function(data, FACT){
         yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25), parms=par, deriv, times=sort(odeset$Time)))
         
         #select time and the measured variables 
-        yhat<-select(yhat_all, c("time", "Protc", "r"))
+        yhat<-select(yhat_all, c("time", "r"))
+        colnames(yhat)<-c("time", "value")
         
         #reformat to long format data frame
-        Yhat<-melt(yhat, id.vars = "time")
+        #Yhat<-melt(yhat, id.vars = "time")
         
         #add the measured data to a data frame
-        Yhat$obs<-c(odeset[order(odeset$Time), "Protc"], odeset[order(odeset$Time), c("r")])
+        yhat$obs<-c(odeset[order(odeset$Time), c("r")])
         
         #add the weighting factor
         #I want to have the weighting factor to be proportional to mean of the given variable 
-        yweights<-Yhat %>% group_by(variable) %>% summarise(weights=mean(value, na.rm = T))
+        yhat$weights<-rep(mean(yhat$value, na.rm = T), times=nrow(yhat))
         
         #match with the Yhat data frame
-        Yhat<-merge(Yhat, yweights, by.x=c("variable"), by.y=c("variable"))
+        #Yhat<-merge(Yhat, yweights, by.x=c("variable"), by.y=c("variable"))
         
-        Yhat<-Yhat[Yhat$variable!="Protc", ]
+        #Yhat<-Yhat[Yhat$variable!="Protc", ]
         
         #now, the root mean square error is calculated
-        NRMSE<-as.numeric(Yhat %>% summarise(NRMSE=sum((((value-obs)/mean(weights))^2), na.rm = T)))
+        NRMSE<-with(yhat, sum((((value-obs)/mean(weights))^2), na.rm = T))
         
         return(NRMSE)
         
@@ -799,25 +799,35 @@ mend_r<-function(data, FACT){
         yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25), parms=par, deriv, times=sort(odeset$Time)))
         
         #select time and the measured variables 
-        yhat<-select(yhat_all, c("time", "Protc", "r"))
+        yhat<-select(yhat_all, c("time", "r"))
+        colnames(yhat)<-c("time", "value")
         
         #reformat to long format data frame
-        Yhat<-melt(yhat, id.vars = "time")
+        #Yhat<-melt(yhat, id.vars = "time")
         
         #add the measured data to a data frame
-        Yhat$obs<-c(odeset[order(odeset$Time), "Protc"], odeset[order(odeset$Time), c("r")])
-        Yhat$Substrate<-rep(odeset[order(odeset$Time), "Substrate"], times=2)
-        Yhat$Structure<-rep(odeset[order(odeset$Time), "Structure"], times=2)
+        yhat$obs<-c(odeset[order(odeset$Time), c("r")])
+        
+        #add the weighting factor
+        #I want to have the weighting factor to be proportional to mean of the given variable 
+        #yhat$weights<-rep(mean(yhat$value, na.rm = T), times=nrow(yhat))
+        
+        #match with the Yhat data frame
+        #Yhat<-merge(Yhat, yweights, by.x=c("variable"), by.y=c("variable"))
+        
+        #Yhat<-Yhat[Yhat$variable!="Protc", ]
         
         #rsquared calculation for each variable
-        Gfit<-Yhat %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
-                                                        SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
-                                                        ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
-        Gfit$R2<-with(Gfit, 1-SSres/SStot)
-        Gfit$N<-c(5)
-        Gfit$AIC<-with(Gfit, 2*N-2*ll)
+        SSres=with(yhat, sum(((obs-value)^2), na.rm = T))
+        SStot=with(yhat, sum(((obs-mean(obs, na.rm = T))^2), na.rm = T))
+        ll=with(yhat, -sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+        R2<-1-SSres/SStot
+        N<-length(x)
+        AIC<-2*N-2*ll
         
-        rsq_out<-list(Yhat=Yhat, Gfit=Gfit)
+        Gfit<-c(R2=R2, N=N, AIC=AIC, ll=ll)
+        
+        rsq_out<-list(Yhat=yhat, Gfit=Gfit)
         
         return(rsq_out)
         
@@ -825,7 +835,7 @@ mend_r<-function(data, FACT){
       
       #approximate parameter estimation is done by MCMC method
       par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, mr=0.01, Cmic_0=0.01), 
-                          lower=c(Vmax=1e-3, Km=1e-3, CUE=0, mr=1e-5,  Cmic_0=1e-5),
+                          lower=c(Vmax=1e-3, Km=1e-3, CUE=0, mr=1e-5, Cmic_0=1e-5),
                           upper=c(Vmax=10, Km=100, CUE=1, mr=10, Cmic_0=5), niter=10000)
       
       #lower and upper limits for parameters are extracted
@@ -887,13 +897,14 @@ mend_r<-function(data, FACT){
         res$OvP<-rbind(res[[1]]$fit$Yhat, res[[2]]$fit$Yhat)
         
         #rsquared calculation for each variable
-        res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
-                                                               SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
-                                                               ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
-        res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
-        res$goodness$N<-rep(length(parnames)*2, times=2)
-        res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
+        SSres=with(res$OvP, sum(((obs-value)^2), na.rm = T))
+        SStot=with(res$OvP, sum(((obs-mean(obs, na.rm = T))^2), na.rm = T))
+        ll=with(res$OvP, -sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+        R2<-1-SSres/SStot
+        N<-length(parnames)*2
+        AIC<-2*N-2*ll
         
+        res$goodness<-c(R2=R2, N=N, AIC=AIC, ll=ll)
         
       }else{
         
@@ -901,26 +912,29 @@ mend_r<-function(data, FACT){
           
           res$OvP<-rbind(res[[1]]$fit$Yhat, res[[2]]$fit$Yhat, res[[3]]$fit$Yhat)
           
-          #rsquared calculation for each variable
-          res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
-                                                                 SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
-                                                                 ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
-          res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
-          res$goodness$N<-rep(length(parnames)*3, times=2)
-          res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
+        #rsquared calculation for each variable
+        SSres=with(res$OvP, sum(((obs-value)^2), na.rm = T))
+        SStot=with(res$OvP, sum(((obs-mean(obs, na.rm = T))^2), na.rm = T))
+        ll=with(res$OvP, -sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+        R2<-1-SSres/SStot
+        N<-length(parnames)*3
+        AIC<-2*N-2*ll
+        
+        res$goodness<-c(R2=R2, N=N, AIC=AIC, ll=ll)
           
         }else{
           
           res$OvP<-rbind(res[[1]]$fit$Yhat, res[[2]]$fit$Yhat, res[[3]]$fit$Yhat, res[[4]]$fit$Yhat, res[[5]]$fit$Yhat, res[[6]]$fit$Yhat)
           
-          #rsquared calculation for each variable
-          res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
-                                                                 SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
-                                                                 ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
-          res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
-          res$goodness$N<-rep(length(parnames)*6, times=2)
-          res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
-          
+        #rsquared calculation for each variable
+        SSres=with(res$OvP, sum(((obs-value)^2), na.rm = T))
+        SStot=with(res$OvP, sum(((obs-mean(obs, na.rm = T))^2), na.rm = T))
+        ll=with(res$OvP, -sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+        R2<-1-SSres/SStot
+        N<-length(parnames)*6
+        AIC<-2*N-2*ll
+        
+        res$goodness<-c(R2=R2, N=N, AIC=AIC, ll=ll)
         }
         
       }
@@ -962,16 +976,16 @@ mend_r4$goodness
 
 ```{r MEND respiration calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 
-#results of the previous iteration (not run)
+# #results of the previous iteration (not run)
 # mend_r_results_par<-rbind(mend_r1[[1]]$pars,
-#                       mend_r2[[1]]$pars, mend_r2[[2]]$pars, mend_r2[[3]]$pars,
-#                       mend_r3[[1]]$pars, mend_r3[[2]]$pars,
-#                       mend_r4[[1]]$pars, mend_r4[[2]]$pars, mend_r4[[3]]$pars,
-#                       mend_r4[[4]]$pars, mend_r4[[5]]$pars, mend_r4[[6]]$pars)
-# mend_r_results_good<-rbind(mend_r1$goodness[2,c(4:7)],
-#                      mend_r2$goodness[2,c(4:7)],
-#                      mend_r3$goodness[2,c(4:7)],
-#                      mend_r4$goodness[2,c(4:7)])
+#                      mend_r2[[1]]$pars, mend_r2[[2]]$pars, mend_r2[[3]]$pars,
+#                      mend_r3[[1]]$pars, mend_r3[[2]]$pars,
+#                      mend_r4[[1]]$pars, mend_r4[[2]]$pars, mend_r4[[3]]$pars,
+#                      mend_r4[[4]]$pars, mend_r4[[5]]$pars, mend_r4[[6]]$pars)
+# mend_r_results_good<-as.data.frame(rbind(mend_r1$goodness,
+#                     mend_r2$goodness,
+#                     mend_r3$goodness,
+#                     mend_r4$goodness))
 # write.csv(mend_r_results_par, file = c("../mend_r_results_par.csv"), row.names = F)
 # write.csv(mend_r_results_good, file = c("../mend_r_results_good.csv"), row.names = F)
 
@@ -1476,7 +1490,7 @@ monod_i<-function(data, FACT){
                                                         SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                         ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
         Gfit$R2<-with(Gfit, 1-SSres/SStot)
-        Gfit$N<-c(6)
+        Gfit$N<-length(x)
         Gfit$AIC<-with(Gfit, 2*N-2*ll)
         
         rsq_out<-list(Yhat=Yhat, Gfit=Gfit)
@@ -2014,21 +2028,19 @@ mend_i<-function(data, FACT){
         
         #equations
         #C uptake
-        F1=1/CUE*(Vmax+mr)*Cmic*C/(Km+C)
-        #growth respiration
-        F4=(1/CUE-1)*Vmax*Cmic*C/(Km+C)
-        #maintnance respiration
-        F5=(1/CUE-1)*mr*Cmic*C/(Km+C)
-        #microbial mortality
-        F8=mr*Cmic
+        Cu=Vmax*Cmic*C/(Km+C)
+        #respiration
+        r=mr*Cmic+(1-CUE)*Cu
         
-        Protc=fp*Cmic
+        Protc=Cmic*fp
+        #DNAc=Cmic*fd
         
         #states
-        dCmic<-F1-(F4+F5)-F8
-        dC<--F1+F8
+        dCmic<-CUE*Cu-mr*Cmic
+        dC<--Cu
         
-        return(list(c(dCmic, dC), r=F4+F5, Protc=Protc))
+        return(list(c(dCmic, dC), r=r, Protc=Protc))
+        
         
       })
     }
@@ -2098,7 +2110,7 @@ mend_i<-function(data, FACT){
                                                         SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                         ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
         Gfit$R2<-with(Gfit, 1-SSres/SStot)
-        Gfit$N<-c(6)
+        Gfit$N<-length(x)
         Gfit$AIC<-with(Gfit, 2*N-2*ll)
         
         rsq_out<-list(Yhat=Yhat, Gfit=Gfit)
@@ -2260,23 +2272,20 @@ mend_i_DNA<-function(data, FACT){
       
       with(as.list(c(state, pars)),{
         
-        #equations
+       #equations
         #C uptake
-        F1=1/CUE*(Vmax+mr)*Cmic*C/(Km+C)
-        #growth respiration
-        F4=(1/CUE-1)*Vmax*Cmic*C/(Km+C)
-        #maintnance respiration
-        F5=(1/CUE-1)*mr*Cmic*C/(Km+C)
-        #microbial mortality
-        F8=mr*Cmic
+        Cu=Vmax*Cmic*C/(Km+C)
+        #respiration
+        r=mr*Cmic+(1-CUE)*Cu
         
-        DNAc=fd*Cmic
+        #Protc=Cmic*fp
+        DNAc=Cmic*fd
         
         #states
-        dCmic<-F1-(F4+F5)-F8
-        dC<--F1+F8
+        dCmic<-CUE*Cu-mr*Cmic
+        dC<--Cu
         
-        return(list(c(dCmic, dC), r=F4+F5, DNAc=DNAc))
+        return(list(c(dCmic, dC), r=r, DNAc=DNAc))
         
       })
     }
@@ -2346,7 +2355,7 @@ mend_i_DNA<-function(data, FACT){
                                                         SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                         ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
         Gfit$R2<-with(Gfit, 1-SSres/SStot)
-        Gfit$N<-c(6)
+        Gfit$N<-length(x)
         Gfit$AIC<-with(Gfit, 2*N-2*ll)
         
         rsq_out<-list(Yhat=Yhat, Gfit=Gfit)
@@ -2356,9 +2365,9 @@ mend_i_DNA<-function(data, FACT){
       }
       
       #approximate parameter estimation is done by MCMC method
-      par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, mr=0.01, fp=0.5, Cmic_0=0.01), 
-                          lower=c(Vmax=1e-3, Km=1e-3, CUE=0, mr=1e-5, fp=0, Cmic_0=1e-5),
-                          upper=c(Vmax=10, Km=100, CUE=1, mr=10, fp=1, Cmic_0=5), niter=10000)
+      par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, mr=0.01, fd=0.5, Cmic_0=0.01), 
+                          lower=c(Vmax=1e-3, Km=1e-3, CUE=0, mr=1e-5, fd=0, Cmic_0=1e-5),
+                          upper=c(Vmax=10, Km=100, CUE=1, mr=10, fd=1, Cmic_0=5), niter=10000)
       
       #lower and upper limits for parameters are extracted
       pl<-summary(par_mcmc)["min",]
@@ -2517,31 +2526,31 @@ mend_i4_DNA$goodness
 
 ```{r MEND overall calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 
-#results of the previous iteration (not run)
+# #results of the previous iteration (not run)
 # mend_all_results_par<-rbind(mend_i1[[1]]$pars, mend_i1_DNA[[1]]$pars,
-#                    mend_i2[[1]]$pars, mend_i2[[2]]$pars, mend_i2[[3]]$pars,
-#                    mend_i2_DNA[[1]]$pars, mend_i2_DNA[[2]]$pars, mend_i2_DNA[[3]]$pars,
-#                    mend_i3[[1]]$pars, mend_i3[[2]]$pars,
-#                    mend_i3_DNA[[1]]$pars, mend_i3_DNA[[2]]$pars,
-#                    mend_i4[[1]]$pars, mend_i4[[2]]$pars, mend_i4[[3]]$pars,
-#                    mend_i4[[4]]$pars, mend_i4[[5]]$pars, mend_i4[[6]]$pars,
-#                    mend_i4_DNA[[1]]$pars, mend_i4_DNA[[2]]$pars, mend_i4_DNA[[3]]$pars,
-#                    mend_i4_DNA[[4]]$pars, mend_i4_DNA[[5]]$pars, mend_i4_DNA[[6]]$pars)
+#                   mend_i2[[1]]$pars, mend_i2[[2]]$pars, mend_i2[[3]]$pars,
+#                   mend_i2_DNA[[1]]$pars, mend_i2_DNA[[2]]$pars, mend_i2_DNA[[3]]$pars,
+#                   mend_i3[[1]]$pars, mend_i3[[2]]$pars,
+#                   mend_i3_DNA[[1]]$pars, mend_i3_DNA[[2]]$pars,
+#                   mend_i4[[1]]$pars, mend_i4[[2]]$pars, mend_i4[[3]]$pars,
+#                   mend_i4[[4]]$pars, mend_i4[[5]]$pars, mend_i4[[6]]$pars,
+#                   mend_i4_DNA[[1]]$pars, mend_i4_DNA[[2]]$pars, mend_i4_DNA[[3]]$pars,
+#                   mend_i4_DNA[[4]]$pars, mend_i4_DNA[[5]]$pars, mend_i4_DNA[[6]]$pars)
 # 
 # mend_all_results_good<-rbind(mend_i1$goodness[c(2,1),c(4:7)],
-#                  mend_i2$goodness[c(2,1),c(4:7)],
-#                  mend_i3$goodness[c(2,1),c(4:7)],
-#                  mend_i4$goodness[c(2,1),c(4:7)],
-#                  mend_i1_DNA$goodness[c(2,1),c(4:7)],
-#                  mend_i2_DNA$goodness[c(2,1),c(4:7)],
-#                  mend_i3_DNA$goodness[c(2,1),c(4:7)],
-#                  mend_i4_DNA$goodness[c(2,1),c(4:7)])
+#                 mend_i2$goodness[c(2,1),c(4:7)],
+#                 mend_i3$goodness[c(2,1),c(4:7)],
+#                 mend_i4$goodness[c(2,1),c(4:7)],
+#                 mend_i1_DNA$goodness[c(2,1),c(4:7)],
+#                 mend_i2_DNA$goodness[c(2,1),c(4:7)],
+#                 mend_i3_DNA$goodness[c(2,1),c(4:7)],
+#                 mend_i4_DNA$goodness[c(2,1),c(4:7)])
 # 
 # mend_all_results_good[mend_all_results_good$R2<0,"R2"]<-c(0)
 # mend_all_results_good$Name<-c(rep(c("Respiration rate", "Protein"), times=4),
-#                               rep(c("Respiration rate", "DNA"), times=4))
+#                              rep(c("Respiration rate", "DNA"), times=4))
 # mend_all_results_good<-mend_all_results_good[,c(5,1,2,3,4)]
-#  
+# 
 # 
 # write.csv(mend_all_results_par, file = c("../mend_all_results_par.csv"), row.names = F)
 # write.csv(mend_all_results_good, file = c("../mend_all_results_good.csv"), row.names = F)
@@ -3007,3 +3016,576 @@ grid.arrange(corplot1, corplot2, nrow=1)
 
 
 ```
+
+
+```{r picina example, eval=FALSE, include=TRUE}
+
+#######################################Monod model##################################################
+monod_ex<-function(data){
+
+   #monod growth function
+    deriv<-function(time, state, pars){
+      
+      with(as.list(c(state, pars)),{
+        
+        Cb<-matrix(state[1:5], ncol = 1)
+        C<-matrix(state[6:10], ncol = 1)
+        
+        dCb<--k*Cb+CUE*Vmax*Cb*C/(Km+C)
+        dC<-k*Cb-Vmax*Cb*C/(Km+C)
+        
+        return(list(c(dCb, dC), r=(1-CUE)*Vmax*Cb*C/(Km+C), Cmic=kec*Cb))
+        
+      })
+    }
+    
+    #define names of parameters
+    parnames<-c("Vmax", "Km", "CUE", "k", "kec")
+
+    #parameters estimation function
+    estim<-function(odeset){
+
+      #defining cost function
+      cost<-function(x){
+
+        par<-x[1:length(parnames)]
+
+        names(par)<-parnames
+        
+        #initial conditions
+        Cmicinit=93.6/par[["kec"]]
+        Cinit=315
+
+        #first, pars dependent output from ode is matched with measured values
+        yhat_all<-as.data.frame(ode(y=c(Cb1=Cmicinit, Cb2=Cmicinit, Cb3=Cmicinit, Cb4=Cmicinit, Cb5=Cmicinit,
+                                        C1=315, C2=315, C3=315, C4=315, C5=315), parms=par, deriv, times=c(0, 8, 16, 24, 48, 72)))
+
+        #select time and the measured variables
+        yhat<-select(yhat_all, c("time", "Cmic1", "Cmic2", "Cmic3","Cmic4", "Cmic5",
+                               "C1", "C2", "C3", "C4", "C5",
+                               "r1", "r2", "r3", "r4", "r5"))
+
+        #reformat to long format data frame
+        Yhat<-melt(yhat, id.vars = "time")
+
+        #add the measured data to a data frame
+        Yhat$obs<-c(as.numeric(odeset[c(1,6,11,16, 21, 26), c("Cmic")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("Cmic")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("Cmic")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("Cmic")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("Cmic")]),
+                  as.numeric(odeset[c(1,6,11,16, 21, 26), c("DOC")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("DOC")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("DOC")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("DOC")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("DOC")]),
+                  as.numeric(odeset[c(1,6,11,16, 21, 26), c("r")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("r")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("r")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("r")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("r")]))
+
+        #add the weighting factor
+        #I want to have the weighting factor to be proportional to mean of the given variable
+        yweights<-Yhat %>% group_by(variable) %>% summarise(weights=mean(value, na.rm = T))
+
+        #match with the Yhat data frame
+        Yhat<-merge(Yhat, yweights, by.x=c("variable"), by.y=c("variable"))
+
+        #now, the root mean square error is calculated
+        NRMSE<-as.numeric(Yhat %>% group_by(variable) %>% summarise(NRMSE=sum((((value-obs)/mean(weights))^2), na.rm = T)) %>%
+                            summarise(NRMSE=sum(NRMSE)))
+
+        return(NRMSE)
+
+      }
+
+      #defining goodness of fit function
+      rsq_ode<-function(x){
+
+        par<-x[1:length(parnames)]
+
+        names(par)<-parnames
+
+        #initial conditions
+        Cmicinit=93.6/par[["kec"]]
+        Cinit=315
+
+        #first, pars dependent output from ode is matched with measured values
+        yhat_all<-as.data.frame(ode(y=c(Cb1=Cmicinit, Cb2=Cmicinit, Cb3=Cmicinit, Cb4=Cmicinit, Cb5=Cmicinit,
+                                        C1=315, C2=315, C3=315, C4=315, C5=315), parms=par, deriv, times=c(0, 8, 16, 24, 48, 72)))
+
+        #select time and the measured variables
+        yhat<-select(yhat_all, c("time", "Cmic1", "Cmic2", "Cmic3","Cmic4", "Cmic5",
+                               "C1", "C2", "C3", "C4", "C5",
+                               "r1", "r2", "r3", "r4", "r5"))
+
+        #reformat to long format data frame
+        Yhat<-melt(yhat, id.vars = "time")
+
+        #add the measured data to a data frame
+        Yhat$obs<-c(as.numeric(odeset[c(1,6,11,16, 21, 26), c("Cmic")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("Cmic")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("Cmic")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("Cmic")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("Cmic")]),
+                  as.numeric(odeset[c(1,6,11,16, 21, 26), c("DOC")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("DOC")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("DOC")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("DOC")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("DOC")]),
+                  as.numeric(odeset[c(1,6,11,16, 21, 26), c("r")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("r")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("r")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("r")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("r")]))
+        
+        Yhat$variable<-c(rep("Cmic", 30), rep("C", 30), rep("r", 30))
+
+        #rsquared calculation for each variable
+        Gfit<-Yhat %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T),
+                                                        SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
+                                                        ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+        Gfit$R2<-with(Gfit, 1-SSres/SStot)
+        Gfit$N<-length(x)
+        Gfit$AIC<-with(Gfit, 2*N-2*ll)
+
+        rsq_out<-list(Yhat=Yhat, Gfit=Gfit)
+
+        return(rsq_out)
+
+      }
+
+      #approximate parameter estimation is done by MCMC method
+      par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, k=0.01, kec=0.38),
+                          lower=c(Vmax=1e-5, Km=1e-2, CUE=0, k=1e-5, kec=0),
+                          upper=c(Vmax=1, Km=20, CUE=1, k=10, kec=1), niter=10000)
+
+      #lower and upper limits for parameters are extracted
+      pl<-summary(par_mcmc)["min",]
+      pu<-summary(par_mcmc)["max",]
+
+      #these limits are used to find global optimum by DEoptim
+      opt_par<-DEoptim(fn=cost, lower=pl, upper=pu,
+                       control = c(itermax = 10000, steptol = 50, reltol = 1e-8,
+                                   trace=FALSE, strategy=3, NP=250))
+
+      #global optimum parameters are further used in MCMC to find parameters distribution
+      par_prof<-modMCMC(f=cost, p=opt_par$optim$bestmem,
+                        lower=pl,
+                        upper=pu, niter=5000)
+
+      #goodness of fit
+      fit<-rsq_ode(opt_par$optim$bestmem)
+
+      #best parameters
+      p<-opt_par$optim$bestmem
+      names(p)<-parnames
+
+      #return list with opt_par and par_prof
+      estim_out<-list(pars=p, par_prof=par_prof, fit=fit)
+
+      return(estim_out)
+
+    }
+    
+    res<-estim(odeset=data)
+
+
+  return(res)
+
+}
+
+#################################################MEND#######################################################
+mend_ex<-function(data){
+
+   #mend growth function
+    deriv<-function(time, state, pars){
+      
+      with(as.list(c(state, pars)),{
+        
+        Cb<-matrix(state[1:5], ncol = 1)
+        C<-matrix(state[6:10], ncol = 1)
+        
+        dCb<-CUE*Vmax*Cb*C/(Km+C)-mr*Cb
+        dC<--Vmax*Cb*C/(Km+C)
+        
+        return(list(c(dCb, dC), r=(1-CUE)*Vmax*Cb*C/(Km+C)+mr*Cb, Cmic=kec*Cb))
+        
+      })
+    }
+    
+    #define names of parameters
+    parnames<-c("Vmax", "Km", "CUE", "mr", "kec")
+
+    #parameters estimation function
+    estim<-function(odeset){
+
+      #defining cost function
+      cost<-function(x){
+
+        par<-x[1:length(parnames)]
+
+        names(par)<-parnames
+        
+        #initial conditions
+        Cmicinit=93.6/par[["kec"]]
+        Cinit=315
+
+        #first, pars dependent output from ode is matched with measured values
+        yhat_all<-as.data.frame(ode(y=c(Cb1=Cmicinit, Cb2=Cmicinit, Cb3=Cmicinit, Cb4=Cmicinit, Cb5=Cmicinit,
+                                        C1=315, C2=315, C3=315, C4=315, C5=315), parms=par, deriv, times=c(0, 8, 16, 24, 48, 72)))
+
+        #select time and the measured variables
+        yhat<-select(yhat_all, c("time", "Cmic1", "Cmic2", "Cmic3","Cmic4", "Cmic5",
+                               "C1", "C2", "C3", "C4", "C5",
+                               "r1", "r2", "r3", "r4", "r5"))
+
+        #reformat to long format data frame
+        Yhat<-melt(yhat, id.vars = "time")
+
+        #add the measured data to a data frame
+        Yhat$obs<-c(as.numeric(odeset[c(1,6,11,16, 21, 26), c("Cmic")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("Cmic")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("Cmic")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("Cmic")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("Cmic")]),
+                  as.numeric(odeset[c(1,6,11,16, 21, 26), c("DOC")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("DOC")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("DOC")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("DOC")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("DOC")]),
+                  as.numeric(odeset[c(1,6,11,16, 21, 26), c("r")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("r")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("r")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("r")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("r")]))
+
+        #add the weighting factor
+        #I want to have the weighting factor to be proportional to mean of the given variable
+        yweights<-Yhat %>% group_by(variable) %>% summarise(weights=mean(value, na.rm = T))
+
+        #match with the Yhat data frame
+        Yhat<-merge(Yhat, yweights, by.x=c("variable"), by.y=c("variable"))
+
+        #now, the root mean square error is calculated
+        NRMSE<-as.numeric(Yhat %>% group_by(variable) %>% summarise(NRMSE=sum((((value-obs)/mean(weights))^2), na.rm = T)) %>%
+                            summarise(NRMSE=sum(NRMSE)))
+
+        return(NRMSE)
+
+      }
+
+      #defining goodness of fit function
+      rsq_ode<-function(x){
+
+        par<-x[1:length(parnames)]
+
+        names(par)<-parnames
+
+        #initial conditions
+        Cmicinit=93.6/par[["kec"]]
+        Cinit=315
+
+        #first, pars dependent output from ode is matched with measured values
+        yhat_all<-as.data.frame(ode(y=c(Cb1=Cmicinit, Cb2=Cmicinit, Cb3=Cmicinit, Cb4=Cmicinit, Cb5=Cmicinit,
+                                        C1=315, C2=315, C3=315, C4=315, C5=315), parms=par, deriv, times=c(0, 8, 16, 24, 48, 72)))
+
+        #select time and the measured variables
+        yhat<-select(yhat_all, c("time", "Cmic1", "Cmic2", "Cmic3","Cmic4", "Cmic5",
+                               "C1", "C2", "C3", "C4", "C5",
+                               "r1", "r2", "r3", "r4", "r5"))
+
+        #reformat to long format data frame
+        Yhat<-melt(yhat, id.vars = "time")
+
+        #add the measured data to a data frame
+        Yhat$obs<-c(as.numeric(odeset[c(1,6,11,16, 21, 26), c("Cmic")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("Cmic")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("Cmic")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("Cmic")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("Cmic")]),
+                  as.numeric(odeset[c(1,6,11,16, 21, 26), c("DOC")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("DOC")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("DOC")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("DOC")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("DOC")]),
+                  as.numeric(odeset[c(1,6,11,16, 21, 26), c("r")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("r")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("r")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("r")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("r")]))
+        
+        Yhat$variable<-c(rep("Cmic", 30), rep("C", 30), rep("r", 30))
+
+        #rsquared calculation for each variable
+        Gfit<-Yhat %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T),
+                                                        SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
+                                                        ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+        Gfit$R2<-with(Gfit, 1-SSres/SStot)
+        Gfit$N<-length(x)
+        Gfit$AIC<-with(Gfit, 2*N-2*ll)
+
+        rsq_out<-list(Yhat=Yhat, Gfit=Gfit)
+
+        return(rsq_out)
+
+      }
+
+      #approximate parameter estimation is done by MCMC method
+      par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, mr=0.01,kec=0.38),
+                          lower=c(Vmax=1e-5, Km=1e-2, CUE=0, mr=1e-5, kec=0),
+                          upper=c(Vmax=1, Km=20, CUE=1, mr=10, kec=1), niter=10000)
+
+      #lower and upper limits for parameters are extracted
+      pl<-summary(par_mcmc)["min",]
+      pu<-summary(par_mcmc)["max",]
+
+      #these limits are used to find global optimum by DEoptim
+      opt_par<-DEoptim(fn=cost, lower=pl, upper=pu,
+                       control = c(itermax = 10000, steptol = 50, reltol = 1e-8,
+                                   trace=FALSE, strategy=3, NP=250))
+
+      #global optimum parameters are further used in MCMC to find parameters distribution
+      par_prof<-modMCMC(f=cost, p=opt_par$optim$bestmem,
+                        lower=pl,
+                        upper=pu, niter=5000)
+
+      #goodness of fit
+      fit<-rsq_ode(opt_par$optim$bestmem)
+
+      #best parameters
+      p<-opt_par$optim$bestmem
+      names(p)<-parnames
+
+      #return list with opt_par and par_prof
+      estim_out<-list(pars=p, par_prof=par_prof, fit=fit)
+
+      return(estim_out)
+
+    }
+    
+    res<-estim(odeset=data)
+
+
+  return(res)
+
+}
+
+#################################################DEB#######################################################
+deb_ex<-function(data){
+
+   #deb function
+    deriv<-function(time, state, pars){
+      
+      with(as.list(c(state, pars)),{
+        
+      R<-matrix(state[1:5], ncol = 1)
+      S<-matrix(state[6:10], ncol = 1)
+      C<-matrix(state[11:15], ncol = 1)
+      
+      #C uptake
+      Cu=Vmax*S*C/(Km+C)
+      
+      #udrzovani
+      m=S*m0
+      
+      #mobilizace rezerv
+      an=f*R-m
+      
+      #respirace
+      r=m+pmax(an*(1-Yu), 0)
+      
+      #microbialni uhlik je neco z rezerv a neco ze struktur
+      Cmic=fr*R+fs*S
+      
+      dR<-Cu-f*R
+      dS<-pmax(an*Yu,0)+pmin(0, an)
+      dC<--Cu
+      
+      
+      return(list(c(dR, dS, dC), Cmic=Cmic, r=r))
+        
+      })
+    }
+    
+    #define names of parameters
+    parnames<-c("Vmax", "Km", "m0", "f", "Yu", "fr", "fs", "Rinit")
+
+    #parameters estimation function
+    estim<-function(odeset){
+
+      #defining cost function
+      cost<-function(x){
+
+        par<-x
+
+        names(par)<-parnames
+        
+        Cmicinit=93.6
+        Cinit=315
+      
+        #initial R
+        Rinit<-par[["Rinit"]]
+      
+        #initial S is then
+        Sinit<-(Cmicinit-Rinit*par[["fr"]])/par[["fs"]]
+     
+      
+        #first, pars dependent output from ode is matched with measured values
+        yhat_all<-as.data.frame(ode(y=c(R1=Rinit, R2=Rinit, R3=Rinit, R4=Rinit, R5=Rinit,
+                                      S1=Sinit, S2=Sinit, S3=Sinit, S4=Sinit, S5=Sinit,
+                                      C1=315, C2=315, C3=315, C4=315, C5=315), 
+                                  parms=par[1:7], 
+                                  deriv, 
+                                  times=c(0, 8, 16, 24, 48, 72)))
+         #select time and the measured variables 
+         yhat<-select(yhat_all, c("time", "Cmic1", "Cmic2", "Cmic3","Cmic4", "Cmic5",
+                               "C1", "C2", "C3", "C4", "C5",
+                               "r1", "r2", "r3", "r4", "r5"))
+      
+        #reformat to long format data frame
+        Yhat<-melt(yhat, id.vars = "time")
+      
+        
+        #add the measured data to a data frame
+        Yhat$obs<-c(as.numeric(odeset[c(1,6,11,16, 21, 26), c("Cmic")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("Cmic")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("Cmic")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("Cmic")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("Cmic")]),
+                  as.numeric(odeset[c(1,6,11,16, 21, 26), c("DOC")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("DOC")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("DOC")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("DOC")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("DOC")]),
+                  as.numeric(odeset[c(1,6,11,16, 21, 26), c("r")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("r")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("r")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("r")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("r")]))
+
+        #add the weighting factor
+        #I want to have the weighting factor to be proportional to mean of the given variable
+        yweights<-Yhat %>% group_by(variable) %>% summarise(weights=mean(value, na.rm = T))
+
+        #match with the Yhat data frame
+        Yhat<-merge(Yhat, yweights, by.x=c("variable"), by.y=c("variable"))
+
+        #now, the root mean square error is calculated
+        NRMSE<-as.numeric(Yhat %>% group_by(variable) %>% summarise(NRMSE=sum((((value-obs)/mean(weights))^2), na.rm = T)) %>%
+                            summarise(NRMSE=sum(NRMSE))) 
+
+        return(NRMSE)
+
+      }
+
+      #defining goodness of fit function
+      rsq_ode<-function(x){
+
+        par<-x
+
+        names(par)<-parnames
+
+        #initial conditions
+        Cmicinit=93.6
+        Cinit=315
+      
+        #initial R
+        Rinit<-par[["Rinit"]]
+      
+        #initial S is then
+        Sinit<-(Cmicinit-Rinit*par[["fr"]])/par[["fs"]]
+     
+      
+        #first, pars dependent output from ode is matched with measured values
+        yhat_all<-as.data.frame(ode(y=c(R1=Rinit, R2=Rinit, R3=Rinit, R4=Rinit, R5=Rinit,
+                                      S1=Sinit, S2=Sinit, S3=Sinit, S4=Sinit, S5=Sinit,
+                                      C1=315, C2=315, C3=315, C4=315, C5=315), 
+                                  parms=par[1:7], 
+                                  deriv, 
+                                  times=c(0, 8, 16, 24, 48, 72)))
+         #select time and the measured variables 
+         yhat<-select(yhat_all, c("time", "Cmic1", "Cmic2", "Cmic3","Cmic4", "Cmic5",
+                               "C1", "C2", "C3", "C4", "C5",
+                               "r1", "r2", "r3", "r4", "r5"))
+      
+        #reformat to long format data frame
+        Yhat<-melt(yhat, id.vars = "time")
+      
+        
+        #add the measured data to a data frame
+        Yhat$obs<-c(as.numeric(odeset[c(1,6,11,16, 21, 26), c("Cmic")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("Cmic")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("Cmic")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("Cmic")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("Cmic")]),
+                  as.numeric(odeset[c(1,6,11,16, 21, 26), c("DOC")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("DOC")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("DOC")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("DOC")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("DOC")]),
+                  as.numeric(odeset[c(1,6,11,16, 21, 26), c("r")]),
+                  as.numeric(odeset[c(2,7,12,17, 22, 27), c("r")]),
+                  as.numeric(odeset[c(3,8,13,18, 23, 28), c("r")]),
+                  as.numeric(odeset[c(4,9,14,19, 24, 29), c("r")]),
+                  as.numeric(odeset[c(5,10,15,20, 25, 30), c("r")]))
+        
+        Yhat$variable<-c(rep("Cmic", 30), rep("C", 30), rep("r", 30))
+
+        #rsquared calculation for each variable
+        Gfit<-Yhat %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T),
+                                                        SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
+                                                        ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
+        Gfit$R2<-with(Gfit, 1-SSres/SStot)
+        Gfit$N<-length(x)
+        Gfit$AIC<-with(Gfit, 2*N-2*ll)
+
+        rsq_out<-list(Yhat=Yhat, Gfit=Gfit)
+
+        return(rsq_out)
+
+      }
+
+      #approximate parameter estimation is done by MCMC method
+      par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, m0=1e-3, f=1e-2, Yu=0.5, fr=0.8, fs=0.38, Rinit=40),
+                          lower=c(Vmax=1e-5, Km=1e-2, m0=1e-5, f=1e-5, Yu=0, fr=0, fs=0, Rinit=93*0.01),
+                          upper=c(Vmax=1, Km=20, m0=10, f=10, Yu=1, fr=1, fs=1, Rinit=93*0.9), niter=10000)
+
+      #lower and upper limits for parameters are extracted
+      pl<-summary(par_mcmc)["min",]
+      pu<-summary(par_mcmc)["max",]
+
+      #these limits are used to find global optimum by DEoptim
+      opt_par<-DEoptim(fn=cost, lower=pl, upper=pu,
+                       control = c(itermax = 10000, steptol = 50, reltol = 1e-8,
+                                   trace=FALSE, strategy=3, NP=250))
+
+      #global optimum parameters are further used in MCMC to find parameters distribution
+      par_prof<-modMCMC(f=cost, p=opt_par$optim$bestmem,
+                        lower=pl,
+                        upper=pu, niter=5000)
+
+      #goodness of fit
+      fit<-rsq_ode(opt_par$optim$bestmem)
+
+      #best parameters
+      p<-opt_par$optim$bestmem
+      names(p)<-parnames
+
+      #return list with opt_par and par_prof
+      estim_out<-list(pars=p, par_prof=par_prof, fit=fit)
+
+      return(estim_out)
+
+    }
+    
+    res<-estim(odeset=data)
+
+
+  return(res)
+
+}
+```
+
+

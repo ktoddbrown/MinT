@@ -49,3 +49,6 @@ Rscripts/
 
 #html output
 *.html
+
+#test codes
+SI_code_mend2.Rmd
