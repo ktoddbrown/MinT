@@ -1,6 +1,6 @@
 ---
 title: The effect of restricted substrate diffusion on microbial community function and structure
-author: "Petr Capek, Katherine Todd-Brown, Natalie Sadler, Nancy Hess, Kirsten Hofmockel"
+author: "Petr Capek, Katherine Todd-Brown, Natalie Sadler, Jianqiu Zheng, Nancy Hess, Kirsten Hofmockel"
 date: "`r Sys.Date()`"
 output: html_document
 editor_options: 
@@ -3587,151 +3587,122 @@ deb_ex<-function(data){
 
 }
 ```
+##Supplementary figure
+```{r Monod and MEND model parameters, echo=FALSE, fig.height=24, fig.width=20, message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Fig. S1: Monod (a) and MMR (b) model parameters ($V_{MAX}$ - maximum velocity constant, $K_{M}$ - affinity constant, CUE - carbon use efficiency, $k_{MB}$ - microbial biomass decay rate constant, $m_{R}$ - specific maintenance rate constant) estimated separately for three different types of physical barriers presented in incubation bottle (BROTH - black symbols, GLASS - grey symbols and WOOL - empty symbols). Symbols represent best parameters values estimated by the Differential Evolution Algorithm and error bars represent standard deviation of posterior parameters distribution estimated by Constrained Markov Chain Monte Carlo simulation. Parameters estimation was constrained by either observed respiration rates, observed respiration rates and cellular proteins concentration or observed respiration rates and DNA concentration."}
 
+# # Monod model calibrated against the respiration rate (not run)
+# # uncertainty of model parameters
+# monod_r_sd<-as.data.frame(rbind(apply(monod_r2[[1]]$par_prof$pars, 2, sd),
+#                                 apply(monod_r2[[2]]$par_prof$pars, 2, sd),
+#                                 apply(monod_r2[[3]]$par_prof$pars, 2, sd)))[,-5]
+# colnames(monod_r_sd)<-c("Vmax.sd", "Km.sd", "CUE.sd", "Km.sd")
+# #Combine with the estimated parameters
+# monod_rs1<-cbind(monod_r_results_par[c(2:4), c(1:4)], monod_r_sd)
+# monod_rs1$Legend<-rep("Respiration", times=3)
+# 
+# # Monod model calibrated against the respiration rate and cellular proteins (not run)
+# # uncertainty of model parameters
+# monod_all_sd<-as.data.frame(rbind(apply(monod_i2[[1]]$par_prof$pars, 2, sd),
+#                                   apply(monod_i2[[2]]$par_prof$pars, 2, sd),
+#                                   apply(monod_i2[[3]]$par_prof$pars, 2, sd),
+#                                   apply(monod_i2_DNA[[1]]$par_prof$pars, 2, sd),
+#                                   apply(monod_i2_DNA[[2]]$par_prof$pars, 2, sd),
+#                                   apply(monod_i2_DNA[[3]]$par_prof$pars, 2, sd)))[,-c(5,6)]
+# colnames(monod_all_sd)<-c("Vmax.sd", "Km.sd", "CUE.sd", "Km.sd")
+# #Combine with the estimated parameters
+# monod_alls<-cbind(monod_all_results_par[c(2:4, 14:16), c(1:4)], monod_all_sd)
+# monod_alls$Legend<-c(rep("Respiration & Cellular Proteins", times=3),
+#                      rep("Respiration & DNA", times=3))
+# 
+# #Combine monod_alls and monod_rs1
+# monod_s<-rbind(monod_rs1, monod_alls)
+# #Add labels
+# monod_s$Structure<-rep(c("BROTH", "GLASS", "WOOL"), times=3)
+# 
+# # MEND model calibrated against the respiration rate (not run)
+# # uncertainty of model parameters
+# mend_r_sd<-as.data.frame(rbind(apply(mend_r2[[1]]$par_prof$pars, 2, sd),
+#                                 apply(mend_r2[[2]]$par_prof$pars, 2, sd),
+#                                 apply(mend_r2[[3]]$par_prof$pars, 2, sd)))[,-5]
+# colnames(mend_r_sd)<-c("Vmax.sd", "Km.sd", "CUE.sd", "Km.sd")
+# #Combine with the estimated parameters
+# mend_rs1<-cbind(mend_r_results_par[c(2:4), c(1:4)], mend_r_sd)
+# mend_rs1$Legend<-rep("Respiration", times=3)
+# 
+# # MEND model calibrated against the respiration rate and cellular proteins (not run)
+# # uncertainty of model parameters
+# mend_all_sd<-as.data.frame(rbind(apply(mend_i2[[1]]$par_prof$pars, 2, sd),
+#                                   apply(mend_i2[[2]]$par_prof$pars, 2, sd),
+#                                   apply(mend_i2[[3]]$par_prof$pars, 2, sd),
+#                                   apply(mend_i2_DNA[[1]]$par_prof$pars, 2, sd),
+#                                   apply(mend_i2_DNA[[2]]$par_prof$pars, 2, sd),
+#                                   apply(mend_i2_DNA[[3]]$par_prof$pars, 2, sd)))[,-c(5,6)]
+# colnames(mend_all_sd)<-c("Vmax.sd", "Km.sd", "CUE.sd", "Km.sd")
+# #Combine with the estimated parameters
+# mend_alls<-cbind(mend_all_results_par[c(2:4, 14:16), c(1:4)], mend_all_sd)
+# mend_alls$Legend<-c(rep("Respiration & Cellular Proteins", times=3),
+#                      rep("Respiration & DNA", times=3))
+# 
+# #Combine mend_alls and mend_rs1
+# mend_s<-rbind(mend_rs1, mend_alls)
+# #Add labels
+# mend_s$Structure<-rep(c("BROTH", "GLASS", "WOOL"), times=3)
+# 
+# write.csv(monod_s, file = c("../monod_FigS1.csv"), row.names = F)
+# write.csv(mend_s, file = c("../mend_FigS1.csv"), row.names = F)
 
-```{r}
-#read the data
-picina<-read.xlsx(xlsxFile = c("C:/Users/cape159/Documents/pracovni/data_statistika/kopackuv_grant/michaci_pokus/DB_theory/Hasan_picek/hasan_picek12.xlsx"))
+monod_s<-read.csv("monod_FigS1.csv")
+mend_s<-read.csv("mend_FigS1.csv")
 
-picina_monod<-monod_ex(picina)
-picina_mend<-mend_ex(picina)
-picina_deb<-deb_ex(picina)
+Monod_s<-melt(monod_s[, c(1:4, 9, 10)], id.vars=c("Legend", "Structure"))
+Monod_s$sd<-melt(monod_s[, c(5:8, 9, 10)], id.vars=c("Legend", "Structure"))[, "value"]
 
+#add proper parameter labels
+mlab<-c('Vmax' = 'V[MAX]',
+        'Km' = 'K[M]',
+        'CUE' = 'CUE',
+        'k' = 'k[MB]')
 
-picina_monod$fit$Gfit
-picina_mend$fit$Gfit
-picina_deb$fit$Gfit
-```
+figS1a<-ggplot(Monod_s, aes(Legend, value))+
+  geom_point(shape=21, cex=6, aes(fill=Structure), position = position_dodge(width = 0.6))+
+  geom_errorbar(aes(ymin=value-sd, ymax=value+sd, colour=Structure), 
+                position = position_dodge(width = 0.6))+
+  scale_fill_manual(values = c("black", "grey", "white"))+
+  scale_colour_manual(values = c("black", "black", "black"))+theme_min+
+  theme(axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        axis.text.x=element_text(vjust=0.2, size=18, colour="black", angle = 90),
+        legend.position = c("top"),
+        plot.title=element_text(size=18, face="bold", hjust=-0.01))+
+  facet_wrap(~variable, scale="free", nrow=1, 
+             labeller = labeller(variable = as_labeller(mlab, label_parsed)))+
+  ylab("Parameter value")+ggtitle("a)")
 
-```{r}
+Mend_s<-melt(mend_s[, c(1:4, 9, 10)], id.vars=c("Legend", "Structure"))
+Mend_s$sd<-melt(mend_s[, c(5:8, 9, 10)], id.vars=c("Legend", "Structure"))[, "value"]
 
-#Define the time
-t_ex<-seq(0, 72)
+#add proper parameter labels
+mlab2<-c('Vmax' = 'V[MAX]',
+        'Km' = 'K[M]',
+        'CUE' = 'CUE',
+        'mr' = 'm[R]')
 
-#Define monod model
-monodf<-function(time, state, pars){
-      with(as.list(c(state, pars)),{
-        dCb<--k*Cb+CUE*Vmax*Cb*C/(Km+C)
-        dC<-k*Cb-Vmax*Cb*C/(Km+C)
-        return(list(c(dCb, dC), r=(1-CUE)*Vmax*Cb*C/(Km+C), Cmic=kec*Cb))
-        })
-}
+figS1b<-ggplot(Mend_s, aes(Legend, value))+
+  geom_point(shape=21, cex=6, aes(fill=Structure), position = position_dodge(width = 0.6),
+             show.legend = F)+
+  geom_errorbar(aes(ymin=value-sd, ymax=value+sd, colour=Structure), 
+                position = position_dodge(width = 0.6), show.legend = F)+
+  scale_fill_manual(values = c("black", "grey", "white"))+
+  scale_colour_manual(values = c("black", "black", "black"))+theme_min+
+  theme(axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        axis.text.x=element_text(vjust=0.2, size=18, colour="black", angle = 90),
+        plot.title=element_text(size=18, face="bold", hjust=-0.01))+
+  facet_wrap(~variable, scale="free", nrow=1, 
+             labeller = labeller(variable = as_labeller(mlab2, label_parsed)))+
+  ylab("Parameter value")+ggtitle("b)")
 
-#Define initial conditions
-Cmicinit=93.6
-Cinit=315
-
-#Use estimated parameters
-monodf_pars<-picina_monod$pars
-
-#Do the simulation
-monod_sim<-as.data.frame(ode(y=c(Cb=Cmicinit/monodf_pars[["kec"]], C=Cinit), 
-                                  parms=monodf_pars, monodf, times=t_ex))
-    
-######################################################################################
-#Define MEND model
-mendf<-function(time, state, pars){
-      with(as.list(c(state, pars)),{
-        dCb<--mr*Cb+CUE*Vmax*Cb*C/(Km+C)
-        dC<--Vmax*Cb*C/(Km+C)
-        return(list(c(dCb, dC), r=(1-CUE)*Vmax*Cb*C/(Km+C)+mr*Cb, Cmic=kec*Cb))
-        })
-}
-
-#Use estimated parameters
-mendf_pars<-picina_mend$pars
-
-#Do the simulation
-mend_sim<-as.data.frame(ode(y=c(Cb=Cmicinit/mendf_pars[["kec"]], C=Cinit), 
-                                  parms=mendf_pars, mendf, times=t_ex))
-
-#########################################################################################
-#Define DEB model
-debf<-function(time, state, pars){
-      with(as.list(c(state, pars)),{
-      #C uptake
-      Cu=Vmax*S*C/(Km+C)
-      #udrzovani
-      m=S*m0
-      #mobilizace rezerv
-      an=f*R-m
-      #respirace
-      r=m+pmax(an*(1-Yu), 0)
-      #microbialni uhlik je neco z rezerv a neco ze struktur
-      Cmic=fr*R+fs*S
-      dR<-Cu-f*R
-      dS<-pmax(an*Yu,0)+pmin(0, an)
-      dC<--Cu
-      return(list(c(dR, dS, dC), Cmic=Cmic, r=r))
-      })
-}
-
-#Use estimated parameters
-debf_pars<-picina_deb$pars
-
-#Do the simulation
-deb_sim<-as.data.frame(ode(y=c(R=debf_pars[["Rinit"]], 
-                               S=(Cmicinit-debf_pars[["Rinit"]]*debf_pars[["fr"]])/debf_pars[["fs"]], 
-                               C=Cinit),
-                           parms=debf_pars, debf, times=t_ex))
-
-###################################################################
-#Combine data
-sim_all<-rbind(monod_sim[,c("time", "Cmic", "r")],
-               mend_sim[,c("time", "Cmic", "r")],
-               deb_sim[,c("time", "Cmic", "r")])
-
-sim_all$Model<-c(rep("Monod", times=73), rep("MEND", times=73), rep("DEB", times=73))
-sim_all$Conversion<-numeric(length = 219)
-sim_all[sim_all$Model=="Monod", "Conversion"]<-picina_monod$pars[["kec"]]
-sim_all[sim_all$Model=="MEND", "Conversion"]<-picina_mend$pars[["kec"]]
-sim_all[sim_all$Model=="DEB", "Conversion"]<-with(deb_sim, Cmic/(R+S))
-
-#Cmic
-lbcmic_monod<-paste("R^2 == ", round(as.numeric(picina_monod$fit$Gfit[2,5]), 2))
-lbcmic_mend<-paste("R^2 == ", round(as.numeric(picina_mend$fit$Gfit[2,5]), 2))
-lbcmic_deb<-paste("R^2 == ", round(as.numeric(picina_deb$fit$Gfit[2,5]), 2))
-
-#r
-lbr_monod<-paste("R^2 == ", round(as.numeric(picina_monod$fit$Gfit[3,5]), 2))
-lbr_mend<-paste("R^2 == ", round(as.numeric(picina_mend$fit$Gfit[3,5]), 2))
-lbr_deb<-paste("R^2 == ", round(as.numeric(picina_deb$fit$Gfit[3,5]), 2))
-
-sim1<-ggplot(picina, aes(time, Cmic))+geom_point(cex=6, pch=21, fill="grey")+
-  geom_line(data=sim_all, aes(time, Cmic, linetype=Model), lwd=1.5)+theme_min+
-  xlab("Time (h)")+
-  ylab(expression(paste("Chloroform labile C (", mu, "g ", g^{-1}, ")")))+
-  theme(legend.title = element_blank(),
-        legend.position = c(0.65,0.2))+
-  annotate("text", x=66, y=103.5, label=lbcmic_deb, parse=T, size=5.5)+
-  annotate("text", x=66, y=99, label=lbcmic_mend, parse=T, size=5.5)+
-  annotate("text", x=66, y=94.5, label=lbcmic_monod, parse=T, size=5.5)+
-  ggtitle("a)")
-
-  
-
-sim2<-ggplot(picina, aes(time, r))+geom_point(cex=6, pch=21, fill="grey")+
-  geom_line(data=sim_all, aes(time, r, linetype=Model), lwd=1.5)+theme_min+
-  xlab("Time (h)")+
-  ylab(expression(paste("Respiration rate (", mu, "g ", g^{-1}~h^{-1}, ")")))+
-  theme(legend.title = element_blank(),
-        legend.position = c(0.65,0.7))+
-  annotate("text", x=66, y=3.35, label=lbr_deb, parse=T, size=5.5)+
-  annotate("text", x=66, y=3.1, label=lbr_mend, parse=T, size=5.5)+
-  annotate("text", x=66, y=2.8, label=lbr_monod, parse=T, size=5.5)+
-  ggtitle("b)")
-  
-
-sim3<-ggplot(sim_all, aes(time, Conversion))+geom_line(aes(linetype=Model), lwd=1.5, show.legend = F)+
-  theme_min+ylim(0.18, 0.25)+
-  xlab("Time (h)")+
-  ylab("Conversion factor")+
-  theme(legend.title = element_blank(),
-        legend.position = c(0.8,0.55))+
-  ggtitle("c)")
-
-grid.arrange(sim1, sim2, sim3, nrow=1)
-
+grid.arrange(figS1a, figS1b, nrow=2)
 
 ```
 
