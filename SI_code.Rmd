@@ -235,13 +235,13 @@ Next, the effect of the substrate and the presence of a physical barrier on micr
 ```{r vegan analysis, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 #Bacteria
 bac.norm<-decostand(bac, method=c("normalize"))
-bac.dist<-vegdist(bac.norm, method = "jaccard")
+bac.dist<-vegdist(bac.norm, method = "bray")
 bac.ad<-adonis(bac.dist~Substrate+Structure/Substrate, bac_env, strata = bac_env$Day)
 
 
 #Fungi
 fungi.norm<-decostand(fungi, method=c("normalize"))
-fungi.dist<-vegdist(fungi.norm, method = "jaccard")
+fungi.dist<-vegdist(fungi.norm, method = "bray")
 fungi.ad<-adonis(fungi.dist~Substrate+Structure/Substrate, fungi_env, strata = fungi_env$Day)
 
 
