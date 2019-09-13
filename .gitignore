@@ -6,7 +6,7 @@
 .RData
 
 #scripts for parameters estimation
-*.R
+data_analysis.R
 
 # Example code in package build process
 *-Ex.R
