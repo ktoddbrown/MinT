@@ -1,4 +1,4 @@
-DB_constant<-function(data){
+DB_variable_lin<-function(data, par_const){
   #Define the model with constant parameters
   DB<-function(time, state, pars){
     
@@ -50,13 +50,13 @@ DB_constant<-function(data){
       
       #Simulation
       yhat_all <- as.data.frame(ode(y=c(Cs=25, DOC=0, R=Rinit, S=Sinit, Enz=0), func = DB, times = seq(0,120),
-                  parms = p[-which(names(p)=="RSinit")]))
+                  parms = p))
       
       #Filter the output
       yhat <- yhat_all[, c("Protinc", "DNAc", "Enz", "r", "time")]
       colnames(yhat)<-c("Protinc", "DNAc", "Protoutc", "r", "time")
       Yhat <- melt(yhat, id.vars=c("time"))
-      colnames(Yhat)<-c("time", "variable", "yhat")
+      colnames(Yhat)<-c("time", "variable", "yhat") 
       
       #Observations
       obs <- odeset[, c("Protinc", "DNAc", "Protoutc", "r", "Time2")]
@@ -90,7 +90,7 @@ DB_constant<-function(data){
       
       #Simulation
       yhat_all <- as.data.frame(ode(y=c(Cs=25, DOC=0, R=Rinit, S=Sinit, Enz=0), func = DB, times = seq(0,120),
-                                    parms = p[-which(names(p)=="RSinit")]))
+                                    parms = p))
       
       #Filter the output
       yhat <- yhat_all[, c("Protinc", "DNAc", "Enz", "r", "time")]

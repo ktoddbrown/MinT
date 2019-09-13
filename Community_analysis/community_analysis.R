@@ -347,3 +347,9 @@ m0CB$Time2<-round(m0CB$Time, 0)
 source("C:/Users/cape159/Documents/pracovni/data_statistika/minT/MinT/Community_analysis/R_Functions/DB_constant.R")
 
 out_const<-DB_constant(m0CB)
+out_const$pars
+out_const$fit$Gfit
+
+ggplot(out_const$fit$Yhat, aes(time, obs))+geom_point(cex=6, pch=21, fill="grey")+
+  facet_wrap(~variable, scales="free")+theme_min+
+  geom_line(aes(time, yhat))
