@@ -9,22 +9,22 @@ DB_constant<-function(data){
       ##Carbon uptake
       Cu<-0.283475617*S*DOC/(2.512518101 + DOC)
       ##maintnance
-      m=S*Mr
+      m=S*0.002871328
       ##Reserves available
-      an=f*R-m
+      an=3.052082734*R-m
       ##Respiration rate
-      r=pmin(m, f*R)+pmax(chi*an*(1-0.6), 0) + pmax((1-chi)*an*(1-Yue), 0)
+      r=pmax(chi*an*(1-0.6), 0) + pmax((1-chi)*an*(1-Yue), 0) + m
       
       ##Proteins and DNA
-      Protinc=fpr*R+fps*S
-      DNAc=fds*S
+      Protinc=0.293821346*R+0.063372172*S
+      DNAc=0.004533891*S
       
       #States
-      dCs <- -Deg + pmax(0, -j*(an/Mr))
-      dDOC <- Deg - Cu + Enz*k + pmax(0, -(1 - j)*(an/Mr))
-      dR <- Cu - f*R
-      dS <- pmax(0, chi*an*0.6, 0) - pmax(0, -an/Mr)
-      dEnz <- pmax(0, (1-chi)*an*Yue, 0) - Enz*k
+      dCs <- -Deg
+      dDOC <- Deg - Cu
+      dR <- Cu - 3.052082734*R
+      dS <- pmax(0, chi*an*0.6, 0) + pmin(0, an)
+      dEnz <- pmax(0, (1-chi)*an*Yue, 0)
       
       return(list(c(dCs, dDOC, dR, dS, dEnz), 
                   r=r, Protinc = Protinc, 
@@ -33,7 +33,7 @@ DB_constant<-function(data){
   }
   
   #Define parameters for constant model
-  parnames=c("Ecat", "Mr", "f", "chi", "Yue", "j", "k", "fpr", "fps", "fds", "RSinit")
+  parnames=c("Ecat", "chi", "Yue", "RSinit")
   
   #Define estimation function
   estim<-function(odeset){
@@ -44,7 +44,7 @@ DB_constant<-function(data){
       names(p)<-parnames
       
       #Initial conditions
-      Sinit<-mean(odeset$DNA.initc, na.rm=T)/p[["fds"]]
+      Sinit<-mean(odeset$DNA.initc, na.rm=T)/0.004533891
       #Sinit<-mean(m0CB$DNA.initc, na.rm=T)/p[["fds"]]
       Rinit<-p[["RSinit"]]*Sinit
       
@@ -85,7 +85,7 @@ DB_constant<-function(data){
       names(p)<-parnames
       
       #Initial conditions
-      Sinit<-mean(odeset$DNA.initc, na.rm=T)/p[["fds"]]
+      Sinit<-mean(odeset$DNA.initc, na.rm=T)/0.004533891
       Rinit<-p[["RSinit"]]*Sinit
       
       #Simulation
@@ -121,12 +121,9 @@ DB_constant<-function(data){
     
     #Estimate the parameters
     #approximate parameter estimation is done by MCMC method
-    par_mcmc<-modMCMC(f=cost, p=c(Ecat=0.01, Mr=3e-3, f=3e-4, chi=0.5, Yue=0.6, j=0.5, 
-                                  k=1e-4, fpr=0.29, fps=0.06, fds=0.001, RSinit=0.1),
-                      lower=c(Ecat=1e-5, Mr=3e-6, f=3e-6, chi=0, Yue=0, j=0, 
-                              k=1e-6, fpr=0, fps=0, fds=0, RSinit=0),
-                      upper=c(Ecat=10, Mr=3e-1, f=3e-1, chi=1, Yue=0.9, j=1, 
-                              k=1e-1, fpr=1, fps=1, fds=1, RSinit=50), niter=10000)
+    par_mcmc<-modMCMC(f=cost, p=c(Ecat=0.01, chi=0.5, Yue=0.6, RSinit=0.1),
+                      lower=c(Ecat=1e-5, chi=0, Yue=0, RSinit=0),
+                      upper=c(Ecat=10, chi=1, Yue=0.9, RSinit=50), niter=10000)
     
     #lower and upper limits for parameters are extracted
     pl<-summary(par_mcmc)["min",]

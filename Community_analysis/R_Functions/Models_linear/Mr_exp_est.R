@@ -1,18 +1,17 @@
-j_lin_est<-function(odeset, par_const){
+Mr_exp_est<-function(odeset, par_const){
   #Cost function
   cost<-function(x){
     p<-x
     #p<-out_const$pars
-    #names(p)<-c("Ecat", "Mr","f", "chi", "Yue", "j", "k", "fpr", "fps", "fds", "RSinit", "I", "B")
-    names(p)<-c("Ecat", "Mr","f", "chi", "Yue", "k", "fpr", "fps", "fds", "RSinit", "I", "B")
+    names(p)<-c("Ecat", "chi", "Yue", "RSinit", "I", "B")
     
     #Initial conditions
-    Sinit<-mean(odeset$DNA.initc, na.rm=T)/p[["fds"]]
+    Sinit<-mean(odeset$DNA.initc, na.rm=T)/0.004533891
     #Sinit<-mean(m0CB$DNA.initc, na.rm=T)/p[["fds"]]
     Rinit<-p[["RSinit"]]*Sinit
     
     #Simulation
-    yhat_all <- as.data.frame(ode(y=c(Cs=25, DOC=0, R=Rinit, S=Sinit, Enz=0), func = Mr_lin, times = seq(0,120),
+    yhat_all <- as.data.frame(ode(y=c(Cs=25, DOC=0, R=Rinit, S=Sinit, Enz=0), func = Mr_exp, times = seq(0,120),
                                   parms = p[-which(names(p)=="RSinit")]))
     
     #Filter the output
@@ -45,14 +44,14 @@ j_lin_est<-function(odeset, par_const){
   #Goodness of fit function
   good<-function(x){
     p<-x
-    names(p)<-c("Ecat", "Mr","f", "chi", "Yue", "k", "fpr", "fps", "fds", "RSinit", "I", "B")
+    names(p)<-c("Ecat", "chi", "Yue", "RSinit", "I", "B")
     
     #Initial conditions
-    Sinit<-mean(odeset$DNA.initc, na.rm=T)/p[["fds"]]
+    Sinit<-mean(odeset$DNA.initc, na.rm=T)/0.004533891
     Rinit<-p[["RSinit"]]*Sinit
     
     #Simulation
-    yhat_all <- as.data.frame(ode(y=c(Cs=25, DOC=0, R=Rinit, S=Sinit, Enz=0), func = Mr_lin, times = seq(0,120),
+    yhat_all <- as.data.frame(ode(y=c(Cs=25, DOC=0, R=Rinit, S=Sinit, Enz=0), func = Mr_exp, times = seq(0,120),
                                   parms = p[-which(names(p)=="RSinit")]))
     
     #Filter the output
@@ -84,13 +83,9 @@ j_lin_est<-function(odeset, par_const){
   
   #Estimate the parameters
   #approximate parameter estimation is done by MCMC method
-  par_c<-par_const[-which(names(par_const)=="j")]
-  par_t<-par_const[["j"]]
-  par_mcmc<-modMCMC(f=cost, p=c(par_c, I=par_t, B=1),
-                    lower=c(par_c*0.5, I=par_t*0.5, B=-100),
-                    upper=c(Ecat=10, Mr=1e-1, f=3e-1, chi=1, Yue=0.9,  
-                            k=1e-1, fpr=1, fps=1, fds=1, RSinit=50, 
-                            I=par_t*2, B=100), niter=10000)
+  par_mcmc<-modMCMC(f=cost, p=c(par_const, I = 0.002871328, B=1),
+                    lower=c(Ecat=1e-5, chi=0, Yue=0, RSinit=0, I = 0.002871328*1e-2, B=0.1),
+                    upper=c(Ecat=10, chi=1, Yue=0.9, RSinit=50, I = 0.002871328*1e2, B=1.5), niter=10000)
   
   #lower and upper limits for parameters are extracted
   pl<-summary(par_mcmc)["min",]
@@ -106,7 +101,7 @@ j_lin_est<-function(odeset, par_const){
   
   #best parameters
   p<-opt_par$optim$bestmem
-  names(p)<-parnames
+  names(p)<-c("Ecat", "chi", "Yue", "RSinit", "I", "B")
   
   #return list with opt_par and par_prof
   estim_out<-list(pars=p, par_mcmc=par_mcmc, fit=fit)

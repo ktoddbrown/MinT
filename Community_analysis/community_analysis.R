@@ -16,6 +16,7 @@ library(ggeffects)
 library(rcompanion)
 library(vegan)
 library(stringr)
+library(minpack.lm)
 ###############################################################################################
 #GGPLOT THEME
 theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=18, colour="black"),
@@ -353,3 +354,30 @@ out_const$fit$Gfit
 ggplot(out_const$fit$Yhat, aes(time, obs))+geom_point(cex=6, pch=21, fill="grey")+
   facet_wrap(~variable, scales="free")+theme_min+
   geom_line(aes(time, yhat))
+
+####Mr parameter vary with time depending on community structure
+
+#####Linear relationship
+source("C:/Users/cape159/Documents/pracovni/data_statistika/minT/MinT/Community_analysis/R_Functions/Models_linear/Mr_lin.R")
+source("C:/Users/cape159/Documents/pracovni/data_statistika/minT/MinT/Community_analysis/R_Functions/Models_linear/Mr_lin_est.R")
+
+Mr_lin_out<-Mr_lin_est(odeset=m0CB, par_const=out_const$pars)
+Mr_lin_out$pars
+Mr_lin_out$fit$Gfit
+
+ggplot(Mr_lin_out$fit$Yhat, aes(time, obs))+geom_point(cex=6, pch=21, fill="grey")+
+  facet_wrap(~variable, scales="free")+theme_min+
+  geom_line(aes(time, yhat))
+
+#####Exponential relationship
+source("C:/Users/cape159/Documents/pracovni/data_statistika/minT/MinT/Community_analysis/R_Functions/Models_linear/Mr_exp.R")
+source("C:/Users/cape159/Documents/pracovni/data_statistika/minT/MinT/Community_analysis/R_Functions/Models_linear/Mr_exp_est.R")
+
+Mr_exp_out<-Mr_exp_est(odeset=m0CB, par_const=out_const$pars)
+Mr_exp_out$pars
+Mr_exp_out$fit$Gfit
+
+ggplot(Mr_exp_out$fit$Yhat, aes(time, obs))+geom_point(cex=6, pch=21, fill="grey")+
+  facet_wrap(~variable, scales="free")+theme_min+
+  geom_line(aes(time, yhat))
+
