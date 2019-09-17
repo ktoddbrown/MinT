@@ -381,3 +381,177 @@ ggplot(Mr_exp_out$fit$Yhat, aes(time, obs))+geom_point(cex=6, pch=21, fill="grey
   facet_wrap(~variable, scales="free")+theme_min+
   geom_line(aes(time, yhat))
 
+#Mixed substrate - Broth
+##How the distances changes with the time
+
+###Bacteria
+####Subset the data
+bacMB<-bacr_f[(bac_env$Substrate=="Mix" & bac_env$Structure=="Broth"), ]
+####Add initials
+bacMB<-rbind(bacr_i, bacMB)
+####Environmentals
+bac_envMB<-bac_env[(bac_env$Substrate=="Mix" & bac_env$Structure=="Broth"), 
+                   c("Sample", "Time", "Day")]
+####Add initials
+bac_envMB<-rbind(data.frame(Sample=rep("I", 3),
+                            Time=rep(0, 3),
+                            Day=rep(0, 3)), bac_envMB)
+
+####Remove zeros
+z<-numeric()
+for(i in 1:ncol(bacMB)){
+  if(sum(bacMB[, i])>0){
+    z<-append(z, i)
+  }else{}
+}
+bacMB<-bacMB[, z]
+
+bacMB.norm<-decostand(bacMB, method=c("total"))
+
+####Distance matrix
+#####Manual method
+bac_envMB$D<-numeric(length = nrow(bac_envMB))
+for(i in 1:nrow(bacMB.norm)){
+  bac_envMB[i, "D"]<-sqrt(sum((bacMB.norm[i, ]-bacMB.norm[1, ]+
+                                 bacMB.norm[i, ]-bacMB.norm[2, ]+
+                                 bacMB.norm[i, ]-bacMB.norm[3, ])^2))
+}
+
+bac_envMB %>% group_by(Day) %>%
+  summarise(x=mean(Time),
+            y=mean(D),
+            y.sd=sd(D)) %>%
+  ggplot(aes(x, y)) + geom_point(cex=6, pch=21, fill="grey")+
+  theme_min+geom_errorbar(aes(ymin=y-y.sd, ymax=y+y.sd))+
+  stat_function(fun=function(x){1.946*x/(80.642+x+x^2/31.159)})
+
+summary(nlsLM(D~a*Time/(b+Time+Time^2/c), data=bac_envMB,
+              start = list(a=0.5, b=10, c=0.2)))
+
+####Scaling
+bac_envMB$Dsc<-bac_envMB$D/bac_envMB$D[1:3]
+
+bac_envMB %>% group_by(Day) %>%
+  summarise(x=mean(Time),
+            y=mean(Dsc),
+            y.sd=sd(Dsc)) %>%
+  ggplot(aes(x, y)) + geom_point(cex=6, pch=21, fill="grey")+
+  theme_min+geom_errorbar(aes(ymin=y-y.sd, ymax=y+y.sd))+
+  geom_line(data=data.frame(timetest, y), aes(timetest, y))
+
+timetest<-seq(0, 120)
+y=ifelse(timetest<25, 1 + 0.66352*timetest, 17.6413*exp(-0.0025*timetest))
+
+#Segmented function
+sec_cost<-function(x){
+  return(sum((bac_envMB$Dsc-ifelse(bac_envMB$Time<=x[1], 1 + x[2]*bac_envMB$Time,
+         x[3]*exp(-x[4]*bac_envMB$Time)))^2))
+}
+
+sec_cost(c(0.3, 0.56, 15, 0.1))
+
+DEoptim(fn=sec_cost, p = c(24, 0.6, 15, 0.002), lower = c(23, 0.01, 10, 0.0001),
+        upper = c(26, 1, 20, 0.01),
+        control = c(itermax = 10000, steptol = 50, reltol = 1e-8,
+                    trace=FALSE, strategy=3, NP=250))
+
+###Fungi
+####Subset the data
+funMB<-fungr_f[(fun_env$Substrate=="Mix" & fun_env$Structure=="Broth"), ]
+####Add initials
+funMB<-rbind(fungr_i, funMB)
+####Environmentals
+fun_envMB<-fun_env[(fun_env$Substrate=="Mix" & fun_env$Structure=="Broth"), 
+                   c("Sample", "Time", "Day")]
+####Add initials
+fun_envMB<-rbind(data.frame(Sample=rep("I", 3),
+                            Time=rep(0, 3),
+                            Day=rep(0, 3)), fun_envMB)
+
+####Remove zeros
+z<-numeric()
+for(i in 1:ncol(funMB)){
+  if(sum(funMB[, i])>0){
+    z<-append(z, i)
+  }else{}
+}
+funMB<-funMB[, z]
+
+funMB.norm<-decostand(funMB, method=c("total"))
+
+####Distance matrix
+#####Manual method
+fun_envMB$D<-numeric(length = nrow(fun_envMB))
+for(i in 1:nrow(funCB.norm)){
+  fun_envMB[i, "D"]<-sqrt(sum((funMB.norm[i, ]-funMB.norm[1, ]+
+                                 funMB.norm[i, ]-funMB.norm[2, ]+
+                                 funMB.norm[i, ]-funMB.norm[3, ])^2))
+}
+
+fun_envMB %>% group_by(Day) %>%
+  summarise(x=mean(Time),
+            y=mean(D),
+            y.sd=sd(D)) %>%
+  ggplot(aes(x, y)) + geom_point(cex=6, pch=21, fill="grey")+
+  theme_min+geom_errorbar(aes(ymin=y-y.sd, ymax=y+y.sd))
+
+####Scaling
+fun_envMB$Dsc<-fun_envMB$D/mean(fun_envMB$D[1:3])
+
+fun_envMB %>% group_by(Day) %>%
+  summarise(x=mean(Time),
+            y=mean(Dsc),
+            y.sd=sd(Dsc)) %>%
+  ggplot(aes(x, y)) + geom_point(cex=6, pch=21, fill="grey")+
+  theme_min+geom_errorbar(aes(ymin=y-y.sd, ymax=y+y.sd))
+
+#####Modeling
+m0MB<-subset(m0, Substrate=="Mix" & Structure=="Broth")
+
+ggplot(m0MB, aes(Time, r)) + geom_point(cex=6) + theme_min
+ggplot(m0MB, aes(Time, Protinc)) + geom_point(cex=6) + theme_min
+ggplot(m0MB, aes(Time, DNAc)) + geom_point(cex=6) + theme_min
+ggplot(m0MB, aes(Time, Protoutc)) + geom_point(cex=6) + theme_min
+
+m0MB[(m0MB$Time>30 & m0MB$Time<75 & m0MB$Protoutc>0.6 & !is.na(m0MB$Protoutc)), "Protoutc"]<-NA
+
+####Round the time
+m0MB$Time2<-round(m0MB$Time, 0)
+
+####First all model parameters are constant
+source("C:/Users/cape159/Documents/pracovni/data_statistika/minT/MinT/Community_analysis/R_Functions/DB_constantMB.R")
+
+out_constMB<-DB_constantMB(m0MB)
+out_constMB$pars
+out_constMB$fit$Gfit
+
+ggplot(out_constMB$fit$Yhat, aes(time, obs))+geom_point(cex=6, pch=21, fill="grey")+
+  facet_wrap(~variable, scales="free")+theme_min+
+  geom_line(aes(time, yhat))
+
+####Mr parameter vary with time depending on community structure
+
+#####Linear relationship
+source("C:/Users/cape159/Documents/pracovni/data_statistika/minT/MinT/Community_analysis/R_Functions/Models_linear/Mr_linMB.R")
+source("C:/Users/cape159/Documents/pracovni/data_statistika/minT/MinT/Community_analysis/R_Functions/Models_linear/Mr_lin_estMB.R")
+
+Mr_lin_outMB<-Mr_lin_estMB(odeset=m0MB, par_const=out_constMB$pars)
+Mr_lin_outMB$pars
+Mr_lin_outMB$fit$Gfit
+
+ggplot(Mr_lin_outMB$fit$Yhat, aes(time, obs))+geom_point(cex=6, pch=21, fill="grey")+
+  facet_wrap(~variable, scales="free")+theme_min+
+  geom_line(aes(time, yhat))
+
+#####Exponential relationship
+source("C:/Users/cape159/Documents/pracovni/data_statistika/minT/MinT/Community_analysis/R_Functions/Models_linear/Mr_expDB.R")
+source("C:/Users/cape159/Documents/pracovni/data_statistika/minT/MinT/Community_analysis/R_Functions/Models_linear/Mr_exp_estDB.R")
+
+Mr_exp_outDB<-Mr_exp_estDB(odeset=m0MB, par_const=out_constMB$pars)
+Mr_exp_outDB$pars
+Mr_exp_outDB$fit$Gfit
+
+ggplot(Mr_exp_outDB$fit$Yhat, aes(time, obs))+geom_point(cex=6, pch=21, fill="grey")+
+  facet_wrap(~variable, scales="free")+theme_min+
+  geom_line(aes(time, yhat))
+
