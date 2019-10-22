@@ -91,6 +91,21 @@ m0 %>% filter(Substrate=="Celluloze" | Substrate=="Mix") %>%
 ##Bacteria
 bac<-as.data.frame(read.csv(file=c("C:/Users/cape159/Documents/pracovni/data_statistika/minT/MinT/Community_analysis/OTU_bacteria.txt"), header=T,
                             sep="\t"))
+#bac.tax<-as.data.frame(read.csv(file=c("/home/petacapek/Dokumenty/pracovni/data_statistika/minT/MinT/Community_analysis/OTU_bacteria.txt"), header=T,
+#                             sep="\t"))
+bac.tax<-bac.tax[, c(1, 175)]
+bac.tax$X.OTU.ID<-gsub("_","", bac.tax$X.OTU.ID)
+
+#Add taxonomy to bac.norm dataset
+bac.norm_tax<-bac.norm
+taxlab<-character()
+for(i in 1:ncol(bac.norm_tax)){
+  nd<-which(bac.tax$X.OTU.ID==colnames(bac.norm_tax)[i])
+  taxlab<-append(taxlab, as.character(bac.tax$taxonomy[nd]))
+}
+
+bac.norm_tax<-rbind(bac.norm_tax, taxlab)
+
 ###without the taxonomy 
 bacr<-bac[, -175]
 

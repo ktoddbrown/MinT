@@ -85,9 +85,9 @@ Mr_lin_estMB<-function(odeset, par_const){
   #approximate parameter estimation is done by MCMC method
   par_mcmc<-modMCMC(f=cost, p=c(par_const, I = 0.004769861, B=1),
                     lower=c(Ecat=1e-5, chi=0, Yue=0, fpr=0, 
-                            fps=0, fds=0, RSinit=0, I = 0.002871328*1e-2, B=-100),
+                            fps=0, fds=0, RSinit=0, I = 0.002871328*1e-2, B=-5),
                     upper=c(Ecat=10, chi=1, Yue=0.9, fpr=1, 
-                            fps=1, fds=1, RSinit=50, I = 0.002871328*1e2, B=100), niter=10000)
+                            fps=1, fds=1, RSinit=50, I = 0.002871328*1e2, B=5), niter=10000)
   
   #lower and upper limits for parameters are extracted
   pl<-summary(par_mcmc)["min",]
