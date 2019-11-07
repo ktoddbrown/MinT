@@ -37,6 +37,31 @@ theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=18, colour="black"),
                  legend.spacing=unit(0.5, "cm"),
                  plot.title=element_text(size=18, face="bold", hjust=-0.05))
 ###############################################################################################
+#Cell size
+size<-read.xlsx(xlsxFile = c("/home/petacapek/Dokumenty/pracovni/data_statistika/minT/Mint_CSub3_cellsort_size_dnaRFU.xlsx"),
+                2)
+summary(size)
+#Broth
+mean(c(size$B1, size$B2, size$B3, size$B4), na.rm=T)
+#Mixed glass
+mean(c(size$MG0, size$MG1, size$MG2, size$MG3, size$MG4), na.rm=T)
+#Glass wool
+mean(c(size$GW0, size$GW1, size$GW2, size$GW3, size$GW4), na.rm=T)
+
+hist(c(size$B1, size$B2, size$B3, size$B4))
+hist(c(size$MG0, size$MG1, size$MG2, size$MG3, size$MG4))
+hist(c(size$GW0, size$GW1, size$GW2, size$GW3, size$GW4))
+
+dsize<-data.frame(size=c(size$B1, size$B2, size$B3, size$B4,
+                         size$MG0, size$MG1, size$MG2, size$MG3, size$MG4,
+                         size$GW0, size$GW1, size$GW2, size$GW3, size$GW4),
+                  Structure = c(rep("BROTH", times=length(c(size$B1, size$B2, size$B3, size$B4))),
+                                rep("GLASS", times=length(c(size$MG0, size$MG1, size$MG2, size$MG3, size$MG4))),
+                                rep("WOOL", times=length(c(size$GW0, size$GW1, size$GW2, size$GW3, size$GW4)))))
+
+ggplot(dsize, aes(x=size)) + geom_histogram(aes(fill=Structure), alpha=0.5,
+                                            position = position_dodge())
+###############################################################################################
 #DATA
 ##respiration rates in umol/ml/h
 resp<-read.csv(file=c("C:/Users/cape159/Documents/pracovni/data_statistika/minT/MinT/data_checked_respiration_raw.csv"))
@@ -97,15 +122,292 @@ bac.tax<-bac.tax[, c(1, 175)]
 bac.tax$X.OTU.ID<-gsub("_","", bac.tax$X.OTU.ID)
 
 #Add taxonomy to bac.norm dataset
-bac.norm_tax<-bac.norm
+bac.norm_tax<-bac
+#Transform the dataset
+bac.norm_taxt<-as.data.frame(t(bac.norm_tax))
 taxlab<-character()
-for(i in 1:ncol(bac.norm_tax)){
-  nd<-which(bac.tax$X.OTU.ID==colnames(bac.norm_tax)[i])
+for(i in 1:nrow(bac.norm_taxt)){
+  nd<-which(bac.tax$X.OTU.ID==rownames(bac.norm_taxt)[i])
   taxlab<-append(taxlab, as.character(bac.tax$taxonomy[nd]))
 }
 
-bac.norm_tax<-rbind(bac.norm_tax, taxlab)
+bac.norm_taxt$taxonomy<-taxlab
 
+#How to extract kingdom
+pattern<-"k__(.+?),"
+regmatches(bac.norm_taxt$taxonomy[1], regexec(pattern, bac.norm_taxt$taxonomy[1]))[[1]][2]
+kingdoms<-character()
+for(i in 1:nrow(bac.norm_taxt)){
+  kingdoms<-append(kingdoms, 
+                   regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
+}
+kingdoms[which(kingdoms=="?")]<-c("Unknown")
+bac.norm_taxt$Kingdom<-kingdoms
+
+#How to extract phylum
+pattern<-"p__(.+?),"
+
+phylum<-character()
+for(i in 1:nrow(bac.norm_taxt)){
+  phylum<-append(phylum, 
+                   regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
+}
+phylum[which(phylum=="?")]<-c("Unknown")
+bac.norm_taxt$Phylum<-phylum
+
+#How to extract class
+pattern<-"c__(.+?),"
+
+cs<-character()
+for(i in 1:nrow(bac.norm_taxt)){
+  cs<-append(cs, 
+                 regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
+}
+which(cs=="?")
+cs[which(cs=="?")]<-c("Unknown")
+bac.norm_taxt$Class<-cs
+
+#How to extract o
+pattern<-"o__(.+?),"
+
+os<-character()
+for(i in 1:nrow(bac.norm_taxt)){
+  os<-append(os, 
+             regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
+}
+which(os=="?")
+os[which(os=="?")]<-c("Unknown")
+bac.norm_taxt$Order<-os
+
+#How to extract f
+pattern<-"f__(.+?),"
+
+fs<-character()
+for(i in 1:nrow(bac.norm_taxt)){
+  fs<-append(fs, 
+             regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
+}
+
+fs[which(fs=="?")]<-c("Unknown")
+bac.norm_taxt$Family<-fs
+
+
+#How to extract genus
+pattern<-"g__(.+?),"
+
+gs<-character()
+for(i in 1:nrow(bac.norm_taxt)){
+  gs<-append(gs, 
+             regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
+}
+which(gs=="?")
+gs[which(gs=="?")]<-c("Unknown")
+bac.norm_taxt$Genus<-gs
+
+
+#How to extract species
+pattern<-"s__(.+?),"
+
+ss<-character()
+for(i in 1:nrow(bac.norm_taxt)){
+  ss<-append(ss, 
+             regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
+}
+which(is.na(ss))
+ss[which(is.na(ss))]<-c("Unknown")
+bac.norm_taxt$Specie<-ss
+
+#Plots
+tax_env<-bac_env
+btaxt<-bac.norm_taxt[, 1:71]
+tax_env$IDs<-colnames(btaxt)
+
+##Genus
+btaxtg<-btaxt
+btaxtg$Genus<-bac.norm_taxt$Genus
+
+Btaxtg<-melt(btaxtg, id.vars = c("Genus"))
+colnames(Btaxtg)<-c("Genus", "IDs","Abundance")
+
+Btaxtg<-merge(Btaxtg, tax_env, by.x = "IDs", by.y = "IDs", all.x = TRUE)
+Btaxtg$Total<-numeric(length = nrow(Btaxtg))
+for(i in unique(Btaxtg$IDs)){
+  Btaxtg[Btaxtg$IDs==i, "Total"]<-sum(as.numeric(Btaxtg[Btaxtg$IDs==i, "Abundance"]))
+}
+
+bac_gen_f<-Btaxtg %>% group_by(Genus, Structure, Substrate) %>% 
+  summarize(Abundance=mean(Abundance/Total, na.rm=T))
+
+
+#Jen s abundanci nad 0.05
+ggplot(bac_gen_f[bac_gen_f$Abundance>0.0005, ], aes(Structure, Genus)) +
+  geom_tile(aes(fill = log10(Abundance*100))) +
+  facet_grid(~ Substrate) +
+  scale_fill_gradientn(colours = c("white","darkorange2","grey60"),
+                       breaks = c(-2, -1, 0, 1, 2),
+                       labels=c("0.01", "0.1", "0", "10", "100"),
+                       name = "Relative abundance (%)",
+                       guide = guide_colourbar(direction = "horizontal", title.position = "bottom",
+                                               title.hjust = 0.5, barwidth = 12)) +
+  scale_x_discrete(expand = c(0,0)) + #, labels = c("ctrl", "N")
+  scale_y_discrete(expand = c(0,0)) + #limits = rev(levels(factor(prok_heat2$phylum))), 
+  xlab("Structure") + ylab("")+
+  coord_fixed(ratio=0.4) +
+  theme_min + theme(legend.position = "bottom",
+                    plot.margin = unit(c(0.01, 0, 0.01, 0), "in"))
+
+bac_gen_f %>% filter(Genus=="Enterobacter") %>% group_by(Substrate, Structure) %>% 
+  summarize(Abundance=mean(Abundance))
+bac_gen_f %>% filter(Genus=="Pseudomonas") %>% group_by(Substrate, Structure) %>% 
+  summarize(Abundance=mean(Abundance))
+bac_gen_f %>% filter(Genus=="Burkholderia") %>% group_by(Substrate, Structure) %>% 
+  summarize(Abundance=mean(Abundance))
+
+
+
+##Fungi
+f.tax<-as.data.frame(read.csv(file=c("/home/petacapek/Dokumenty/pracovni/data_statistika/minT/MinT/Community_analysis/OTU_fungi.txt"), header=T,
+                             sep="\t"))
+#Add taxonomy to fungi dataset
+f.norm_tax<-fungi
+#Transform the dataset
+f.norm_taxt<-as.data.frame(t(f.norm_tax))
+ftaxlab<-character()
+for(i in 1:nrow(f.norm_taxt)){
+  nd<-which(f.tax$X.OTU.ID==rownames(f.norm_taxt)[i])
+  ftaxlab<-append(ftaxlab, as.character(f.tax$taxonomy[nd]))
+}
+
+f.norm_taxt$taxonomy<-ftaxlab
+
+#How to extract kingdom
+pattern<-"k__(.+?),"
+regmatches(f.norm_taxt$taxonomy[1], regexec(pattern, f.norm_taxt$taxonomy[1]))[[1]][2]
+kingdoms<-character()
+for(i in 1:nrow(f.norm_taxt)){
+  kingdoms<-append(kingdoms, 
+                   regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
+}
+kingdoms[which(kingdoms=="?")]<-c("Unknown")
+f.norm_taxt$Kingdom<-kingdoms
+
+#How to extract phylum
+pattern<-"p__(.+?),"
+
+phylum<-character()
+for(i in 1:nrow(f.norm_taxt)){
+  phylum<-append(phylum, 
+                 regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
+}
+phylum[which(phylum=="?")]<-c("Unknown")
+f.norm_taxt$Phylum<-phylum
+
+#How to extract class
+pattern<-"c__(.+?),"
+
+cs<-character()
+for(i in 1:nrow(f.norm_taxt)){
+  cs<-append(cs, 
+             regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
+}
+which(cs=="?")
+cs[which(cs=="?")]<-c("Unknown")
+f.norm_taxt$Class<-cs
+
+#How to extract o
+pattern<-"o__(.+?),"
+
+os<-character()
+for(i in 1:nrow(f.norm_taxt)){
+  os<-append(os, 
+             regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
+}
+which(os=="?")
+os[which(os=="?")]<-c("Unknown")
+f.norm_taxt$Order<-os
+
+#How to extract f
+pattern<-"f__(.+?),"
+
+fs<-character()
+for(i in 1:nrow(f.norm_taxt)){
+  fs<-append(fs, 
+             regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
+}
+
+fs[which(fs=="?")]<-c("Unknown")
+f.norm_taxt$Family<-fs
+
+
+#How to extract genus
+pattern<-"g__(.+?),"
+
+gs<-character()
+for(i in 1:nrow(f.norm_taxt)){
+  gs<-append(gs, 
+             regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
+}
+which(gs=="?")
+gs[which(gs=="?")]<-c("Unknown")
+f.norm_taxt$Genus<-gs
+
+
+#How to extract species
+pattern<-"s__(.+?),"
+
+ss<-character()
+for(i in 1:nrow(f.norm_taxt)){
+  ss<-append(ss, 
+             regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
+}
+which(is.na(ss))
+ss[which(is.na(ss))]<-c("Unknown")
+f.norm_taxt$Specie<-ss
+
+#Plots
+ftax_env<-fungi_env
+ftaxt<-f.norm_taxt[, 1:64]
+ftax_env$IDs<-colnames(ftaxt)
+
+##Genus
+ftaxtg<-ftaxt
+ftaxtg$Genus<-f.norm_taxt$Genus
+
+Ftaxtg<-melt(ftaxtg, id.vars = c("Genus"))
+colnames(Ftaxtg)<-c("Genus", "IDs","Abundance")
+
+Ftaxtg<-merge(Ftaxtg, ftax_env, by.x = "IDs", by.y = "IDs", all.x = TRUE)
+Ftaxtg$Total<-numeric(length = nrow(Ftaxtg))
+for(i in unique(Ftaxtg$IDs)){
+  Ftaxtg[Ftaxtg$IDs==i, "Total"]<-sum(as.numeric(Ftaxtg[Ftaxtg$IDs==i, "Abundance"]))
+}
+
+f_gen_f<-Ftaxtg %>% group_by(Genus, Structure, Substrate) %>% 
+  summarize(Abundance=mean(Abundance/Total, na.rm=T))
+
+
+#Jen s abundanci nad 0.05%
+ggplot(f_gen_f[f_gen_f$Abundance>0.0005, ], aes(Structure, Genus)) +
+  geom_tile(aes(fill = log(Abundance*100))) +
+  facet_grid(~ Substrate) +
+  scale_fill_gradientn(colours = c("white","darkorange2","grey60"),
+                       breaks = c(-2, -1, 0, 1, 2),
+                       labels=c("0.01", "0.1", "0", "10", "100"),
+                       name = "Relative abundance (%)",
+                       guide = guide_colourbar(direction = "horizontal", title.position = "bottom",
+                                               title.hjust = 0.5, barwidth = 12)) +
+  scale_x_discrete(expand = c(0,0)) + #, labels = c("ctrl", "N")
+  scale_y_discrete(expand = c(0,0)) + #limits = rev(levels(factor(prok_heat2$phylum))), 
+  xlab("Structure") + ylab("")+
+  coord_fixed(ratio=0.4) +
+  theme_min + theme(legend.position = "bottom",
+                    plot.margin = unit(c(0.01, 0, 0.01, 0), "in"))
+
+f_gen_f %>% filter(Genus=="Gibberella") %>% group_by(Structure) %>% 
+  summarize(Abundance=mean(Abundance))
+f_gen_f %>% filter(Genus=="Verticillium") %>% group_by(Structure) %>% 
+  summarize(Abundance=mean(Abundance, na.rm=T))
+#############################################################################################
 ###without the taxonomy 
 bacr<-bac[, -175]
 
