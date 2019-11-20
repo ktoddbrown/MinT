@@ -1,6 +1,6 @@
 ---
-title: The effect of habitat structure on microbial community function and composition
-author: "Petr Capek, Katherine Todd-Brown, Natalie Sadler, Jianqiu Zheng, Nancy Hess, Kirsten Hofmockel"
+title: Towards more realistic model representation of microbial population dynamics in complex environment
+author: "Petr Capek, Katherine Todd-Brown, Natalie Sadler, Michal Choma, Jianqiu Zheng, Nancy Hess, Kirsten Hofmockel"
 date: "`r Sys.Date()`"
 output: html_document
 editor_options: 
@@ -552,8 +552,8 @@ kable(monodplus_r_results_good[,c(4, 1, 2, 3)], digits = c(2, 2, 2, 2), align = 
 
 ```
 
-####Two pool model
-```{r Two pool model respiration calibration, eval=F, echo=T}
+####Sub-microbial model
+```{r Sub-microbial model respiration calibration, eval=F, echo=T}
 #Loading the function 
 source("../Rscripts/two_pool_r.R")
 source("../Rscripts/two_pool_r_fix.R")
@@ -589,7 +589,7 @@ two_pool_r3_fix$goodness
 two_pool_r4_fix$goodness
 ```
 
-```{r Two pool model respiration calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r Sub-microbial model respiration calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 
 #results of the previous iteration (not run)
 # two_pool_r_results_par<-rbind(two_pool_r1[[1]]$pars[c(1:6)],
@@ -625,14 +625,14 @@ row.names(t.s3.1)<-c("All", "Broth", "Glass", "Wool",
 options(knitr.kable.NA = '')
 
 
-kable(t.s3.1, digits = c(2, 2, 3, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('v', 'k', 'h', 'f', 'm', 'Y'), row.names=T, caption = "_**Table S7:** Two pool model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(t.s3.1, digits = c(2, 2, 3, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('v', 'k', 'h', 'f', 'm', 'Y'), row.names=T, caption = "_**Table S7:** Sub-microbial model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 1) %>%
   group_rows("Structure", 2, 4) %>%
   group_rows("Substrate", 5, 6) %>%
   group_rows("Each", 7, 12) 
 
-kable(two_pool_r_results_good[, c(3:6)], digits = c(2, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S8:** Goodness of fit of Two pool model calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(two_pool_r_results_good[, c(3:6)], digits = c(2, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S8:** Goodness of fit of Sub-microbial model calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 1) %>%
   group_rows("Structure", 2, 2) %>%
@@ -642,7 +642,7 @@ kable(two_pool_r_results_good[, c(3:6)], digits = c(2, 2, 2, 2, 2), align = 'c',
 ```
 
 ###All models are calibrated against respiration rate, proteins and DNA concentration in the cells.
-All models are calibrated against all data we measured. In addition to model parameters reported in tables above, conversion factors between proteins/DNA concentration and microbial biomass are estimated. For Monod and Monod plus models, initial concentration of microbial biomass is defined as an initial concentration of the DNA in the incubation vial divided by the conversion factor between the DNA concentration and microbial biomass. For Two pool model, initial concentration of Structures is defined similarly - i.e. initial concentration of the DNA in the incubation vial divided by the conversion factor between the DNA concentration and Structures. However, initial concetration of Reserves cannot be defined because initial concentration of proteins is not know. Therefore, one more parameter is defined. This parameter is denoted as RS_0 in the respective function and define initial concentration of Reserves per unit of Structures. This parameter has to be fixed across treatments to reflect the reality.
+All models are calibrated against all data we measured. In addition to model parameters reported in tables above, conversion factors between proteins/DNA concentration and microbial biomass are estimated. For Monod and Monod plus models, initial concentration of microbial biomass is defined as an initial concentration of the DNA in the incubation vial divided by the conversion factor between the DNA concentration and microbial biomass. For Sub-microbial model, initial concentration of Structures is defined similarly - i.e. initial concentration of the DNA in the incubation vial divided by the conversion factor between the DNA concentration and Structures. However, initial concetration of Reserves cannot be defined because initial concentration of proteins is not know. Therefore, one more parameter is defined. This parameter is denoted as RS_0 in the respective function and define initial concentration of Reserves per unit of Structures. This parameter has to be fixed across treatments to reflect the reality.
 In addition, Monod and Monod plus models are calibrated against respiration rate and proteins or DNA concentration separately. When calibrated againnst protein concentration, initial concentration of microbial biomass is estimated and fixed across treatments.
 
 ####Monod model
@@ -1120,9 +1120,9 @@ kable(monodplus_DNA_results_good[,c(1, 4:7)], digits = c(0, 2, 2, 0, 2), align =
   group_rows("Each", 7, 8)
 ```
 
-####Two pool model
+####Sub-microbial model
 Not all model parameters vary significantly across treatments. Parameters that doesn't show any variability across treatments are fixed.
-```{r Two pool model calibration, eval=F, echo=T}
+```{r Sub-microbial model calibration, eval=F, echo=T}
 #Loading the function 
 source("../Rscripts/two_pool_all.R")
 source("../Rscripts/two_pool_all_fix.R")
@@ -1165,7 +1165,7 @@ two_pool_all3_fix$goodness
 two_pool_all_fixYukfVmax4$goodness
 ```
 
-```{r Two pool model overall calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r Sub-microbial model overall calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 
 # #results of the previous iteration (not run)
 # two_pool_all_results_par<-rbind(c(two_pool_all1[[1]]$pars[c(1:9)], RS_0 = 0.06185237),
@@ -1271,14 +1271,14 @@ t.s6.1<-data.frame(Name=c("All", "Broth", "Glass", "Wool",
 options(knitr.kable.NA = '')
 
 
-kable(t.s6.1, digits = c(0, 2, 2, 3, 3, 3, 2, 3, 3, 3, 2), align = 'c', "html", booktabs=T, col.names = c(" ","v", 'k', 'h', 'f', 'm', 'Y', '$\\B_{R-Proteins}$', '$\\B_{S-Proteins}$', '$\\B_{S-DNA}$', '$\\RS_{0}$'), row.names=F, caption = "_**Table S21:** Two pool model parameters calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(t.s6.1, digits = c(0, 2, 2, 3, 3, 3, 2, 3, 3, 3, 2), align = 'c', "html", booktabs=T, col.names = c(" ","v", 'k', 'h', 'f', 'm', 'Y', '$\\B_{R-Proteins}$', '$\\B_{S-Proteins}$', '$\\B_{S-DNA}$', '$\\RS_{0}$'), row.names=F, caption = "_**Table S21:** Sub-microbial model parameters calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 1) %>%
   group_rows("Structure", 2, 4) %>%
   group_rows("Substrate", 5, 6) %>%
   group_rows("Each", 7, 12) 
 
-kable(two_pool_all_results_good[, c(1, 4:7)], digits = c(0, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S21:** Goodness of fit of Two pool model calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(two_pool_all_results_good[, c(1, 4:7)], digits = c(0, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S21:** Goodness of fit of Sub-microbial model calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 3) %>%
   group_rows("Structure", 4, 6) %>%

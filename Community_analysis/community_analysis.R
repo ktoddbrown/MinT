@@ -372,9 +372,10 @@ ftax_env$IDs<-colnames(ftaxt)
 ##Genus
 ftaxtg<-ftaxt
 ftaxtg$Genus<-f.norm_taxt$Genus
+ftaxtg$Order<-f.norm_taxt$Order
 
-Ftaxtg<-melt(ftaxtg, id.vars = c("Genus"))
-colnames(Ftaxtg)<-c("Genus", "IDs","Abundance")
+Ftaxtg<-melt(ftaxtg, id.vars = c("Genus", "Order"))
+colnames(Ftaxtg)<-c("Genus", "Order","IDs","Abundance")
 
 Ftaxtg<-merge(Ftaxtg, ftax_env, by.x = "IDs", by.y = "IDs", all.x = TRUE)
 Ftaxtg$Total<-numeric(length = nrow(Ftaxtg))
@@ -382,7 +383,7 @@ for(i in unique(Ftaxtg$IDs)){
   Ftaxtg[Ftaxtg$IDs==i, "Total"]<-sum(as.numeric(Ftaxtg[Ftaxtg$IDs==i, "Abundance"]))
 }
 
-f_gen_f<-Ftaxtg %>% group_by(Genus, Structure, Substrate) %>% 
+f_gen_f<-Ftaxtg %>% group_by(Genus, Order, Structure, Substrate) %>% 
   summarize(Abundance=mean(Abundance/Total, na.rm=T))
 
 
@@ -403,10 +404,21 @@ ggplot(f_gen_f[f_gen_f$Abundance>0.0005, ], aes(Structure, Genus)) +
   theme_min + theme(legend.position = "bottom",
                     plot.margin = unit(c(0.01, 0, 0.01, 0), "in"))
 
+unique(f_gen_f$Order)
+
 f_gen_f %>% filter(Genus=="Gibberella") %>% group_by(Structure) %>% 
   summarize(Abundance=mean(Abundance))
 f_gen_f %>% filter(Genus=="Verticillium") %>% group_by(Structure) %>% 
   summarize(Abundance=mean(Abundance, na.rm=T))
+
+f_gen_f %>% filter(Order=="Saccharomycetales" |
+                     Order=="Cystofilobasidiales" |
+                     Order=="Sporidiobolales" |
+                     Order=="Tremellales" |
+                     Order=="Chaetothyriales") %>% group_by(Structure) %>% 
+  summarize(Abundance=mean(Abundance*100, na.rm=T))
+
+
 #############################################################################################
 ###without the taxonomy 
 bacr<-bac[, -175]
