@@ -48,10 +48,10 @@ two_pool_r<-function(data, FACT){
       #Carbon uptake
       Cu=Vmax*C*S/(Km+C)
       #Respiration
-      r=m0*S + f*R*(1-Yu) 
+      r=f*R*(1-Yu) 
       
       dR<-Cu-f*R
-      dS<-f*R*Yu - k*S - m0*S
+      dS<-f*R*Yu - k*S
       dC<--Cu + k*S
       
       return(list(c(dR, dS, dC), r=r))
@@ -59,7 +59,7 @@ two_pool_r<-function(data, FACT){
     })
   }
   #define names of parameters
-  parnames<-c("Vmax", "Km", "m0", "f", "k", "Yu", "R_0", "S_0")
+  parnames<-c("Vmax", "Km", "f", "k", "Yu", "R_0", "S_0")
   
   #parameters estimation function
   estim<-function(odeset){
@@ -120,9 +120,9 @@ two_pool_r<-function(data, FACT){
     }
     
     #approximate parameter estimation is done by MCMC method
-    par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, m0=0.01, f=4, k=1e-2, Yu=0.8,R_0=0.03483481, S_0=0.07661063),
-                      lower=c(Vmax=1e-5, Km=1e-2, m0=1e-5, f=1e-3, k=1e-6, Yu=0.01, R_0=1e-4, S_0=1e-4),
-                      upper=c(Vmax=1, Km=20, m0=1, f=100, k=1, Yu=0.8, R_0=2, S_0=2), niter=10000)
+    par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, f=4, k=1e-2, Yu=0.8,R_0=0.03483481, S_0=0.07661063),
+                      lower=c(Vmax=1e-5, Km=1e-2, f=1e-3, k=1e-6, Yu=0.01, R_0=1e-4, S_0=1e-4),
+                      upper=c(Vmax=1, Km=20, f=100, k=1, Yu=0.8, R_0=2, S_0=2), niter=10000)
     
     #lower and upper limits for parameters are extracted
     pl<-summary(par_mcmc)["min",]

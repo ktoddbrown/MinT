@@ -48,10 +48,10 @@ two_pool_r_fix<-function(data, FACT){
       #Carbon uptake
       Cu=Vmax*C*S/(Km+C)
       #Respiration
-      r=m0*S + f*R*(1-Yu) 
+      r=f*R*(1-Yu) 
       
       dR<-Cu-f*R
-      dS<-f*R*Yu - k*S - m0*S
+      dS<-f*R*Yu - k*S
       dC<--Cu + k*S
       
       return(list(c(dR, dS, dC), r=r))
@@ -59,7 +59,7 @@ two_pool_r_fix<-function(data, FACT){
     })
   }
   #define names of parameters
-  parnames<-c("Vmax", "Km", "m0", "f", "k", "Yu")
+  parnames<-c("Vmax", "Km", "f", "k", "Yu")
   
   #parameters estimation function
   estim<-function(odeset){
@@ -72,7 +72,7 @@ two_pool_r_fix<-function(data, FACT){
       names(par)<-parnames
       
       #first, pars dependent output from ode is matched with measured values
-      yhat_all<-as.data.frame(ode(y=c(R=0.01908309, S=0.2687341, C=25), parms=par, deriv, times=sort(odeset$Time)))
+      yhat_all<-as.data.frame(ode(y=c(R=0.08814891, S=0.4807859, C=25), parms=par, deriv, times=sort(odeset$Time)))
       
       #select time and the measured variables
       yhat<-select(yhat_all, c("time", "r"))
@@ -95,7 +95,7 @@ two_pool_r_fix<-function(data, FACT){
       names(par)<-parnames
       
       #first, pars dependent output from ode is matched with measured values
-      yhat_all<-as.data.frame(ode(y=c(R=0.01908309, S=0.2687341, C=25), parms=par, deriv, times=sort(odeset$Time)))
+      yhat_all<-as.data.frame(ode(y=c(R=0.08814891, S=0.4807859, C=25), parms=par, deriv, times=sort(odeset$Time)))
       
       #select time and the measured variables
       yhat<-select(yhat_all, c("time", "r"))
@@ -120,9 +120,9 @@ two_pool_r_fix<-function(data, FACT){
     }
     
     #approximate parameter estimation is done by MCMC method
-    par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, m0=0.01, f=4, k=1e-2, Yu=0.8),
-                      lower=c(Vmax=1e-5, Km=1e-2, m0=1e-5, f=1e-3, k=1e-6, Yu=0.01),
-                      upper=c(Vmax=1, Km=20, m0=1, f=100, k=1, Yu=0.8), niter=10000)
+    par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, f=4, k=1e-2, Yu=0.8),
+                      lower=c(Vmax=1e-5, Km=1e-2, f=1e-3, k=1e-6, Yu=0.01),
+                      upper=c(Vmax=1, Km=20, f=100, k=1, Yu=0.8), niter=10000)
     
     #lower and upper limits for parameters are extracted
     pl<-summary(par_mcmc)["min",]

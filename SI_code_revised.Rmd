@@ -126,7 +126,7 @@ d[(d$Substrate=="Cellobiose" & d$Structure=="Glass wool" & d$Time>75 & d$Prot.in
 
 ```
 
-DNA and protein concentrations are in $\mu$grams per incubation vial. Both values are recalculated to unit of carbon per one ml of media in the vial (4 ml) using the conversion factors reported in Vrede et al. (2004).
+DNA and protein concentrations are in $\mu$grams per incubation vial. Both values are converted to unit of carbon per one ml of media in the vial (4 ml) using the conversion factors reported in Vrede et al. (2004).
 
 ```{r conversions}
 
@@ -135,7 +135,7 @@ d$DNAc<-d$DNA*0.51/12.01/4
 
 ```
 ##Statistical analysis
-Linear Mixed-Effect models are used to evaluate the effect of substrate and the type of physical barrier on measured respiration rate, DNA and protein concentration. Becuase all three variables display significant variability over time, the time of measurement is treated as a random effect. Type of the barrier is nested within the substrate. 
+Linear Mixed-Effect models are used to evaluate the effect of substrate and the type of physical barrier on measured respiration rate, DNA and protein concentration. Because all three variables display significant variability over time, the time of measurement is treated as a random effect factor. Type of the barrier is nested within the substrate. 
 
 ```{r lme analysis, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 #respiration rate
@@ -234,136 +234,9 @@ grid.arrange(p1, p2, p3, nrow=1)
 $~$
 $~$
 $~$
-Next, the effect of the substrate and the presence of a physical barrier on microbial community structure and diversity is evaluated. First, the bray distance indices are calculated on a normalized data. Then, Permutational Multivariate Analysis of Variance is used to estimate the treatment effects. Analysis permutations are constrained to an individual times of incubation to avoid the potential confounding effect of time.   
-
-```{r vegan analysis, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
-#Bacteria
-bac.norm<-decostand(bac2, method=c("normalize"))
-bac.dist<-vegdist(bac.norm, method = "bray")
-bac.ad<-adonis(bac.dist~Substrate+Structure/Substrate, bac_env, strata = bac_env$Day)
-
-
-#Fungi
-fungi.norm<-decostand(fungi2, method=c("normalize"))
-fungi.dist<-vegdist(fungi.norm, method = "bray")
-fungi.ad<-adonis(fungi.dist~Substrate+Structure/Substrate, fungi_env, strata = fungi_env$Day)
-
-
-t.s01<-cbind(as.data.frame(bac.ad$aov[c(4, 1, 6)])[c(1:3), ], as.data.frame(fungi.ad$aov[c(4, 1, 6)])[c(1:3), ])
-
-row.names(t.s01)<-c("Substrate", "Structure", "Substrate*Structure")
-
-kable(t.s01, digits = c(2, 1, 3, 2, 1, 3), align = 'c', "html", booktabs=T, col.names = c("F", "df", "p", "F", "df", "p"), row.names=T, caption = "_**Table S2:** Results of permutational multivariate analysis of variance. Effect of substrate, the type of physical barrier (Structure) and their interaction was evaluated. Statistical analysis was conducted for bacterial and fungal part of the microbial community separately. F values, degrees of freedom (df) and the probability (p) are reported._") %>% 
-  kable_styling() %>% 
-  add_header_above(c(" " = 1, "Bacteria" = 3, "Fungi" = 3),
-                   italic=T)
-
-
-```
-$~$
-$~$
-$~$
-$~$
-$~$
-$~$
-```{r community figure, echo=FALSE, fig.height=5, fig.width=10, fig.cap="Fig. S2: Multivariate distances between six experimental groups that combine two different substrate treatments (Glucose or Cellobiose) and three different types of physical barrier (BROTH, WOOL, GLASS - black, grey and empty symbols respectively) in respect to structure of bacterial ((a); 16S) and fungal ((b); ITS) part of microbial community."}
-#Bacteria
-bacm<-as.matrix(bac.dist)
-#Intercept - Glucose - BROTH
-mGB<-bacm[intersect(which(bac_env$Structure=="BROTH"),which(bac_env$Substrate=="Cellobiose")), 
-       intersect(which(bac_env$Structure=="BROTH"),which(bac_env$Substrate=="Glucose"))]
-mGB[mGB==0]<-NA
-#Glucose - GLASS
-mGG<-bacm[intersect(which(bac_env$Structure=="BROTH"),which(bac_env$Substrate=="Cellobiose")), 
-       intersect(which(bac_env$Structure=="GLASS"),which(bac_env$Substrate=="Glucose"))]
-mGG[mGG==0]<-NA
-#Glucose - WOOL
-mGW<-bacm[intersect(which(bac_env$Structure=="BROTH"),which(bac_env$Substrate=="Cellobiose")), 
-       intersect(which(bac_env$Structure=="WOOL"),which(bac_env$Substrate=="Glucose"))]
-mGW[mGW==0]<-NA
-#Cellobiose - BROTH
-mCB<-bacm[intersect(which(bac_env$Structure=="BROTH"),which(bac_env$Substrate=="Cellobiose")), 
-       intersect(which(bac_env$Structure=="BROTH"),which(bac_env$Substrate=="Cellobiose"))]
-mCB[mCB==0]<-NA
-#Cellobiose - GLASS
-mCG<-bacm[intersect(which(bac_env$Structure=="BROTH"),which(bac_env$Substrate=="Cellobiose")), 
-       intersect(which(bac_env$Structure=="GLASS"),which(bac_env$Substrate=="Cellobiose"))]
-mCG[mCG==0]<-NA
-#Cellobiose - WOOL
-mCW<-bacm[intersect(which(bac_env$Structure=="BROTH"),which(bac_env$Substrate=="Cellobiose")), 
-       intersect(which(bac_env$Structure=="WOOL"),which(bac_env$Substrate=="Cellobiose"))]
-mCW[mCW==0]<-NA
-
-bacdiff<-data.frame(Dist=c(mean(mGB, na.rm=T), mean(mGG, na.rm=T), mean(mGW, na.rm=T), 0, mean(mCG, na.rm=T), mean(mCW, na.rm=T)),
-                    Dist.sd=c(sd(mGB, na.rm=T), sd(mGG, na.rm=T), sd(mGW, na.rm=T), sd(mCB, na.rm=T), sd(mCG, na.rm=T), sd(mCW, na.rm=T)),
-                    Substrate=c(rep("Glucose", 3), rep("Cellobiose", 3)),
-                    Structure=rep(c("BROTH", "GLASS", "WOOL"), 2))
-
-#Fungi
-fm<-as.matrix(fungi.dist)
-#Intercept - Glucose - BROTH
-fGB<-fm[intersect(which(fungi_env$Structure=="BROTH"),which(fungi_env$Substrate=="Cellobiose")), 
-          intersect(which(fungi_env$Structure=="BROTH"),which(fungi_env$Substrate=="Glucose"))]
-fGB[fGB==0]<-NA
-#Glucose - GLASS
-fGG<-fm[intersect(which(fungi_env$Structure=="BROTH"),which(fungi_env$Substrate=="Cellobiose")), 
-          intersect(which(fungi_env$Structure=="GLASS"),which(fungi_env$Substrate=="Glucose"))]
-fGG[fGG==0]<-NA
-#Glucose - WOOL
-fGW<-fm[intersect(which(fungi_env$Structure=="BROTH"),which(fungi_env$Substrate=="Cellobiose")), 
-          intersect(which(fungi_env$Structure=="WOOL"),which(fungi_env$Substrate=="Glucose"))]
-fGW[fGW==0]<-NA
-#Cellobiose - BROTH
-fCB<-fm[intersect(which(fungi_env$Structure=="BROTH"),which(fungi_env$Substrate=="Cellobiose")), 
-          intersect(which(fungi_env$Structure=="BROTH"),which(fungi_env$Substrate=="Cellobiose"))]
-fCB[fCB==0]<-NA
-#Cellobiose - GLASS
-fCG<-fm[intersect(which(fungi_env$Structure=="BROTH"),which(fungi_env$Substrate=="Cellobiose")), 
-          intersect(which(fungi_env$Structure=="GLASS"),which(fungi_env$Substrate=="Cellobiose"))]
-fCG[fCG==0]<-NA
-#Cellobiose - WOOL
-fCW<-fm[intersect(which(fungi_env$Structure=="BROTH"),which(fungi_env$Substrate=="Cellobiose")), 
-          intersect(which(fungi_env$Structure=="WOOL"),which(fungi_env$Substrate=="Cellobiose"))]
-fCW[fCW==0]<-NA
-
-fdiff<-data.frame(Dist=c(mean(fGB, na.rm=T), mean(fGG, na.rm=T), mean(fGW, na.rm=T), 0, mean(fCG, na.rm=T), mean(fCW, na.rm=T)),
-                    Dist.sd=c(sd(fGB, na.rm=T), sd(fGG, na.rm=T), sd(fGW, na.rm=T), sd(fCB, na.rm=T), sd(fCG, na.rm=T), sd(fCW, na.rm=T)),
-                    Substrate=c(rep("Glucose", 3), rep("Cellobiose", 3)),
-                    Structure=rep(c("BROTH", "GLASS", "WOOL"), 2))
-
-bacplot<-ggplot(bacdiff, aes(Substrate, Dist))+
-  geom_point(position = position_dodge(width = 0.5), aes(fill=Structure), shape=21, cex=6)+
-  scale_fill_manual(values = c("black", "grey", "white"))+
-  scale_colour_manual(values = c("black", "black", "black"))+
-  geom_errorbar(aes(ymin=Dist-Dist.sd, ymax=Dist+Dist.sd, colour=Structure),
-                position=position_dodge(width = 0.5), width=0.1)+
-  ylab("16S Distance")+
-  ggtitle("a)")+
-  theme_min+theme(axis.title.x = element_blank(),
-                  legend.title = element_blank(),
-                  legend.position = c(0.8, 0.2))
-fplot<-ggplot(fdiff, aes(Substrate, Dist))+
-  geom_point(position = position_dodge(width = 0.5), aes(fill=Structure), shape=21, cex=6, show.legend = F)+
-  scale_fill_manual(values = c("black", "grey", "white"))+
-  scale_colour_manual(values = c("black", "black", "black"))+
-  geom_errorbar(aes(ymin=Dist-Dist.sd, ymax=Dist+Dist.sd, colour=Structure),
-                position=position_dodge(width = 0.5), width=0.1, show.legend = F)+
-  ylab("ITS Distance")+
-  ggtitle("b)")+
-  theme_min+theme(axis.title.x = element_blank(),
-                  legend.title = element_blank())
-
-grid.arrange(bacplot, fplot, nrow=1)
-
-```
-
-$~$
-$~$
-$~$
-
 ##Microbial-explicit models analysis
-###All models are first calibrated against respiration rate
-Calibration of each model is done in four steps. First, the model is calibrated against data across all treatments. Second, the model is calibrated for each level of incubation system complexity separately. Third, the model is calibrated for Glucose and Cellobiose treatments separately. Fourth, the model is calibrated for each experimental treatment separately. 
+###Both models are first calibrated against respiration rate
+Calibration of both models is done in four steps. First, the model is calibrated against data across all treatments. Second, the model is calibrated for each level of incubation system complexity separately. Third, the model is calibrated for Glucose and Cellobiose treatments separately. Fourth, the model is calibrated for each experimental treatment separately. 
 Goodness of correspondence between measurements and model simulations are calculated across all treatments. By doing so, the effect of experimental treatment is evaluated. If the model simulation fits the data significantly better when model parameters are estimated for different treatments separately, effect of this treatment is significant.
 
 The calibration of the models is not run within this document because it takes couple of hours to finish. Results of the previous iteration is printed instead. 
@@ -379,7 +252,7 @@ source("../Rscripts/monod_r_fix.R")
 #across all treatments
 monod_r1<-monod_r(data=d, FACT = 4)
 #########################################################
-no_cors<-detectCores()
+no_cors<-detectCores()-1
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 ##########################################################
@@ -461,97 +334,6 @@ kable(monod_r_results_good[c(3:6)], digits = c(2, 2, 2, 2, 2), align = 'c', "htm
 
 ```
 
-####Monod plus model
-```{r Monod plus respiration calibration, eval=F, echo=T}
-#Loading the function 
-source("../Rscripts/monodplus_r.R")
-source("../Rscripts/monodplus_r_fix.R")
-#across all treatments
-monodplus_r1<-monodplus_r(data=d, FACT = 4)
-##################################################
-no_cors<-detectCores()-1
-cl<-makeCluster(no_cors)
-registerDoParallel(cl)
-##################################################
-#for different structures
-monodplus_r2<-monodplus_r(data=d, FACT = 2)
-monodplus_r2_fix<-monodplus_r_fix(data=d, FACT = 2)
-#for different substrates
-monodplus_r3<-monodplus_r(data=d, FACT = 1)
-monodplus_r3_fix<-monodplus_r_fix(data=d, FACT = 1)
-#for each separately 
-monodplus_r4<-monodplus_r(data=d, FACT = 3)
-monodplus_r4_fix<-monodplus_r_fix(data=d, FACT = 3)
-##################################################
-stopImplicitCluster()
-##################################################
-monodplus_r1$goodness
-monodplus_r2$goodness
-monodplus_r3$goodness
-monodplus_r4$goodness
-
-# mean(c(monodplus_r4[[1]]$pars[["Cmic_0"]], monodplus_r4[[2]]$pars[["Cmic_0"]],
-#        monodplus_r4[[3]]$pars[["Cmic_0"]], monodplus_r4[[4]]$pars[["Cmic_0"]],
-#        monodplus_r4[[5]]$pars[["Cmic_0"]], monodplus_r4[[6]]$pars[["Cmic_0"]]))
-
-monodplus_r1$goodness
-monodplus_r2_fix$goodness
-monodplus_r3_fix$goodness
-monodplus_r4_fix$goodness
-```
-
-
-```{r Monod plus respiration calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
-
-#results of the previous iteration (not run)
-# monodplus_r_results_par<-as.data.frame(rbind(monodplus_r1[[1]]$pars[c(1:5)],
-#                     monodplus_r2_fix[[1]]$pars, monodplus_r2_fix[[2]]$pars,
-#                     monodplus_r2_fix[[3]]$pars,
-#                     monodplus_r3_fix[[1]]$pars, monodplus_r3_fix[[2]]$pars,
-#                     monodplus_r4_fix[[1]]$pars, monodplus_r4_fix[[2]]$pars,
-#                     monodplus_r4_fix[[3]]$pars, monodplus_r4_fix[[4]]$pars,
-#                     monodplus_r4_fix[[5]]$pars, monodplus_r4_fix[[6]]$pars))
-# monodplus_r_results_good<-as.data.frame(rbind(monodplus_r1$goodness,
-#                                               monodplus_r2_fix$goodness,
-#                                               monodplus_r3_fix$goodness,
-#                                               monodplus_r4_fix$goodness))
-# write.csv(monodplus_r_results_par, file = c("../monodplus_r_results_par.csv"), row.names = F)
-# write.csv(monodplus_r_results_good, file = c("../monodplus_r_results_good.csv"), row.names = F)
-
-monodplus_r_results_par<-read.csv("monodplus_r_results_par.csv")
-monodplus_r_results_good<-read.csv("monodplus_r_results_good.csv")
-
-
-t.s2.1<-data.frame(Vmax=monodplus_r_results_par[,1],
-                 Km=monodplus_r_results_par[,2],
-                 CUE=monodplus_r_results_par[,3],
-                 mr=monodplus_r_results_par[,4],
-                 k=monodplus_r_results_par[,5])
-row.names(t.s2.1)<-c("All", "Broth", "Glass", "Wool",
-                    "Celluloze", "Glucose",
-                    "Broth - Cellobiose", "Broth - Glucose",
-                    "Glass - Cellobiose", "Glass - Glucose",
-                    "Wool - Cellobiose", "Wool - Glucose")
-
-options(knitr.kable.NA = '')
-
-
-kable(t.s2.1, digits = c(2, 2, 2, 3), align = 'c', "html", booktabs=T, col.names = c('v', 'k', '$\\Y_{CUE}$', 'h', 'm'), row.names=T, caption = "_**Table S5:** Monod plus model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
-  kable_styling() %>% 
-  group_rows("All", 1, 1) %>%
-  group_rows("Structure", 2, 4) %>%
-  group_rows("Substrate", 5, 6) %>%
-  group_rows("Each", 7, 12) 
-
-kable(monodplus_r_results_good[,c(4, 1, 2, 3)], digits = c(2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S6:** Goodness of fit of Monnod plus model calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
-  kable_styling() %>% 
-  group_rows("All", 1, 1) %>%
-  group_rows("Structure", 2, 2) %>%
-  group_rows("Substrate", 3, 4) %>%
-  group_rows("Each", 4, 4) 
-
-```
-
 ####Sub-microbial model
 ```{r Sub-microbial model respiration calibration, eval=F, echo=T}
 #Loading the function 
@@ -577,32 +359,33 @@ two_pool_r4_fix<-two_pool_r_fix(data=d, FACT = 3)
 stopImplicitCluster()
 #################################################
 # mean(c(two_pool_r4[[1]]$pars[["R_0"]], two_pool_r4[[2]]$pars[["R_0"]],
-#       two_pool_r4[[3]]$pars[["R_0"]], two_pool_r4[[4]]$pars[["R_0"]],
-#       two_pool_r4[[5]]$pars[["R_0"]], two_pool_r4[[6]]$pars[["R_0"]]))
+#      two_pool_r4[[3]]$pars[["R_0"]], two_pool_r4[[4]]$pars[["R_0"]],
+#      two_pool_r4[[5]]$pars[["R_0"]], two_pool_r4[[6]]$pars[["R_0"]]))
 # mean(c(two_pool_r4[[1]]$pars[["S_0"]], two_pool_r4[[2]]$pars[["S_0"]],
-#       two_pool_r4[[3]]$pars[["S_0"]], two_pool_r4[[4]]$pars[["S_0"]],
-#       two_pool_r4[[5]]$pars[["S_0"]], two_pool_r4[[6]]$pars[["S_0"]]))
+#      two_pool_r4[[3]]$pars[["S_0"]], two_pool_r4[[4]]$pars[["S_0"]],
+#      two_pool_r4[[5]]$pars[["S_0"]], two_pool_r4[[6]]$pars[["S_0"]]))
 
 two_pool_r1$goodness
 two_pool_r2_fix$goodness
 two_pool_r3_fix$goodness
 two_pool_r4_fix$goodness
+  
 ```
 
 ```{r Sub-microbial model respiration calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 
 #results of the previous iteration (not run)
-# two_pool_r_results_par<-rbind(two_pool_r1[[1]]$pars[c(1:6)],
-#                     two_pool_r2_fix[[1]]$pars, two_pool_r2_fix[[2]]$pars,
-#                     two_pool_r2_fix[[3]]$pars,
-#                     two_pool_r3_fix[[1]]$pars, two_pool_r3_fix[[2]]$pars,
-#                     two_pool_r4_fix[[1]]$pars, two_pool_r4_fix[[2]]$pars,
-#                     two_pool_r4_fix[[3]]$pars, two_pool_r4_fix[[4]]$pars,
-#                     two_pool_r4_fix[[5]]$pars, two_pool_r4_fix[[6]]$pars)
+# two_pool_r_results_par<-rbind(two_pool_r1[[1]]$pars[c(1:5)],
+#                    two_pool_r2_fix[[1]]$pars, two_pool_r2_fix[[2]]$pars,
+#                    two_pool_r2_fix[[3]]$pars,
+#                    two_pool_r3_fix[[1]]$pars, two_pool_r3_fix[[2]]$pars,
+#                    two_pool_r4_fix[[1]]$pars, two_pool_r4_fix[[2]]$pars,
+#                    two_pool_r4_fix[[3]]$pars, two_pool_r4_fix[[4]]$pars,
+#                    two_pool_r4_fix[[5]]$pars, two_pool_r4_fix[[6]]$pars)
 # two_pool_r_results_good<-rbind(two_pool_r1$goodness,
-#                                two_pool_r2$goodness,
-#                                two_pool_r3$goodness,
-#                                two_pool_r4$goodness)
+#                               two_pool_r2$goodness,
+#                               two_pool_r3$goodness,
+#                               two_pool_r4$goodness)
 # write.csv(two_pool_r_results_par, file = c("../two_pool_r_results_par.csv"), row.names = F)
 # write.csv(two_pool_r_results_good, file = c("../two_pool_r_results_good.csv"), row.names = F)
 
@@ -612,10 +395,9 @@ two_pool_r_results_good<-read.csv("two_pool_r_results_good.csv")
 
 t.s3.1<-data.frame(Vmax=two_pool_r_results_par[,1],
                  Km=two_pool_r_results_par[,2],
-                 mo=two_pool_r_results_par[,3],
-                 f=two_pool_r_results_par[,4],
-                 k=two_pool_r_results_par[,5],
-                 Yu=two_pool_r_results_par[,6])
+                 f=two_pool_r_results_par[,3],
+                 k=two_pool_r_results_par[,4],
+                 Yu=two_pool_r_results_par[,5])
 row.names(t.s3.1)<-c("All", "Broth", "Glass", "Wool",
                     "Cellobiose", "Glucose",
                     "Broth - Cellobiose", "Broth - Glucose",
@@ -625,7 +407,7 @@ row.names(t.s3.1)<-c("All", "Broth", "Glass", "Wool",
 options(knitr.kable.NA = '')
 
 
-kable(t.s3.1, digits = c(2, 2, 3, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('v', 'k', 'h', 'f', 'm', 'Y'), row.names=T, caption = "_**Table S7:** Sub-microbial model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(t.s3.1, digits = c(2, 2, 2, 3, 2), align = 'c', "html", booktabs=T, col.names = c('v', 'k', 'f', 'm', 'Y'), row.names=T, caption = "_**Table S7:** Sub-microbial model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 1) %>%
   group_rows("Structure", 2, 4) %>%
@@ -641,9 +423,9 @@ kable(two_pool_r_results_good[, c(3:6)], digits = c(2, 2, 2, 2, 2), align = 'c',
 
 ```
 
-###All models are calibrated against respiration rate, proteins and DNA concentration in the cells.
-All models are calibrated against all data we measured. In addition to model parameters reported in tables above, conversion factors between proteins/DNA concentration and microbial biomass are estimated. For Monod and Monod plus models, initial concentration of microbial biomass is defined as an initial concentration of the DNA in the incubation vial divided by the conversion factor between the DNA concentration and microbial biomass. For Sub-microbial model, initial concentration of Structures is defined similarly - i.e. initial concentration of the DNA in the incubation vial divided by the conversion factor between the DNA concentration and Structures. However, initial concetration of Reserves cannot be defined because initial concentration of proteins is not know. Therefore, one more parameter is defined. This parameter is denoted as RS_0 in the respective function and define initial concentration of Reserves per unit of Structures. This parameter has to be fixed across treatments to reflect the reality.
-In addition, Monod and Monod plus models are calibrated against respiration rate and proteins or DNA concentration separately. When calibrated againnst protein concentration, initial concentration of microbial biomass is estimated and fixed across treatments.
+###Both models are calibrated against respiration rate, proteins and DNA concentration in the cells.
+Both models are calibrated against all data we measured. In addition to model parameters reported in tables above, conversion factors between proteins/DNA concentration and microbial biomass are estimated. For Monod model, initial concentration of microbial biomass is defined as an initial concentration of the DNA in the incubation vial divided by the conversion factor between the DNA concentration and microbial biomass. For Sub-microbial model, initial concentration of Structures is defined similarly - i.e. initial concentration of the DNA in the incubation vial divided by the conversion factor between the DNA concentration and Structures. However, initial concetration of Reserves cannot be defined because initial concentration of proteins is not know. Therefore, one more parameter is defined. This parameter is denoted as RS_0 in the respective function and define initial concentration of Reserves per unit of Structures. This parameter has to be fixed across treatments to reflect the reality.
+In addition, Monod model is calibrated against respiration rate and proteins or DNA concentration separately. When calibrated againnst protein concentration, initial concentration of microbial biomass is estimated and fixed across treatments.
 
 ####Monod model
 ```{r Monod model - biomass components, eval=F, echo=T}
@@ -882,366 +664,143 @@ kable(monod_DNA_results_good[,c(1, 4:7)], digits = c(0, 2, 2, 0, 2), align = 'c'
 
 ```
 
-####Monod plus model
-```{r Monod plus model calibartion, eval=F, echo=T}
-#Proteins
-#Loading the function 
-source("../Rscripts/monodplus_prot.R")
-source("../Rscripts/monodplus_prot_fix.R")
-#across all treatments
-monodplus_prot1<-monodplus_prot(data=d, FACT = 4)
-###########################################################
-no_cors<-detectCores()-1
-cl<-makeCluster(no_cors)
-registerDoParallel(cl)
-###########################################################
-#for different structures
-monodplus_prot2<-monodplus_prot(data=d, FACT = 2)
-monodplus_prot2_fix<-monodplus_prot_fix(data=d, FACT = 2)
-#for different substrates
-monodplus_prot3<-monodplus_prot(data=d, FACT = 1)
-monodplus_prot3_fix<-monodplus_prot_fix(data=d, FACT = 1)
-#for each separately 
-monodplus_prot4<-monodplus_prot(data=d, FACT = 3)
-monodplus_prot4_fix<-monodplus_prot_fix(data=d, FACT = 3)
-###########################################################
-stopImplicitCluster()
-###########################################################
-monodplus_prot1$goodness
-monodplus_prot2_fix$goodness
-monodplus_prot3_fix$goodness
-monodplus_prot4_fix$goodness
-###########################################################
-#DNA
-#Loading the function 
-source("../Rscripts/monodplus_DNA.R")
-#across all treatments
-monodplus_DNA1<-monodplus_DNA(data=d, FACT = 4)
-###########################################################
-no_cors<-detectCores()-2
-cl<-makeCluster(no_cors)
-registerDoParallel(cl)
-###########################################################
-#for different structures
-monodplus_DNA2<-monodplus_DNA(data=d, FACT = 2)
-#for different substrates
-monodplus_DNA3<-monodplus_DNA(data=d, FACT = 1)
-#for each separately 
-monodplus_DNA4<-monodplus_DNA(data=d, FACT = 3)
-###########################################################
-stopImplicitCluster()
-###########################################################
-monodplus_DNA1$goodness
-monodplus_DNA2$goodness
-monodplus_DNA3$goodness
-monodplus_DNA4$goodness
-###########################################################
-#DNA and Proteins
-#Loading the function 
-source("../Rscripts/monodplus_all.R")
-#across all treatments
-monodplus_all1<-monodplus_all(data=d, FACT = 4)
-###########################################################
-no_cors<-detectCores()-1
-cl<-makeCluster(no_cors)
-registerDoParallel(cl)
-###########################################################
-#for different structures
-monodplus_all2<-monodplus_all(data=d, FACT = 2)
-#for different substrates
-monodplus_all3<-monodplus_all(data=d, FACT = 1)
-#for each separately 
-monodplus_all4<-monodplus_all(data=d, FACT = 3)
-###########################################################
-stopImplicitCluster()
-###########################################################
-monodplus_all1$goodness
-monodplus_all2$goodness
-monodplus_all3$goodness
-monodplus_all4$goodness
-```
-
-```{r Monod plus overall calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
-
-# #results of the previous iteration (not run)
-# ##All measurements together
-# monodplus_all_results_par<-rbind(monodplus_all1[[1]]$pars, 
-#                             monodplus_all2[[1]]$pars, monodplus_all2[[2]]$pars,
-#                             monodplus_all2[[3]]$pars, 
-#                             monodplus_all3[[1]]$pars, monodplus_all3[[2]]$pars,
-#                             monodplus_all4[[1]]$pars, monodplus_all4[[2]]$pars,
-#                             monodplus_all4[[3]]$pars, monodplus_all4[[4]]$pars,
-#                             monodplus_all4[[5]]$pars, monodplus_all4[[6]]$pars)
-# 
-# monodplus_all_results_good<-rbind(monodplus_all1$goodness[c(2, 3, 1), ],
-#                              monodplus_all2$goodness[c(2, 3, 1), ],
-#                              monodplus_all3$goodness[c(2, 3, 1), ],
-#                              monodplus_all4$goodness[c(2, 3, 1), ])
-# 
-# write.csv(monodplus_all_results_par, file = c("../monodplus_all_results_par.csv"), row.names = F)
-# write.csv(monodplus_all_results_good, file = c("../monodplus_all_results_good.csv"), row.names = F)
-# 
-# ##Respiration rate and proteins
-# monodplus_prot_results_par<-rbind(monodplus_prot1[[1]]$pars[c(1:6)], 
-#                             monodplus_prot2_fix[[1]]$pars, monodplus_prot2_fix[[2]]$pars,
-#                             monodplus_prot2_fix[[3]]$pars, 
-#                             monodplus_prot3_fix[[1]]$pars, monodplus_prot3_fix[[2]]$pars,
-#                             monodplus_prot4_fix[[1]]$pars, monodplus_prot4_fix[[2]]$pars,
-#                             monodplus_prot4_fix[[3]]$pars, monodplus_prot4_fix[[4]]$pars,
-#                             monodplus_prot4_fix[[5]]$pars, monodplus_prot4_fix[[6]]$pars)
-# 
-# monodplus_prot_results_good<-rbind(monodplus_prot1$goodness[c(2,1), ],
-#                              monodplus_prot2_fix$goodness[c(2,1), ],
-#                              monodplus_prot3_fix$goodness[c(2,1), ],
-#                              monodplus_prot4_fix$goodness[c(2,1), ])
-# 
-# write.csv(monodplus_prot_results_par, file = c("../monodplus_prot_results_par.csv"), row.names = F)
-# write.csv(monodplus_prot_results_good, file = c("../monodplus_prot_results_good.csv"), row.names = F)
-# 
-# ##Respiration rate and DNA
-# monodplus_DNA_results_par<-rbind(monodplus_DNA1[[1]]$pars, 
-#                             monodplus_DNA2[[1]]$pars, monodplus_DNA2[[2]]$pars,
-#                             monodplus_DNA2[[3]]$pars, 
-#                             monodplus_DNA3[[1]]$pars, monodplus_DNA3[[2]]$pars,
-#                             monodplus_DNA4[[1]]$pars, monodplus_DNA4[[2]]$pars,
-#                             monodplus_DNA4[[3]]$pars, monodplus_DNA4[[4]]$pars,
-#                             monodplus_DNA4[[5]]$pars, monodplus_DNA4[[6]]$pars)
-#  
-# monodplus_DNA_results_good<-rbind(monodplus_DNA1$goodness[c(2, 1), ],
-#                              monodplus_DNA2$goodness[c(2, 1), ],
-#                              monodplus_DNA3$goodness[c(2, 1), ],
-#                              monodplus_DNA4$goodness[c(2, 1), ])
-# 
-# write.csv(monodplus_DNA_results_par, file = c("../monodplus_DNA_results_par.csv"), row.names = F)
-# write.csv(monodplus_DNA_results_good, file = c("../monodplus_DNA_results_good.csv"), row.names = F)
-
-#All measurements
-monodplus_all_results_par<-read.csv("monodplus_all_results_par.csv")
-monodplus_all_results_good<-read.csv("monodplus_all_results_good.csv")
-monodplus_all_results_good$variable<-rep(c("Respiration", "Proteins", "DNA"), 4)
-monodplus_all_results_good[monodplus_all_results_good$R2<0, "R2"]<-0
-#Respiration and proteins
-monodplus_prot_results_par<-read.csv("monodplus_prot_results_par.csv")
-monodplus_prot_results_good<-read.csv("monodplus_prot_results_good.csv")
-monodplus_prot_results_good$variable<-rep(c("Respiration", "Proteins"), 4)
-monodplus_prot_results_good[monodplus_prot_results_good$R2<0, "R2"]<-0
-#Respiration and DNA
-monodplus_DNA_results_par<-read.csv("monodplus_DNA_results_par.csv")
-monodplus_DNA_results_good<-read.csv("monodplus_DNA_results_good.csv")
-monodplus_DNA_results_good$variable<-rep(c("Respiration", "DNA"), 4)
-monodplus_DNA_results_good[monodplus_DNA_results_good$R2<0, "R2"]<-0
-
-t.s5.1<-data.frame(Name=c("All", "Broth", "Glass", "Wool",
-                    "Cellobiose", "Glucose",
-                    "Broth - Cellobiose", "Broth - Glucose",
-                    "Glass - Cellobiose", "Glass - Glucose",
-                    "Wool - Cellobiose", "Wool - Glucose"),
-                   Vmax=monodplus_all_results_par[,1],
-                   Km=monodplus_all_results_par[,2],
-                   CUE=monodplus_all_results_par[,3],
-                   mr=monodplus_all_results_par[,4],
-                   k=monodplus_all_results_par[,5],
-                   fp=monodplus_all_results_par[,6],
-                   fd=monodplus_all_results_par[,7])
-
-options(knitr.kable.NA = '')
-
-
-kable(t.s5.1, digits = c(0, 2, 2, 2, 3, 3, 3, 3), align = 'c', "html", booktabs=T, col.names = c(" ", 'v', 'k', '$\\Y_{CUE}$', 'h', 'm', '$\\f_{Proteins}$', '$\\f_{DNA}$'), row.names=F, caption = "_**Table S15:** Monod plus model parameters calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
-  kable_styling() %>% 
-  group_rows("All", 1, 1) %>%
-  group_rows("Structure", 2, 4) %>%
-  group_rows("Substrate", 5, 6) %>%
-  group_rows("Each", 7, 12) 
-
-kable(monodplus_all_results_good[,c(1, 4:7)], digits = c(0, 2, 2, 0, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S16:** Goodness of fit of Monod plus model calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
-  kable_styling() %>% 
-  group_rows("All", 1, 3) %>%
-  group_rows("Structure", 4, 6) %>%
-  group_rows("Substrate", 7, 9) %>%
-  group_rows("Each", 10, 12)
-
-t.s5.2<-data.frame(Name=c("All", "Broth", "Glass", "Wool",
-                    "Cellobiose", "Glucose",
-                    "Broth - Cellobiose", "Broth - Glucose",
-                    "Glass - Cellobiose", "Glass - Glucose",
-                    "Wool - Cellobiose", "Wool - Glucose"),
-                   Vmax=monodplus_prot_results_par[,1],
-                   Km=monodplus_prot_results_par[,2],
-                   CUE=monodplus_prot_results_par[,3],
-                   mr=monodplus_prot_results_par[,4],
-                   k=monodplus_prot_results_par[,5],
-                   fp=monodplus_prot_results_par[,6])
-
-options(knitr.kable.NA = '')
-
-
-kable(t.s5.2, digits = c(0, 2, 2, 2, 3, 3, 3), align = 'c', "html", booktabs=T, col.names = c(" ", 'v', 'k', '$\\Y_{CUE}$', 'h', 'm', '$\\f_{Proteins}$'), row.names=F, caption = "_**Table S17:** Monod plus model parameters calibrated against respiration rate and protein concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
-  kable_styling() %>% 
-  group_rows("All", 1, 1) %>%
-  group_rows("Structure", 2, 4) %>%
-  group_rows("Substrate", 5, 6) %>%
-  group_rows("Each", 7, 12) 
-
-kable(monodplus_prot_results_good[,c(1, 4:7)], digits = c(0, 2, 2, 0, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S18:** Goodness of fit of Monod plus model calibrated against respiration rate and protein concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
-  kable_styling() %>% 
-  group_rows("All", 1, 1) %>%
-  group_rows("Structure", 3, 4) %>%
-  group_rows("Substrate", 5, 6) %>%
-  group_rows("Each", 7, 8)
-
-t.s5.3<-data.frame(Name=c("All", "Broth", "Glass", "Wool",
-                    "Cellobiose", "Glucose",
-                    "Broth - Cellobiose", "Broth - Glucose",
-                    "Glass - Cellobiose", "Glass - Glucose",
-                    "Wool - Cellobiose", "Wool - Glucose"),
-                   Vmax=monodplus_DNA_results_par[,1],
-                   Km=monodplus_DNA_results_par[,2],
-                   CUE=monodplus_DNA_results_par[,3],
-                   mr=monodplus_DNA_results_par[,4],
-                   k=monodplus_DNA_results_par[,5],
-                   fd=monodplus_DNA_results_par[,6])
-
-options(knitr.kable.NA = '')
-
-
-kable(t.s5.3, digits = c(0, 2, 2, 2, 3, 3, 3), align = 'c', "html", booktabs=T, col.names = c(" ", 'v', 'k', '$\\Y_{CUE}$', 'h', 'm', '$\\f_{DNA}$'), row.names=F, caption = "_**Table S19:** Monod plus model parameters calibrated against respiration rate and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
-  kable_styling() %>% 
-  group_rows("All", 1, 1) %>%
-  group_rows("Structure", 2, 4) %>%
-  group_rows("Substrate", 5, 6) %>%
-  group_rows("Each", 7, 12) 
-
-kable(monodplus_DNA_results_good[,c(1, 4:7)], digits = c(0, 2, 2, 0, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S20:** Goodness of fit of Monod plus  model calibrated against respiration rate and protein concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
-  kable_styling() %>% 
-  group_rows("All", 1, 2) %>%
-  group_rows("Structure", 3, 4) %>%
-  group_rows("Substrate", 5, 6) %>%
-  group_rows("Each", 7, 8)
-```
-
 ####Sub-microbial model
 Not all model parameters vary significantly across treatments. Parameters that doesn't show any variability across treatments are fixed.
 ```{r Sub-microbial model calibration, eval=F, echo=T}
 #Loading the function 
-source("../Rscripts/two_pool_all.R")
-source("../Rscripts/two_pool_all_fix.R")
+source("./Rscripts/two_pool_allx.R")
+source("../Rscripts/two_pool_allx_fix.R")
 #across all treatments
-two_pool_all1<-two_pool_all(data=d, FACT = 4)
+two_pool_allx_out1<-two_pool_allx(data=d, FACT = 4)
+
 ###########################################################
 no_cors<-detectCores()-1
 cl<-makeCluster(no_cors)
 registerDoParallel(cl)
 ###########################################################
 #for different structures
-two_pool_all2<-two_pool_all(data=d, FACT = 2)
-two_pool_all2_fix<-two_pool_all_fix(data=d, FACT = 2)
+two_pool_allx_out2<-two_pool_allx(data=d, FACT = 2)
+
+two_pool_allx_fix_out2<-two_pool_allx_fix(data=d, FACT = 2)
+two_pool_allx_fix_out2$goodness
+
+two_pool_allx_fix_out2[[1]]$pars
+two_pool_allx_fix_out2[[2]]$pars
+two_pool_allx_fix_out2[[3]]$pars
+
+# mean(c(two_pool_allx_fix_out2[[1]]$pars[["Vmax"]],
+#        two_pool_allx_fix_out2[[2]]$pars[["Vmax"]],
+#        two_pool_allx_fix_out2[[3]]$pars[["Vmax"]]))
+# mean(c(two_pool_allx_fix_out2[[1]]$pars[["Yu"]],
+#        two_pool_allx_fix_out2[[2]]$pars[["Yu"]],
+#        two_pool_allx_fix_out2[[3]]$pars[["Yu"]]))
+# mean(c(two_pool_allx_fix_out2[[1]]$pars[["k"]],
+#        two_pool_allx_fix_out2[[2]]$pars[["k"]],
+#        two_pool_allx_fix_out2[[3]]$pars[["k"]]))
 ############################################################################
-#in the following code, the Ys and k parameters are fixed across treatments
+#in the following code, the Vmax, Ys and k parameters are fixed across treatments
 #becuase its variability across treatments is minimal (data not shown)
-source("./Rscripts/two_pool_all_fixYuk.R")
-two_pool_all_fixYuk2<-two_pool_all_fixYuk(data=d, FACT = 2)
-#Then, parameter f is fixed as well
-source("./Rscripts/two_pool_all_fixYukf.R")
-two_pool_all_fixYukf2<-two_pool_all_fixYukf(data=d, FACT = 2)
-#Then, parameter Vmax is fixed as well
-source("./Rscripts/two_pool_all_fixYukfVmax.R")
-two_pool_all_fixYukfVmax2<-two_pool_all_fixYukfVmax(data=d, FACT = 2)
+source("./Rscripts/two_pool_all_fixVmaxYuk.R")
+two_pool_all_fixVmaxYuk_out2<-two_pool_all_fixVmaxYuk(data=d, FACT = 2)
+two_pool_all_fixVmaxYuk_out2$goodness
+
 ############################################################################
 #for different substrates
-two_pool_all3<-two_pool_all(data=d, FACT = 1)
-two_pool_all3_fix<-two_pool_all_fix(data=d, FACT = 1)
+two_pool_allx_fix_out3<-two_pool_allx_fix(data=d, FACT = 1)
+two_pool_allx_fix_out3$goodness
 #for each separately 
-two_pool_all4<-two_pool_all(data=d, FACT = 3)
-two_pool_all4_fix<-two_pool_all_fix(data=d, FACT = 3)
-#in the following code, the Ys, k,f and Vmax parameters are fixed across treatments
-two_pool_all_fixYukfVmax4<-two_pool_all_fixYukfVmax(data=d, FACT = 3)
+two_pool_allx_fix_out4<-two_pool_allx_fix(data=d, FACT = 3)
+two_pool_allx_fix_out4$goodness
+#in the following code, the Vmax Ys, and k parameters are fixed across treatments
+two_pool_all_fixVmaxYuk_out4<-two_pool_all_fixVmaxYuk(data=d, FACT = 3)
+two_pool_all_fixVmaxYuk_out4$goodness
 ###########################################################
 stopImplicitCluster()
 ###########################################################
-two_pool_all1$goodness
-two_pool_all_fixYukfVmax2$goodness
-two_pool_all3_fix$goodness
-two_pool_all_fixYukfVmax4$goodness
+two_pool_allx_out1$goodness
+two_pool_all_fixVmaxYuk_out2$goodness
+two_pool_allx_fix_out3$goodness
+two_pool_all_fixVmaxYuk_out4$goodness
+
+
+# mean(c(two_pool_allx_out4[[1]]$pars[["RS_0"]],
+#        two_pool_allx_out4[[2]]$pars[["RS_0"]],
+#        two_pool_allx_out4[[3]]$pars[["RS_0"]],
+#        #two_pool_allx_out4[[4]]$pars[["RS_0"]],
+#        two_pool_allx_out4[[5]]$pars[["RS_0"]],
+#        two_pool_allx_out4[[6]]$pars[["RS_0"]]))
+       
+
 ```
 
 ```{r Sub-microbial model overall calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 
-# #results of the previous iteration (not run)
-# two_pool_all_results_par<-rbind(c(two_pool_all1[[1]]$pars[c(1:9)], RS_0 = 0.06185237),
-#                          c(Vmax = 0.2761818, 
-#                            two_pool_all_fixYukfVmax2[[1]]$pars[1],
-#                            two_pool_all_fixYukfVmax2[[1]]$pars[2],
-#                            f = 0.2373511,
-#                            k = 0.004915818,
-#                            Yu = 0.3565256,
-#                            two_pool_all_fixYukfVmax2[[1]]$pars[c(3:5)],
-#                            RS_0 = 0.06185237),
-#                          c(Vmax = 0.2761818, 
-#                            two_pool_all_fixYukfVmax2[[2]]$pars[1],
-#                            two_pool_all_fixYukfVmax2[[2]]$pars[2],
-#                            f = 0.2373511,
-#                            k = 0.004915818,
-#                            Yu = 0.3565256,
-#                            two_pool_all_fixYukfVmax2[[2]]$pars[c(3:5)],
-#                            RS_0 = 0.06185237),
-#                          c(Vmax = 0.2761818, 
-#                            two_pool_all_fixYukfVmax2[[3]]$pars[1],
-#                            two_pool_all_fixYukfVmax2[[3]]$pars[2],
-#                            f = 0.2373511,
-#                            k = 0.004915818,
-#                            Yu = 0.3565256,
-#                            two_pool_all_fixYukfVmax2[[3]]$pars[c(3:5)],
-#                            RS_0 = 0.06185237),
-#                          c(two_pool_all3_fix[[1]]$pars[c(1:9)], RS_0 = 0.06185237),
-#                          c(two_pool_all3_fix[[2]]$pars[c(1:9)], RS_0 = 0.06185237),
-#                          c(Vmax = 0.2761818, 
-#                            two_pool_all_fixYukfVmax4[[1]]$pars[c(1:2)],
-#                            f = 0.2373511,
-#                            k = 0.004915818,
-#                            Yu = 0.3565256,
-#                            two_pool_all_fixYukfVmax4[[1]]$pars[c(3:5)],
-#                            RS_0 = 0.06185237),
-#                          c(Vmax = 0.2761818, 
-#                            two_pool_all_fixYukfVmax4[[2]]$pars[c(1:2)],
-#                            f = 0.2373511,
-#                            k = 0.004915818,
-#                            Yu = 0.3565256,
-#                            two_pool_all_fixYukfVmax4[[2]]$pars[c(3:5)],
-#                            RS_0 = 0.06185237),
-#                          c(Vmax = 0.2761818, 
-#                            two_pool_all_fixYukfVmax4[[3]]$pars[c(1:2)],
-#                            f = 0.2373511,
-#                            k = 0.004915818,
-#                            Yu = 0.3565256,
-#                            two_pool_all_fixYukfVmax4[[3]]$pars[c(3:5)],
-#                            RS_0 = 0.06185237),
-#                          c(Vmax = 0.2761818, 
-#                            two_pool_all_fixYukfVmax4[[4]]$pars[c(1:2)],
-#                            f = 0.2373511,
-#                            k = 0.004915818,
-#                            Yu = 0.3565256,
-#                            two_pool_all_fixYukfVmax4[[4]]$pars[c(3:5)],
-#                            RS_0 = 0.06185237),
-#                          c(Vmax = 0.2761818, 
-#                            two_pool_all_fixYukfVmax4[[5]]$pars[c(1:2)],
-#                            f = 0.2373511,
-#                            k = 0.004915818,
-#                            Yu = 0.3565256,
-#                            two_pool_all_fixYukfVmax4[[5]]$pars[c(3:5)],
-#                            RS_0 = 0.06185237),
-#                          c(Vmax = 0.2761818, 
-#                            two_pool_all_fixYukfVmax4[[6]]$pars[c(1:2)],
-#                            f = 0.2373511,
-#                            k = 0.004915818,
-#                            Yu = 0.3565256,
-#                            two_pool_all_fixYukfVmax4[[6]]$pars[c(3:5)],
-#                            RS_0 = 0.06185237)
-#                          )
-# two_pool_all_results_good<-rbind(two_pool_all1$goodness,
-#                                 two_pool_all_fixYukfVmax2$goodness,
-#                                 two_pool_all3_fix$goodness,
-#                                 two_pool_all_fixYukfVmax4$goodness)
+#results of the previous iteration (not run)
+# two_pool_all_results_par<-rbind(c(two_pool_allx_out1[[1]]$pars[c(1:8)], RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173, 
+#                           two_pool_all_fixVmaxYuk_out2[[1]]$pars[1],
+#                           two_pool_all_fixVmaxYuk_out2[[1]]$pars[2],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out2[[1]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173, 
+#                           two_pool_all_fixVmaxYuk_out2[[2]]$pars[1],
+#                           two_pool_all_fixVmaxYuk_out2[[2]]$pars[2],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out2[[2]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173, 
+#                           two_pool_all_fixVmaxYuk_out2[[3]]$pars[1],
+#                           two_pool_all_fixVmaxYuk_out2[[3]]$pars[2],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out2[[3]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(two_pool_allx_fix_out3[[1]]$pars[c(1:8)], RS_0 = 0.04012019),
+#                         c(two_pool_allx_fix_out3[[2]]$pars[c(1:8)], RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173, 
+#                           two_pool_all_fixVmaxYuk_out4[[1]]$pars[c(1:2)],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out4[[1]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173, 
+#                           two_pool_all_fixVmaxYuk_out4[[2]]$pars[c(1:2)],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out4[[2]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173, 
+#                           two_pool_all_fixVmaxYuk_out4[[3]]$pars[c(1:2)],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out4[[3]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173, 
+#                           two_pool_all_fixVmaxYuk_out4[[4]]$pars[c(1:2)],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out4[[4]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173, 
+#                           two_pool_all_fixVmaxYuk_out4[[5]]$pars[c(1:2)],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out4[[5]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173, 
+#                           two_pool_all_fixVmaxYuk_out4[[6]]$pars[c(1:2)],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out4[[6]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019)
+#                         )
+# two_pool_all_results_good<-rbind(two_pool_allx_out1$goodness,
+#                                two_pool_all_fixVmaxYuk_out2$goodness,
+#                                two_pool_allx_fix_out3$goodness,
+#                                two_pool_all_fixVmaxYuk_out4$goodness)
 # 
 # write.csv(two_pool_all_results_par, file = c("../two_pool_all_results_par.csv"), row.names = F)
 # write.csv(two_pool_all_results_good, file = c("../two_pool_all_results_good.csv"), row.names = F)
@@ -1259,19 +818,18 @@ t.s6.1<-data.frame(Name=c("All", "Broth", "Glass", "Wool",
                     "Wool - Cellobiose", "Wool - Glucose"),
                    Vmax=two_pool_all_results_par[,1],
                    Km=two_pool_all_results_par[,2],
-                   m0=two_pool_all_results_par[,3],
-                   f=two_pool_all_results_par[,4],
-                   k=two_pool_all_results_par[,5],
-                   Yu=two_pool_all_results_par[,6],
-                   fpr=two_pool_all_results_par[,7],
-                   fps=two_pool_all_results_par[,8],
-                   fds=two_pool_all_results_par[,9],
-                   RS_0=two_pool_all_results_par[,10])
+                   f=two_pool_all_results_par[,3],
+                   k=two_pool_all_results_par[,4],
+                   Yu=two_pool_all_results_par[,5],
+                   fpr=two_pool_all_results_par[,6],
+                   fps=two_pool_all_results_par[,7],
+                   fds=two_pool_all_results_par[,8],
+                   RS_0=two_pool_all_results_par[,9])
 
 options(knitr.kable.NA = '')
 
 
-kable(t.s6.1, digits = c(0, 2, 2, 3, 3, 3, 2, 3, 3, 3, 2), align = 'c', "html", booktabs=T, col.names = c(" ","v", 'k', 'h', 'f', 'm', 'Y', '$\\B_{R-Proteins}$', '$\\B_{S-Proteins}$', '$\\B_{S-DNA}$', '$\\RS_{0}$'), row.names=F, caption = "_**Table S21:** Sub-microbial model parameters calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
+kable(t.s6.1, digits = c(0, 2, 2, 2, 3, 2, 2, 2, 3, 3), align = 'c', "html", booktabs=T, col.names = c(" ","v", 'k', 'f', 'm', 'Y', '$\\B_{R-Proteins}$', '$\\B_{S-Proteins}$', '$\\B_{S-DNA}$', '$\\RS_{0}$'), row.names=F, caption = "_**Table S21:** Sub-microbial model parameters calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>% 
   kable_styling() %>% 
   group_rows("All", 1, 1) %>%
   group_rows("Structure", 2, 4) %>%
@@ -1286,504 +844,3 @@ kable(two_pool_all_results_good[, c(1, 4:7)], digits = c(0, 2, 2, 2, 2), align =
   group_rows("Each", 10, 12) 
 
 ```
-
-$~$
-$~$
-$~$
-$~$
-$~$
-$~$
-```{r correlation figure, echo=FALSE, fig.height=12, fig.width=16, fig.cap="Fig. S3: Relative abundance of bacterial (a) and fungal (b) species in three experimental treatments differing in presence/absence of physical structure. Species with relative abundance above 0.5% are plotted. Their abundance is visualized by colour scale. Effect of bacterial and fungal composition of microbial community (expressed as multivariate mean distance between groups; see Material and Methods section) on overall microbial community affinity to substrate (i.e. parameter k - (a)) and abundance of proteins in microbial biomass (i.e. sum of protein abundance in biomass reserve and struscture - (b)). The values on y-axes are expressed as a mean difference between groups in order to allow unbiased correlation with microbial community structure metric (see Matrial and Methods section)."}
-#Heatmap
-bac.tax<-as.data.frame(read.csv(file=c("./Community_analysis/OTU_bacteria.txt"), header=T,
-                             sep="\t"))
-bac.tax<-bac.tax[, c(1, 175)]
-bac.tax$X.OTU.ID<-gsub("_","", bac.tax$X.OTU.ID)
-
-#Add taxonomy to bac.norm dataset
-bac.norm_tax<-bac
-#Transform the dataset
-bac.norm_taxt<-as.data.frame(t(bac.norm_tax))
-taxlab<-character()
-for(i in 1:nrow(bac.norm_taxt)){
-  nd<-which(bac.tax$X.OTU.ID==rownames(bac.norm_taxt)[i])
-  taxlab<-append(taxlab, as.character(bac.tax$taxonomy[nd]))
-}
-
-bac.norm_taxt$taxonomy<-taxlab
-
-#Extract kingdom
-pattern<-"k__(.+?),"
-regmatches(bac.norm_taxt$taxonomy[1], regexec(pattern, bac.norm_taxt$taxonomy[1]))[[1]][2]
-kingdoms<-character()
-for(i in 1:nrow(bac.norm_taxt)){
-  kingdoms<-append(kingdoms, 
-                   regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
-}
-kingdoms[which(kingdoms=="?")]<-c("Unknown")
-bac.norm_taxt$Kingdom<-kingdoms
-
-#Extract phylum
-pattern<-"p__(.+?),"
-
-phylum<-character()
-for(i in 1:nrow(bac.norm_taxt)){
-  phylum<-append(phylum, 
-                   regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
-}
-phylum[which(phylum=="?")]<-c("Unknown")
-bac.norm_taxt$Phylum<-phylum
-
-#Extract class
-pattern<-"c__(.+?),"
-
-cs<-character()
-for(i in 1:nrow(bac.norm_taxt)){
-  cs<-append(cs, 
-                 regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
-}
-cs[which(cs=="?")]<-c("Unknown")
-bac.norm_taxt$Class<-cs
-
-#Extract order
-pattern<-"o__(.+?),"
-
-os<-character()
-for(i in 1:nrow(bac.norm_taxt)){
-  os<-append(os, 
-             regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
-}
-os[which(os=="?")]<-c("Unknown")
-bac.norm_taxt$Order<-os
-
-#Extract family
-pattern<-"f__(.+?),"
-
-fs<-character()
-for(i in 1:nrow(bac.norm_taxt)){
-  fs<-append(fs, 
-             regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
-}
-
-fs[which(fs=="?")]<-c("Unknown")
-bac.norm_taxt$Family<-fs
-
-#Extract genus
-pattern<-"g__(.+?),"
-
-gs<-character()
-for(i in 1:nrow(bac.norm_taxt)){
-  gs<-append(gs, 
-             regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
-}
-gs[which(gs=="?")]<-c("Unknown")
-bac.norm_taxt$Genus<-gs
-
-#Extract species
-pattern<-"s__(.+?),"
-
-ss<-character()
-for(i in 1:nrow(bac.norm_taxt)){
-  ss<-append(ss, 
-             regmatches(bac.norm_taxt$taxonomy[i], regexec(pattern, bac.norm_taxt$taxonomy[i]))[[1]][2])
-}
-ss[which(is.na(ss))]<-c("Unknown")
-bac.norm_taxt$Specie<-ss
-
-#Plots
-tax_env<-bac_env
-btaxt<-bac.norm_taxt[, 1:71]
-tax_env$IDs<-colnames(btaxt)
-
-##Genus
-btaxtg<-btaxt
-btaxtg$Genus<-bac.norm_taxt$Genus
-
-Btaxtg<-melt(btaxtg, id.vars = c("Genus"))
-colnames(Btaxtg)<-c("Genus", "IDs","Abundance")
-
-Btaxtg<-merge(Btaxtg, tax_env, by.x = "IDs", by.y = "IDs", all.x = TRUE)
-Btaxtg$Total<-numeric(length = nrow(Btaxtg))
-for(i in unique(Btaxtg$IDs)){
-  Btaxtg[Btaxtg$IDs==i, "Total"]<-sum(as.numeric(Btaxtg[Btaxtg$IDs==i, "Abundance"]))
-}
-
-bac_gen_f<-Btaxtg %>% group_by(Genus, Structure, Substrate) %>% 
-  summarize(Abundance=mean(Abundance/Total, na.rm=T))
-
-
-#Only genus with abundance above 0.05%
-heat1<-ggplot(bac_gen_f[bac_gen_f$Abundance>0.0005, ], aes(Structure, Genus)) +
-  geom_tile(aes(fill = log10(Abundance*100))) +
-  facet_grid(~ Substrate) +
-  scale_fill_gradientn(colours = c("white","darkorange2","grey60"),
-                       breaks = c(-2, -1, 0, 1, 2),
-                       labels=c("0.01", "0.1", "0", "10", "100"),
-                       name = "Relative abundance (%)",
-                       guide = guide_colourbar(direction = "horizontal", title.position = "bottom",
-                                               title.hjust = 0.5, barwidth = 12)) +
-  scale_x_discrete(expand = c(0,0)) + 
-  scale_y_discrete(expand = c(0,0)) +  
-  xlab("Structure") + ylab("")+
-  ggtitle("a)")+
-  theme_min + theme(legend.position = "bottom",
-                    axis.text = element_text(size=14),
-                    strip.text = element_text(size=14))
-
-
-##Fungi
-f.tax<-as.data.frame(read.csv(file=c("./Community_analysis/OTU_fungi.txt"), header=T,
-                             sep="\t"))
-#Add taxonomy to fungi dataset
-f.norm_tax<-fungi
-#Transform the dataset
-f.norm_taxt<-as.data.frame(t(f.norm_tax))
-ftaxlab<-character()
-for(i in 1:nrow(f.norm_taxt)){
-  nd<-which(f.tax$X.OTU.ID==rownames(f.norm_taxt)[i])
-  ftaxlab<-append(ftaxlab, as.character(f.tax$taxonomy[nd]))
-}
-
-f.norm_taxt$taxonomy<-ftaxlab
-
-#Extract kingdom
-pattern<-"k__(.+?),"
-regmatches(f.norm_taxt$taxonomy[1], regexec(pattern, f.norm_taxt$taxonomy[1]))[[1]][2]
-kingdoms<-character()
-for(i in 1:nrow(f.norm_taxt)){
-  kingdoms<-append(kingdoms, 
-                   regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
-}
-kingdoms[which(kingdoms=="?")]<-c("Unknown")
-f.norm_taxt$Kingdom<-kingdoms
-
-#Extract phylum
-pattern<-"p__(.+?),"
-
-phylum<-character()
-for(i in 1:nrow(f.norm_taxt)){
-  phylum<-append(phylum, 
-                 regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
-}
-phylum[which(phylum=="?")]<-c("Unknown")
-f.norm_taxt$Phylum<-phylum
-
-#Extract class
-pattern<-"c__(.+?),"
-
-cs<-character()
-for(i in 1:nrow(f.norm_taxt)){
-  cs<-append(cs, 
-             regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
-}
-cs[which(cs=="?")]<-c("Unknown")
-f.norm_taxt$Class<-cs
-
-#Extract order
-pattern<-"o__(.+?),"
-
-os<-character()
-for(i in 1:nrow(f.norm_taxt)){
-  os<-append(os, 
-             regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
-}
-os[which(os=="?")]<-c("Unknown")
-f.norm_taxt$Order<-os
-
-#Extract family
-pattern<-"f__(.+?),"
-
-fs<-character()
-for(i in 1:nrow(f.norm_taxt)){
-  fs<-append(fs, 
-             regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
-}
-
-fs[which(fs=="?")]<-c("Unknown")
-f.norm_taxt$Family<-fs
-
-#Extract genus
-pattern<-"g__(.+?),"
-
-gs<-character()
-for(i in 1:nrow(f.norm_taxt)){
-  gs<-append(gs, 
-             regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
-}
-gs[which(gs=="?")]<-c("Unknown")
-f.norm_taxt$Genus<-gs
-
-#Extract species
-pattern<-"s__(.+?),"
-
-ss<-character()
-for(i in 1:nrow(f.norm_taxt)){
-  ss<-append(ss, 
-             regmatches(f.norm_taxt$taxonomy[i], regexec(pattern, f.norm_taxt$taxonomy[i]))[[1]][2])
-}
-ss[which(is.na(ss))]<-c("Unknown")
-f.norm_taxt$Specie<-ss
-
-#Plots
-ftax_env<-fungi_env
-ftaxt<-f.norm_taxt[, 1:64]
-ftax_env$IDs<-colnames(ftaxt)
-
-##Genus
-ftaxtg<-ftaxt
-ftaxtg$Genus<-f.norm_taxt$Genus
-
-Ftaxtg<-melt(ftaxtg, id.vars = c("Genus"))
-colnames(Ftaxtg)<-c("Genus", "IDs","Abundance")
-
-Ftaxtg<-merge(Ftaxtg, ftax_env, by.x = "IDs", by.y = "IDs", all.x = TRUE)
-Ftaxtg$Total<-numeric(length = nrow(Ftaxtg))
-for(i in unique(Ftaxtg$IDs)){
-  Ftaxtg[Ftaxtg$IDs==i, "Total"]<-sum(as.numeric(Ftaxtg[Ftaxtg$IDs==i, "Abundance"]))
-}
-
-f_gen_f<-Ftaxtg %>% group_by(Genus, Structure, Substrate) %>% 
-  summarize(Abundance=mean(Abundance/Total, na.rm=T))
-
-
-#Genus with abundance above 0.05%
-heat2<-ggplot(f_gen_f[f_gen_f$Abundance>0.0005, ], aes(Structure, Genus)) +
-  geom_tile(aes(fill = log(Abundance*100))) +
-  facet_grid(~ Substrate) +
-  scale_fill_gradientn(colours = c("white","darkorange2","grey60"),
-                       breaks = c(-2, -1, 0, 1, 2),
-                       labels=c("0.01", "0.1", "0", "10", "100"),
-                       name = "Relative abundance (%)",
-                       guide = guide_colourbar(direction = "horizontal", title.position = "bottom",
-                                               title.hjust = 0.5, barwidth = 12)) +
-  scale_x_discrete(expand = c(0,0)) + 
-  scale_y_discrete(expand = c(0,0)) +  
-  xlab("Structure") + ylab("")+
-  ggtitle("b)")+
-  theme_min + theme(legend.position = "bottom",
-                    axis.text = element_text(size=14),
-                    strip.text = element_text(size=14))
-##########################################################################################
-dpars<-t.s6.1[c(2:4), -1]
-dpars$Structure<-c("BROTH", "GLASS", "WOOL")
-
-#Bacteria
-bacm<-as.matrix(bac.dist)
-#Intercept - BROTH
-mBB<-bacm[which(bac_env$Structure=="BROTH"), 
-       which(bac_env$Structure=="BROTH")]
-mBB[mBB==0]<-NA
-#BROTH - GLASS
-mBG<-bacm[which(bac_env$Structure=="BROTH"), 
-       which(bac_env$Structure=="GLASS")]
-
-#BRTOH - WOOL
-mBW<-bacm[which(bac_env$Structure=="BROTH"), 
-       which(bac_env$Structure=="WOOL")]
-
-bacBGW<-data.frame(Dist=c(0, mean(mBG, na.rm=T), mean(mBW, na.rm=T)),
-                    Dist.sd=c(sd(mBB, na.rm=T), sd(mBG, na.rm=T), sd(mBW, na.rm=T)),
-                    Structure=c("BROTH", "GLASS", "WOOL"))
-
-#Fungi
-#Intercept - BROTH
-fBB<-fm[which(fungi_env$Structure=="BROTH"), 
-       which(fungi_env$Structure=="BROTH")]
-fBB[fBB==0]<-NA
-#BROTH - GLASS
-fBG<-fm[which(fungi_env$Structure=="BROTH"), 
-       which(fungi_env$Structure=="GLASS")]
-
-#BRTOH - WOOL
-fBW<-fm[which(fungi_env$Structure=="BROTH"), 
-       which(fungi_env$Structure=="WOOL")]
-
-fBGW<-data.frame(Dist=c(0, mean(fBG, na.rm=T), mean(fBW, na.rm=T)),
-                    Dist.sd=c(sd(fBB, na.rm=T), sd(fBG, na.rm=T), sd(fBW, na.rm=T)),
-                    Structure=c("BROTH", "GLASS", "WOOL"))
-
-dpars2<-merge(dpars, bacBGW, by.y=c("Structure"), by.x=c("Structure"))
-
-dpars3<-merge(dpars, fBGW, by.y=c("Structure"), by.x=c("Structure"))
-
-for(i in 2:11){
-  dpars2[, i]<-sqrt((dpars2[, i]-as.numeric(dpars2[1, i]))^2)
-}
-
-for(i in 2:11){
-  dpars3[, i]<-sqrt((dpars3[, i]-as.numeric(dpars3[1, i]))^2)
-}
-
-dpars2$group<-c("Bacteria")
-dpars3$group<-c("Fungi")
-dpars4<-rbind(dpars2, dpars3)
-
-corplot1.p<-coefficients(nls(Km~exp(Dist*x)-a, dpars4, start = list(x=10, a=2)))
-
-corplot1<-ggplot(dpars4[dpars4$group=="Bacteria", ], aes(Dist, Km))+
-  geom_point(cex=6, aes(fill=Structure), show.legend=T, shape=21)+
-  geom_point(data=dpars4[dpars4$group=="Fungi", ], cex=6, 
-             aes(x=Dist, y=Km, fill=Structure), show.legend=F, shape=22)+
-  scale_fill_manual(values = c("black", "grey", "white"))+
-  stat_function(fun = function(x){(exp(x*corplot1.p[1])-corplot1.p[2])}, lwd=1, lty=2, colour="grey30")+
-  xlab("16S and ITS Distance")+
-  ggtitle("c)")+
-  ylab("Affinity to substrate (relative difference)")+
-  theme_min+theme(legend.title = element_blank(),
-                  legend.position = c(0.2,0.7),
-                  plot.margin = unit(c(0.5,1,0.5,2), "in"))
-
-corplot2<-ggplot(dpars4[dpars4$group=="Bacteria", ], aes(Dist, fps+fpr))+
-  geom_point(cex=6, aes(fill=Structure), show.legend=F, shape=21)+
-  geom_point(data=dpars4[dpars4$group=="Fungi", ], cex=6, 
-             aes(x=Dist, y=fps+fpr, fill=Structure), show.legend=F, shape=22)+
-  stat_smooth(method = lm, colour="grey30", lty=2, se=F)+
-  scale_fill_manual(values = c("black", "grey", "white"))+
-  ggtitle("d)")+
-  theme_min+xlab("16S and ITS Distance")+
-  ylab("Proteins abundance (relative difference)")+
-  theme(plot.margin = unit(c(0.5,1,0.5,2), "in"))
-
-
-grid.arrange(heat1, heat2, corplot1, corplot2, nrow=2)
-
-```
-
-##Supplementary figure
-```{r Monod and Monod plus model parameters, echo=FALSE, fig.height=24, fig.width=20, message=FALSE, warning=FALSE, paged.print=FALSE, fig.cap="Fig. S1: Monod (a) and Monod plus (b) model parameters (v - maximum velocity constant, k - affinity constant, $Y_{CUE}$ - carbon use efficiency, m - microbial biomass decay rate constant, h - specific maintenance rate constant) estimated separately for three different types of physical barriers presented in incubation bottle (BROTH - black symbols, GLASS - grey symbols and WOOL - empty symbols). Symbols represent best parameters values estimated by the Differential Evolution Algorithm and error bars represent standard deviation of posterior parameters distribution estimated by Constrained Markov Chain Monte Carlo simulation. Parameters estimation was constrained by either observed respiration rates, observed respiration rates and cellular proteins concentration, observed respiration rates and DNA concentration or by all measurements at the same time."}
-
-# # Monod model calibrated against the respiration rate (not run)
-# #uncertainty of model parameters
-# monod_r_sd<-as.data.frame(rbind(apply(monod_r2_fix[[1]]$par_prof$pars, 2, sd),
-#                                apply(monod_r2_fix[[2]]$par_prof$pars, 2, sd),
-#                                apply(monod_r2_fix[[3]]$par_prof$pars, 2, sd)))[,-5]
-# colnames(monod_r_sd)<-c("Vmax.sd", "Km.sd", "CUE.sd", "k.sd")
-# 
-# #Combine with the estimated parameters
-# monod_rs1<-cbind(monod_r_results_par[c(2:4), c(1:4)], monod_r_sd)
-# monod_rs1$Legend<-rep("Respiration", times=3)
-# 
-# #Monod model calibrated against the respiration rate and the rest (not run)
-# # uncertainty of model parameters
-# monod_rest_sd<-as.data.frame(rbind(apply(monod_prot2_fix[[1]]$par_prof$pars, 2, sd)[c(1:4)],
-#                                  apply(monod_prot2_fix[[2]]$par_prof$pars, 2, sd)[c(1:4)],
-#                                  apply(monod_prot2_fix[[3]]$par_prof$pars, 2, sd)[c(1:4)],
-#                                  apply(monod_DNA2[[1]]$par_prof$pars, 2, sd)[c(1:4)],
-#                                  apply(monod_DNA2[[2]]$par_prof$pars, 2, sd)[c(1:4)],
-#                                  apply(monod_DNA2[[3]]$par_prof$pars, 2, sd)[c(1:4)],
-#                                  apply(monod_all2[[1]]$par_prof$pars, 2, sd)[c(1:4)],
-#                                  apply(monod_all2[[2]]$par_prof$pars, 2, sd)[c(1:4)],
-#                                  apply(monod_all2[[3]]$par_prof$pars, 2, sd)[c(1:4)]))[,-c(5,6)]
-# colnames(monod_rest_sd)<-c("Vmax.sd", "Km.sd", "CUE.sd", "k.sd")
-# #Combine with the estimated parameters
-# monod_alls<-cbind(rbind(monod_prot_results_par[c(2:4), c(1:4)],
-#                         monod_DNA_results_par[c(2:4), c(1:4)],
-#                         monod_all_results_par[c(2:4), c(1:4)]), monod_rest_sd)
-# 
-# 
-# monod_alls$Legend<-c(rep("Respiration & Proteins", times=3),
-#                     rep("Respiration & DNA", times=3),
-#                     rep("All", times=3))
-#  
-# #Combine monod_alls and monod_rs1
-# monod_s<-rbind(monod_rs1, monod_alls)
-# #Add labels
-# monod_s$Structure<-rep(c("BROTH", "GLASS", "WOOL"), times=4)
-# 
-# # Monod plus model calibrated against the respiration rate (not run)
-# # uncertainty of model parameters
-# monodplus_r_sd<-as.data.frame(rbind(apply(monodplus_r2_fix[[1]]$par_prof$pars, 2, sd),
-#                                apply(monodplus_r2_fix[[2]]$par_prof$pars, 2, sd),
-#                                apply(monodplus_r2_fix[[3]]$par_prof$pars, 2, sd)))
-# colnames(monodplus_r_sd)<-c("Vmax.sd", "Km.sd", "CUE.sd", "mr.sd", "k.sd")
-# 
-# #Combine with the estimated parameters
-# monodplus_rs1<-cbind(monodplus_r_results_par[c(2:4), c(1:5)], monodplus_r_sd)
-# monodplus_rs1$Legend<-rep("Respiration", times=3)
-# 
-# #Monod model calibrated against the respiration rate and the rest (not run)
-# # uncertainty of model parameters
-# monodplus_rest_sd<-as.data.frame(rbind(apply(monodplus_prot2_fix[[1]]$par_prof$pars, 2, sd)[c(1:5)],
-#                                  apply(monodplus_prot2_fix[[2]]$par_prof$pars, 2, sd)[c(1:5)],
-#                                  apply(monodplus_prot2_fix[[3]]$par_prof$pars, 2, sd)[c(1:5)],
-#                                  apply(monodplus_DNA2[[1]]$par_prof$pars, 2, sd)[c(1:5)],
-#                                  apply(monodplus_DNA2[[2]]$par_prof$pars, 2, sd)[c(1:5)],
-#                                  apply(monodplus_DNA2[[3]]$par_prof$pars, 2, sd)[c(1:5)],
-#                                  apply(monodplus_all2[[1]]$par_prof$pars, 2, sd)[c(1:5)],
-#                                  apply(monodplus_all2[[2]]$par_prof$pars, 2, sd)[c(1:5)],
-#                                  apply(monodplus_all2[[3]]$par_prof$pars, 2, sd)[c(1:5)]))
-# colnames(monodplus_rest_sd)<-c("Vmax.sd", "Km.sd", "CUE.sd", "mr.sd", "k.sd")
-# #Combine with the estimated parameters
-# monodplus_alls<-cbind(rbind(monodplus_prot_results_par[c(2:4), c(1:5)],
-#                         monodplus_DNA_results_par[c(2:4), c(1:5)],
-#                         monodplus_all_results_par[c(2:4), c(1:5)]), monodplus_rest_sd)
-# 
-# 
-# monodplus_alls$Legend<-c(rep("Respiration & Proteins", times=3),
-#                     rep("Respiration & DNA", times=3),
-#                     rep("All", times=3))
-#  
-# #Combine monod_alls and monod_rs1
-# monodplus_s<-rbind(monodplus_rs1, monodplus_alls)
-# #Add labels
-# monodplus_s$Structure<-rep(c("BROTH", "GLASS", "WOOL"), times=4)
-# 
-# write.csv(monod_s, file = c("../monod_FigS1.csv"), row.names = F)
-# write.csv(monodplus_s, file = c("../monodplus_FigS1.csv"), row.names = F)
-
-monod_s<-read.csv("monod_FigS1.csv")
-monodplus_s<-read.csv("monodplus_FigS1.csv")
-
-Monod_s<-melt(monod_s[, c(1:4, 9, 10)], id.vars=c("Legend", "Structure"))
-Monod_s$sd<-melt(monod_s[, c(5:8, 9, 10)], id.vars=c("Legend", "Structure"))[, "value"]
-
-#add proper parameter labels
-mlab<-c('Vmax' = 'v',
-        'Km' = 'k',
-        'CUE' = 'Y[CUE]',
-        'k' = 'm')
-
-figS1a<-ggplot(Monod_s, aes(Legend, value))+
-  geom_point(shape=21, cex=6, aes(fill=Structure), position = position_dodge(width = 0.6))+
-  geom_errorbar(aes(ymin=value-sd, ymax=value+sd, colour=Structure), 
-                position = position_dodge(width = 0.6))+
-  scale_fill_manual(values = c("black", "grey", "white"))+
-  scale_colour_manual(values = c("black", "black", "black"))+theme_min+
-  theme(axis.title.x = element_blank(),
-        legend.title = element_blank(),
-        axis.text.x=element_text(vjust=0.2, size=18, colour="black", angle = 90),
-        legend.position = c("top"),
-        plot.title=element_text(size=18, face="bold", hjust=-0.01))+
-  facet_wrap(~variable, scale="free", nrow=1, 
-             labeller = labeller(variable = as_labeller(mlab, label_parsed)))+
-  ylab("Parameter value")+ggtitle("a)")
-
-Monodplus_s<-melt(monodplus_s[, c(1:5, 11, 12)], id.vars=c("Legend", "Structure"))
-Monodplus_s$sd<-melt(monodplus_s[, c(6:10, 11, 12)], id.vars=c("Legend", "Structure"))[, "value"]
-
-#add proper parameter labels
-mlab2<-c('Vmax' = 'v',
-        'Km' = 'k',
-        'CUE' = 'Y[CUE]',
-        'mr' = 'h',
-        'k' = 'm')
-
-figS1b<-ggplot(Monodplus_s, aes(Legend, value))+
-  geom_point(shape=21, cex=6, aes(fill=Structure), position = position_dodge(width = 0.6),
-             show.legend = F)+
-  geom_errorbar(aes(ymin=value-sd, ymax=value+sd, colour=Structure), 
-                position = position_dodge(width = 0.6), show.legend = F)+
-  scale_fill_manual(values = c("black", "grey", "white"))+
-  scale_colour_manual(values = c("black", "black", "black"))+theme_min+
-  theme(axis.title.x = element_blank(),
-        legend.title = element_blank(),
-        axis.text.x=element_text(vjust=0.2, size=18, colour="black", angle = 90),
-        plot.title=element_text(size=18, face="bold", hjust=-0.01))+
-  facet_wrap(~variable, scale="free", nrow=1, 
-             labeller = labeller(variable = as_labeller(mlab2, label_parsed)))+
-  ylab("Parameter value")+ggtitle("b)")
-
-grid.arrange(figS1a, figS1b, nrow=2)
-
-```
-

@@ -1,11 +1,13 @@
-monodplus_prot<-function(data, FACT){
+two_pool_allx_fix<-function(data, FACT){
   
   #FACT 1 = Substrate, 2=Structure, 3=Both, 4=No
   
+  
+  #if factor needs to be included, its levels are defined
   if(FACT==1){
     
     dat<-data
-    dat$id<-ifelse(d$Substrate=="Glucose", 1, 2)
+    dat$id<-ifelse(data$Substrate=="Glucose", 1, 2)
     
   }else{
     
@@ -38,31 +40,30 @@ monodplus_prot<-function(data, FACT){
     }
   }
   
-  #mend model
+  #deb model
   deriv<-function(time, state, pars){
     
     with(as.list(c(state, pars)),{
       
-      #equations
-      #C uptake
-      Cu=Vmax*Cmic*C/(Km+C)
-      #respiration
-      r=mr*Cmic+(1-CUE)*Cu
+      #Carbon uptake
+      Cu=Vmax*C*S/(Km+C)
+      #Respiration
+      r=f*R*(1-Yu)
       
-      Protc=Cmic*fp
-      #DNAc=Cmic*fd
+      Protc=fpr*R+fps*S
+      DNAc=fds*S
       
-      #states
-      dCmic<-CUE*Cu-mr*Cmic-k*Cmic
-      dC<--Cu + k*Cmic
+      dR<-Cu-f*R
+      dS<-f*R*Yu - k*S
+      dC<--Cu + k*S
       
-      return(list(c(dCmic, dC), r=r, Protc=Protc))
       
+      return(list(c(dR, dS, dC), r=r, Protc=Protc, DNAc=DNAc))
       
     })
   }
   #define names of parameters
-  parnames<-c("Vmax", "Km", "CUE", "mr", "k","fp", "Cmic_0")
+  parnames<-c("Vmax", "Km", "f", "k", "Yu", "fpr", "fps", "fds")
   
   #parameters estimation function
   estim<-function(odeset){
@@ -74,55 +75,62 @@ monodplus_prot<-function(data, FACT){
       
       names(par)<-parnames
       
-      #first, pars dependent output from ode is matched with measured values
-      yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25), parms=par, deriv, times=sort(odeset$Time)))
+      Sinit=2.01*0.51/12.01/4/par[["fds"]]
+      Rinit=0.04012019*Sinit
       
-      #select time and the measured variables 
-      yhat<-select(yhat_all, c("time", "Protc", "r"))
+      #first, pars dependent output from ode is matched with measured values
+      yhat_all<-as.data.frame(ode(y=c(R=Rinit, S=Sinit, C=25), parms=par, deriv, times=sort(odeset$Time)))
+      
+      #select time and the measured variables
+      yhat<-select(yhat_all, c("time", "r", "Protc", "DNAc"))
       
       #reformat to long format data frame
       Yhat<-melt(yhat, id.vars = "time")
       
       #add the measured data to a data frame
-      Yhat$obs<-c(odeset[order(odeset$Time), "Protc"], odeset[order(odeset$Time), c("r")])
+      Yhat$obs<-c(odeset[order(odeset$Time), c("r")], odeset[order(odeset$Time), "Protc"], odeset[order(odeset$Time), "DNAc"])
       
       #add the weighting factor
-      #I want to have the weighting factor to be proportional to mean of the given variable 
+      #I want to have the weighting factor to be proportional to mean of the given variable
       yweights<-Yhat %>% group_by(variable) %>% summarise(weights=mean(value, na.rm = T))
+      
       #match with the Yhat data frame
       Yhat<-merge(Yhat, yweights, by.x=c("variable"), by.y=c("variable"))
       
       #now, the root mean square error is calculated
-      NRMSE<-as.numeric(Yhat %>% group_by(variable) %>% summarise(NRMSE=sum((((value-obs)/mean(weights))^2), na.rm = T)) %>% 
+      NRMSE<-as.numeric(Yhat %>% group_by(variable) %>% summarise(NRMSE=sum((((value-obs)/mean(weights))^2), na.rm = T)) %>%
                           summarise(NRMSE=sum(NRMSE)))
       
       return(NRMSE)
       
     }
     
-    #defining goodness of fit function 
+    #defining goodness of fit function
     rsq_ode<-function(x){
       
       par<-x[1:length(parnames)]
       
       names(par)<-parnames
       
-      #first, pars dependent output from ode is matched with measured values
-      yhat_all<-as.data.frame(ode(y=c(Cmic=par[["Cmic_0"]], C=25), parms=par, deriv, times=sort(odeset$Time)))
+      Sinit=2.01*0.51/12.01/4/par[["fds"]]
+      Rinit=0.04012019*Sinit
       
-      #select time and the measured variables 
-      yhat<-select(yhat_all, c("time", "Protc", "r"))
+      #first, pars dependent output from ode is matched with measured values
+      yhat_all<-as.data.frame(ode(y=c(R=Rinit, S=Sinit, C=25), parms=par, deriv, times=sort(odeset$Time)))
+      
+      #select time and the measured variables
+      yhat<-select(yhat_all, c("time", "r", "Protc", "DNAc"))
       
       #reformat to long format data frame
       Yhat<-melt(yhat, id.vars = "time")
       
       #add the measured data to a data frame
-      Yhat$obs<-c(odeset[order(odeset$Time), "Protc"], odeset[order(odeset$Time), c("r")])
-      Yhat$Substrate<-rep(odeset[order(odeset$Time), "Substrate"], times=2)
-      Yhat$Structure<-rep(odeset[order(odeset$Time), "Structure"], times=2)
+      Yhat$obs<-c(odeset[order(odeset$Time), c("r")], odeset[order(odeset$Time), "Protc"], odeset[order(odeset$Time), "DNAc"])
+      Yhat$Substrate<-rep(odeset[order(odeset$Time), "Substrate"], times=3)
+      Yhat$Structure<-rep(odeset[order(odeset$Time), "Structure"], times=3)
       
       #rsquared calculation for each variable
-      Gfit<-Yhat %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
+      Gfit<-Yhat %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T),
                                                       SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                       ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
       Gfit$R2<-with(Gfit, 1-SSres/SStot)
@@ -136,21 +144,21 @@ monodplus_prot<-function(data, FACT){
     }
     
     #approximate parameter estimation is done by MCMC method
-    par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, CUE=0.5, mr=0.01, k=1e-3, fp=0.5, Cmic_0=0.01), 
-                      lower=c(Vmax=1e-3, Km=1e-3, CUE=0, mr=1e-5, k=1e-6, fp=0, Cmic_0=1e-5),
-                      upper=c(Vmax=10, Km=100, CUE=1, mr=10, k=10, fp=1, Cmic_0=5), niter=10000)
+    par_mcmc<-modMCMC(f=cost, p=c(Vmax=0.1, Km=3, f=4, k=1e-2, Yu=0.8, fpr=0.5, fps=0.5, fds=0.03),
+                      lower=c(Vmax=1e-5, Km=1e-2, f=1e-3, k=1e-6, Yu=0.01, fpr=0, fps=0, fds=0),
+                      upper=c(Vmax=1, Km=20, f=100, k=1, Yu=0.8, fpr=1, fps=1, fds=1), niter=10000)
     
     #lower and upper limits for parameters are extracted
     pl<-summary(par_mcmc)["min",]
     pu<-summary(par_mcmc)["max",]
     
     #these limits are used to find global optimum by DEoptim
-    opt_par<-DEoptim(fn=cost, lower=pl, upper=pu, 
-                     control = c(itermax = 10000, steptol = 50, reltol = 1e-8, 
+    opt_par<-DEoptim(fn=cost, lower=pl, upper=pu,
+                     control = c(itermax = 10000, steptol = 50, reltol = 1e-8,
                                  trace=FALSE, strategy=3, NP=250))
     
     #global optimum parameters are further used in MCMC to find parameters distribution
-    par_prof<-modMCMC(f=cost, p=opt_par$optim$bestmem, 
+    par_prof<-modMCMC(f=cost, p=opt_par$optim$bestmem,
                       lower=pl,
                       upper=pu, niter=5000)
     
@@ -199,11 +207,11 @@ monodplus_prot<-function(data, FACT){
       res$OvP<-rbind(res[[1]]$fit$Yhat, res[[2]]$fit$Yhat)
       
       #rsquared calculation for each variable
-      res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
+      res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T),
                                                                  SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                                  ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
       res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
-      res$goodness$N<-rep(length(parnames)*2, times=2)
+      res$goodness$N<-rep(length(parnames)*2+1, times=3)
       res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
       
       
@@ -214,11 +222,11 @@ monodplus_prot<-function(data, FACT){
         res$OvP<-rbind(res[[1]]$fit$Yhat, res[[2]]$fit$Yhat, res[[3]]$fit$Yhat)
         
         #rsquared calculation for each variable
-        res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
+        res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T),
                                                                    SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                                    ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
         res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
-        res$goodness$N<-rep(length(parnames)*3, times=2)
+        res$goodness$N<-rep(length(parnames)*3+1, times=3)
         res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
         
       }else{
@@ -226,11 +234,11 @@ monodplus_prot<-function(data, FACT){
         res$OvP<-rbind(res[[1]]$fit$Yhat, res[[2]]$fit$Yhat, res[[3]]$fit$Yhat, res[[4]]$fit$Yhat, res[[5]]$fit$Yhat, res[[6]]$fit$Yhat)
         
         #rsquared calculation for each variable
-        res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T), 
+        res$goodness<-res$OvP %>% group_by(variable) %>% summarise(SSres=sum(((obs-value)^2), na.rm = T),
                                                                    SStot=sum(((obs-mean(obs, na.rm = T))^2), na.rm = T),
                                                                    ll=-sum(((obs-value)^2), na.rm = T)/2/(sd(obs, na.rm = T)^2))
         res$goodness$R2<-with(res$goodness, 1-SSres/SStot)
-        res$goodness$N<-rep(length(parnames)*6, times=2)
+        res$goodness$N<-rep(length(parnames)*6+1, times=3)
         res$goodness$AIC<-with(res$goodness, 2*N-2*ll)
         
       }

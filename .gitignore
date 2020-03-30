@@ -1,9 +1,9 @@
-# History files
+﻿# History files
 .Rhistory
 .Rapp.history
 
 # Session Data files
-.RData
+*.RData
 
 #scripts for parameters estimation
 data_analysis.R
@@ -48,3 +48,15 @@ OLD/
 
 #html output
 *.html
+
+#Community data
+fungi.csv
+bacteria.csv
+
+#Supplementary information data
+monodplus_FigS1.csv
+monod_FigS1.csv
+
+#Old version of the code
+Si_code_ns.Rmd
+
