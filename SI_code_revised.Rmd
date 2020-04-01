@@ -830,3 +830,135 @@ kable(two_pool_all_results_good[, c(1, 4:7)], digits = c(0, 2, 2, 2, 2), align =
   group_rows("Each", 10, 12) 
 
 ```
+
+```{r}
+
+fpars<-t.s6.1[c(2:4), ]
+fpars$SA<-c(0, 332, 400)
+
+fpars$Km.sd<-c(summary(two_pool_all_fixVmaxYuk_out2[[1]]$par_prof)[2,1],
+               summary(two_pool_all_fixVmaxYuk_out2[[2]]$par_prof)[2,1],
+               summary(two_pool_all_fixVmaxYuk_out2[[3]]$par_prof)[2,1])
+fpars$fr.sd<-c(summary(two_pool_all_fixVmaxYuk_out2[[1]]$par_prof)[2,4]+
+                 summary(two_pool_all_fixVmaxYuk_out2[[1]]$par_prof)[2,5],
+               summary(two_pool_all_fixVmaxYuk_out2[[2]]$par_prof)[2,4]+
+                 summary(two_pool_all_fixVmaxYuk_out2[[2]]$par_prof)[2,5],
+               summary(two_pool_all_fixVmaxYuk_out2[[3]]$par_prof)[2,4]+
+                 summary(two_pool_all_fixVmaxYuk_out2[[3]]$par_prof)[2,5])
+
+grid.arrange(ggplot(fpars, aes(SA, Km)) + 
+  geom_point(cex=6, pch=21, aes(fill = Name)) + theme_min + stat_smooth(method=lm, se = F, colour="grey30") +
+  geom_errorbar(aes(ymin=Km-Km.sd, ymax=Km+Km.sd)) +
+  scale_fill_manual(values=c("black", "grey", "white")) +
+  xlab(expression(paste("Total surface area (", cm^{2}, ")"))) +
+  ylab(expression(paste("Affinity to substrate (", mu, "mol ", L^{-1}, ")"))) +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.75, 0.75))+
+  ggtitle("A)"), 
+  ggplot(fpars, aes(SA, fpr+fps)) + 
+  geom_point(cex=6, pch=21, aes(fill = Name), show.legend = F) + theme_min + stat_smooth(method=lm, se = F, colour="grey30") +
+  geom_errorbar(aes(ymin=fpr+fps-fr.sd, ymax=fpr+fps+fr.sd)) +
+  scale_fill_manual(values=c("black", "grey", "white")) +
+  xlab(expression(paste("Total surface area (", cm^{2}, ")"))) +
+  ylab("Abundance of proteins in cells") + ggtitle("B)"),
+  nrow=1)
+
+```
+
+```{r}
+source("./Rscripts/two_pool_plot.R")
+
+sim_out<-two_pool_plot(fpars)
+
+bplot<-m0 %>% filter(Substrate=="Glucose" | Substrate=="Cellobiose") %>% 
+  group_by(Structure, Substrate, Day) %>%
+  summarise(P = mean(Prot.in*0.46/12.01/4, na.rm=T),
+            P.sd = sd(Prot.in*0.46/12.01/4, na.rm=T),
+            D = mean(DNA*0.51/12.01/4, na.rm=T),
+            D.sd = sd(DNA*0.51/12.01/4, na.rm=T)) 
+bplot$Struc<-NA
+
+for(i in 1:nrow(bplot)){
+  if(bplot$Structure[i]=="Broth"){
+    bplot$Struc[i]<-"BROTH"
+  }else{
+    if(bplot$Structure[i]=="Glass wool"){
+      bplot$Struc[i]<-"WOOL"
+    }else{
+      bplot$Struc[i]<-"GLASS"
+    }
+  }
+}
+
+bplot$Struc<-factor(bplot$Struc, levels=c("BROTH", "GLASS", "WOOL"))
+
+ggplot(bplot, aes(x=Day*24))+
+    geom_point(cex=6, aes(y=P, colour="Cellular Proteins", shape=Substrate)) +
+  geom_errorbar(aes(ymin=P-P.sd, ymax=P+P.sd, color="Cellular Proteins"), width=0.0001, lwd=1)+
+  geom_line(data = sim_out, aes(x=time, y=Protc, colour="Cellular Proteins"), lwd=1.5)+
+    geom_point(cex=6, aes(y=D*28, colour="DNA", shape=Substrate))+
+  geom_errorbar(aes(ymin=(D-D.sd)*28, ymax=(D+D.sd)*28, color="DNA"), width=0.0001, lwd=1)+
+  geom_line(data = sim_out, aes(x=time, y=DNAc*28, colour="DNA"), lwd=1.5)+
+    scale_y_continuous(sec.axis = sec_axis(~./28, 
+                       name = expression(paste("DNA (", mu ,"mol(",C[DNA],")" ,ml^{-1}, ")"))), limits = c(0, 3))+
+    scale_colour_manual(values = c( "black", "grey60"))+
+    labs(y = expression(paste("Cellular Proteins (", mu ,"mol(",C[Proteins],")" ,ml^{-1}, ")")),
+         x = "Time (h)")+
+    theme_min + facet_wrap(~Struc, ncol=1) + expand_limits(x = 0, y = 0) +
+  theme(legend.title = element_blank(),
+        legend.direction = "horizontal",
+        legend.spacing.y = unit(2.6, "in"),
+        legend.spacing.x = unit(0.05, "in"),
+        legend.position = c(0.65, 0.45),
+        legend.background = element_blank(),
+        )
+
+
+source("./Rscripts/monod_plot.R")
+sim_monod_out<-monod_plot(t.s4.1)
+
+bplot$Struc<-factor(bplot$Struc, levels=c("BROTH", "GLASS", "WOOL"))
+
+ggplot(bplot, aes(x=Day*24))+
+    geom_point(cex=6, aes(y=P, colour="Cellular Proteins", shape=Substrate)) +
+  geom_errorbar(aes(ymin=P-P.sd, ymax=P+P.sd, color="Cellular Proteins"), width=0.0001, lwd=1)+
+  geom_line(data = sim_out, aes(x=time, y=Protc, colour="Cellular Proteins"), lwd=1.5)+
+  geom_line(data = sim_monod_out, aes(x=time, y=Protc, colour="Cellular Proteins"), lwd=1, linetype="dashed")+
+    geom_point(cex=6, aes(y=D*28, colour="DNA", shape=Substrate))+
+  geom_errorbar(aes(ymin=(D-D.sd)*28, ymax=(D+D.sd)*28, color="DNA"), width=0.0001, lwd=1)+
+  geom_line(data = sim_out, aes(x=time, y=DNAc*28, colour="DNA"), lwd=1.5)+
+  geom_line(data = sim_monod_out, aes(x=time, y=DNAc*28, colour="DNA"), lwd=1, linetype="dashed")+
+    scale_y_continuous(sec.axis = sec_axis(~./28, 
+                       name = expression(paste("DNA (", mu ,"mol(",C[DNA],")" ,ml^{-1}, ")"))), limits = c(0, 3))+
+    scale_colour_manual(values = c( "black", "grey60"))+
+    labs(y = expression(paste("Cellular Proteins (", mu ,"mol(",C[Proteins],")" ,ml^{-1}, ")")),
+         x = "Time (h)")+
+    theme_min + facet_wrap(~Struc, ncol=1) + expand_limits(x = 0, y = 0) +
+  theme(legend.title = element_blank(),
+        legend.direction = "horizontal",
+        legend.spacing.y = unit(2.6, "in"),
+        legend.spacing.x = unit(0.05, "in"),
+        legend.position = c(0.65, 0.45),
+        legend.background = element_blank(),
+        )
+
+ggplot(sim_out, aes(x=time))+
+    geom_line(lwd=1.5, aes(y=Protc/(R+S)*100, colour="Cellular Proteins")) +
+    geom_line(lwd=1.5, aes(y=DNAc/(R+S)*15*100, colour="DNA"))+
+    scale_y_continuous(sec.axis = sec_axis(~./15, 
+                       name = expression(paste(frac(C[DNA], Biomass)%*%100))))+
+    scale_colour_manual(values = c( "black", "grey60"))+
+    labs(y = expression(paste(frac(C[Proteins], Biomass)%*%100)),
+         x = "Time (h)")+
+    theme_min + facet_wrap(~Struc, ncol=1) + expand_limits(x = 0, y = 0) +
+  theme(legend.title = element_blank(),
+        legend.direction = "horizontal",
+        legend.spacing.y = unit(2.6, "in"),
+        legend.spacing.x = unit(0.05, "in"),
+        legend.position = c(0.55, 0.45),
+        legend.background = element_blank(),
+        )
+
+
+```
+
