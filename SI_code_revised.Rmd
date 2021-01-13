@@ -1,0 +1,963 @@
+---
+title: Physical structure of an environment and microbial biomass composition variability affect the performance of microbially explicit model
+author: "Petr Capek, Katherine Todd-Brown, Natalie Sadler, Michal Choma, Jianqiu Zheng, Nancy Hess, Kirsten Hofmockel"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Supplementary Information
+## Step-by-step analysis and code
+
+The analysis requires several libraries
+
+```{r libraries loading, message=FALSE, warning=FALSE}
+
+##libraries
+library(deSolve)
+library(dplyr)
+library(FME)
+library(reshape)
+library(ggplot2)
+library(foreach)
+library(doParallel)
+library(openxlsx)
+library(DEoptim)
+library(gridExtra)
+library(kableExtra)
+library(lmerTest)
+library(psycho)
+library(ggeffects)
+library(rcompanion)
+library(vegan)
+
+##ggplot theme
+theme_min<-theme(axis.text.x=element_text(vjust=0.2, size=18, colour="black"),
+                 axis.text.y=element_text(hjust=0.2, size=18, colour="black"),
+                 axis.title=element_text(size=18, colour="black"),
+                 axis.line=element_line(size=0.5, colour="black"),
+                 strip.text=element_text(size=18, face="bold"),
+                 axis.ticks=element_line(size=1, colour="black"),
+                 axis.ticks.length=unit(-0.05, "cm"),
+                 panel.background=element_rect(colour="black", fill="white"),
+                 panel.grid=element_line(linetype=0),
+                 legend.text=element_text(size=14, colour="black"),
+                 legend.title=element_text(size=14, colour="black"),
+                 legend.position=c("right"),
+                 legend.key.size=unit(1, "cm"),
+                 strip.background=element_rect(fill="grey98", colour="black"),
+                 legend.key=element_rect(fill="white", size=1.2),
+                 legend.spacing=unit(0.5, "cm"),
+                 plot.title=element_text(size=18, face="bold", hjust=-0.05))
+```
+
+Data are available at https://github.com/petacapek/MinT.
+
+```{r data loading, echo=FALSE}
+#respiration rates in umol/ml/h
+resp<-read.csv(file=c("data_checked_respiration_raw.csv"))
+
+#arrange the data
+resp.ordered<-resp[order(resp$Sample, resp$Day), ]
+
+#biological data
+biology<-read.csv(file=c("data_checked_biology_raw.csv"))
+
+#arrange the data in the same way
+biology.ordered<-biology[order(biology$Sample, biology$Day), -c(2,3)]
+biology.ordered$Sample<-paste0("CSub3_", biology.ordered$Sample)
+
+#merging both data sets
+m0<-merge(resp.ordered, biology.ordered, by.x=c("Sample", "Day"), by.y = c("Sample", "Day"), all=T)
+
+```
+
+The conducted experiment is large. For this analysis, only subset of data is used. We use treatments with Glucose or Celluloze as a single source of organic carbon and all three levels of incubation system complexity (i.e. broth, glass wool and mix of glass beads).
+
+```{r data filtering}
+
+d<-subset(m0, Substrate=="Glucose" | Substrate=="Cellobiose")
+summary(d)
+
+#removing outliers
+#respiration rate
+ggplot(d, aes(Time, r))+geom_point(cex=6)+facet_wrap(Structure~Substrate, scales="free")
+
+d[(d$Substrate=="Glucose" & d$Structure=="Glass wool" & d$Time>20 & d$Time<30 & d$r<0.4 & !is.na(d$r)), "r"]<-NA
+
+#Proteins
+ggplot(d, aes(Time, Prot.in))+geom_point(cex=6)+facet_wrap(Structure~Substrate, scales="free")
+
+d[(d$Substrate=="Cellobiose" & d$Structure=="Broth" &  d$Time>75), "Prot.in"]<-NA
+d[(d$Substrate=="Glucose" & d$Structure=="Broth" & d$Time>75), "Prot.in"]<-NA
+d[(d$Substrate=="Cellobiose" & d$Structure=="Mixed glass" & d$Time>75), "Prot.in"]<-NA
+d[(d$Substrate=="Cellobiose" & d$Structure=="Glass wool" & d$Time>75 & d$Prot.in>110 & !is.na(d$Prot.in)), "Prot.in"]<-NA
+
+
+```
+
+DNA and protein concentrations are in $\mu$grams per incubation vial. Both values are converted to unit of carbon per one ml of media in the vial (4 ml) using the conversion factors reported in Vrede et al. (2004).
+
+```{r conversions}
+
+d$Protc<-d$Prot.in*0.46/12.01/4
+d$DNAc<-d$DNA*0.51/12.01/4
+
+```
+
+## Statistical analysis
+
+Linear Mixed-Effect models are used to evaluate the effect of substrate and the type of physical barrier on measured respiration rate, DNA and protein concentration. Because all three variables display significant variability over time, the time of measurement is treated as a random effect factor. Type of the barrier is nested within the substrate.
+
+```{r lme analysis, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+#respiration rate
+lme1<-lmer(r~Substrate+Structure/Substrate + (1|Day), d)
+#Proteins
+lme2<-lmer(Protc~Substrate+Structure/Substrate + (1|Day), d)
+#DNA
+lme3<-lmer(DNAc~Substrate+Structure/Substrate + (1|Day), d)
+
+t.s0<-as.data.frame(cbind(anova(lme1)[c(5,3,6)], anova(lme2)[c(5,3,6)], anova(lme3)[c(5,3,6)]))
+
+row.names(t.s0)<-c("Substrate", "Structure", "Substrate*Structure")
+
+kable(t.s0, digits = c(2, 1, 3, 2, 1, 3, 2, 1, 3), align = 'c', "html", booktabs=T, col.names = c("F", "df", "p", "F", "df", "p", "F", "df", "p"), row.names=T, caption = "_**Table S1:** Results of linear mixed-effects model analysis. Effect of substrate, the type of physical barrier (Structure) and their interaction was evaluated. Statistical analysis was conducted for measured respiration rate, cellular protein concentration and DNA. F values, degrees of freedom (df) and the probability (p) are reported._") %>%
+  kable_styling() %>%
+  add_header_above(c(" " = 1, "Respiration rate" = 3, "Cellular Proteins" = 3, "DNA" = 3),
+                   italic=T)
+
+
+```
+$~$
+$~$
+$~$
+$~$
+$~$
+$~$
+
+```{r lme effects, echo=FALSE, fig.height=5, fig.width=15, message=FALSE, paged.print=FALSE, fig.cap="Fig. S1: Marginal effects of the substrate (Glucose or Cellobiose) and the type of physical barrier (BROTH, GLASS, WOOL) on the respiration rate (a), cellular proteins (b) and DNA concentration (c) estimated by the linear mixed-effect model."}
+#respiration
+lme1_contr<-get_contrasts(lme1)
+lme1_effects<-ggpredict(lme1, c("Substrate", "Structure"), type="fe")
+lme1_effects$x<-c(rep("Cellobiose", 3), rep("Glucose", 3))
+lme1_effects$group<-c(rep(c("BROTH", "WOOL", "GLASS"), 2))
+lme1_effects<-lme1_effects[order(lme1_effects$group), ]
+lme1_effects$letters<-c(as.character(cldList(p ~ Contrast, data      = lme1_contr, threshold = 0.05)[[2]])[c(1:2, 5:6)], as.character(cldList(p ~ Contrast, data      = lme1_contr, threshold = 0.05)[[2]])[c(3:4)])
+#Proteins
+lme2_contr<-get_contrasts(lme2)
+lme2_effects<-ggpredict(lme2, c("Substrate", "Structure"), type="fe")
+lme2_effects$x<-c(rep("Cellobiose", 3), rep("Glucose", 3))
+lme2_effects$group<-c(rep(c("BROTH", "WOOL", "GLASS"), 2))
+lme2_effects<-lme2_effects[order(lme2_effects$group), ]
+lme2_effects$letters<-c(as.character(cldList(p ~ Contrast, data      = lme2_contr, threshold = 0.05)[[2]])[c(1:2, 5:6)], as.character(cldList(p ~ Contrast, data      = lme2_contr, threshold = 0.05)[[2]])[c(3:4)])
+#DNA
+lme3_contr<-get_contrasts(lme3)
+lme3_effects<-ggpredict(lme3, c("Substrate", "Structure"), type="fe")
+lme3_effects$x<-c(rep("Cellobiose", 3), rep("Glucose", 3))
+lme3_effects$group<-c(rep(c("BROTH", "WOOL", "GLASS"), 2))
+lme3_effects<-lme3_effects[order(lme3_effects$group), ]
+lme3_effects$letters<-c(as.character(cldList(p ~ Contrast, data      = lme3_contr, threshold = 0.05)[[2]])[c(1:2, 5:6)], as.character(cldList(p ~ Contrast, data      = lme3_contr, threshold = 0.05)[[2]])[c(3:4)])
+
+p1<-ggplot(lme1_effects, aes(x, predicted))+
+    geom_point(position = position_dodge(width = 0.5), aes(fill=group), shape=21, cex=6, show.legend = F)+
+    scale_fill_manual(values = c("black", "grey", "white"))+
+    scale_colour_manual(values = c("black", "black", "black"))+
+    geom_errorbar(aes(ymin=predicted-std.error, ymax=predicted+std.error, colour=group),
+                  position=position_dodge(width = 0.5), width=0.1, show.legend = F)+
+    ylab(expression(paste("Respiration rate (", mu, "mol",(C-CO[2])~ml^{-1}~h^{-1}, ")")))+
+    ggtitle("a)")+
+    geom_text(aes(label=letters, colour=group, vjust=-10, fontface="bold.italic"),
+              cex=5, position=position_dodge(width = 0.5), show.legend = F)+
+    ylim(-0.01,0.3)+
+    theme_min+theme(axis.title.x = element_blank(),
+                    legend.title = element_blank())
+p2<-ggplot(lme2_effects, aes(x, predicted))+
+    geom_point(position = position_dodge(width = 0.5), aes(fill=group), shape=21, cex=6, show.legend = F)+
+    scale_fill_manual(values = c("black", "grey", "white"))+
+    scale_colour_manual(values = c("black", "black", "black"))+
+    geom_errorbar(aes(ymin=predicted-std.error, ymax=predicted+std.error, colour=group),
+                  position=position_dodge(width = 0.5), width=0.1, show.legend = F)+
+    ylab(expression(paste("Cellular Proteins (", mu, "mol",(C[Proteins])~ml^{-1}, ")")))+
+    ggtitle("b)")+
+    geom_text(aes(label=letters, colour=group, vjust=-3, fontface="bold.italic"),
+              cex=5, position=position_dodge(width = 0.5), show.legend = F)+
+    ylim(0,1.2)+
+    theme_min+theme(axis.title.x = element_blank(),
+                    legend.title = element_blank())
+p3<-ggplot(lme3_effects, aes(x, predicted))+
+    geom_point(position = position_dodge(width = 0.5), aes(fill=group), shape=21, cex=6)+
+    scale_fill_manual(values = c("black", "grey", "white"))+
+    scale_colour_manual(values = c("black", "black", "black"))+
+    geom_errorbar(aes(ymin=predicted-std.error, ymax=predicted+std.error, colour=group),
+                  position=position_dodge(width = 0.5), width=0.1)+
+    ylab(expression(paste("DNA (", mu, "mol",(C[DNA])~ml^{-1}, ")")))+
+    ggtitle("c)")+
+    geom_text(aes(label=letters, colour=group, vjust=-3, fontface="bold.italic"),
+              cex=5, position=position_dodge(width = 0.5), show.legend = F)+
+    ylim(0,0.08)+
+    theme_min+theme(axis.title.x = element_blank(),
+                    legend.title = element_blank(),
+                    legend.position = c(0.25,0.2))
+
+
+grid.arrange(p1, p2, p3, nrow=1)
+
+```
+$~$
+$~$
+$~$
+
+## Microbial-explicit models analysis
+
+### Both models are first calibrated against respiration rate
+
+Calibration of both models is done in four steps. First, the model is calibrated against data across all treatments. Second, the model is calibrated for each level of incubation system complexity separately. Third, the model is calibrated for Glucose and Cellobiose treatments separately. Fourth, the model is calibrated for each experimental treatment separately.
+Goodness of correspondence between measurements and model simulations are calculated across all treatments. By doing so, the effect of experimental treatment is evaluated. If the model simulation fits the data significantly better when model parameters are estimated for different treatments separately, effect of this treatment is significant.
+
+The calibration of the models is not run within this document because it takes couple of hours to finish. Results of the previous iteration is printed instead.
+To run the code and reproduce the results, the option "eval" need to be changed to TRUE. Please note that the parallel computing is used. Number of cores is set to total number of cores of the computer minus 1. This can be changed if necessary.
+
+When models are calibrated against the respiration rate only, initial concentration of microbial biomass or reserves and structures is estimated as a single parameter. However, when model parameters are estimated for each treatment separately, initial microbial biomass can differ between treatments. This does not correspond to a reality. Therefore, initial concentration of microbial biomass is subsequently fixed across treatments.
+
+#### Monod model
+
+```{r monod respiration calibration, eval=F, echo=T}
+#Loading the function
+source("../Rscripts/monod_r.R")
+source("../Rscripts/monod_r_fix.R")
+#across all treatments
+monod_r1<-monod_r(data=d, FACT = 4)
+#########################################################
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+##########################################################
+#for different structures
+monod_r2<-monod_r(data=d, FACT = 2)
+monod_r2_fix<-monod_r_fix(data=d, FACT = 2)
+#for different substrates
+monod_r3<-monod_r(data=d, FACT = 1)
+monod_r3_fix<-monod_r_fix(data=d, FACT = 1)
+#for each separately  
+monod_r4<-monod_r(data=d, FACT = 3)
+monod_r4_fix<-monod_r_fix(data=d, FACT = 3)
+###################################################
+stopImplicitCluster()
+###################################################
+# monod_r1$goodness
+# monod_r2$goodness
+# monod_r3$goodness
+# monod_r4$goodness
+
+# mean(c(monod_r4[[1]]$pars[["Cmic_0"]], monod_r4[[2]]$pars[["Cmic_0"]],
+#   monod_r4[[3]]$pars[["Cmic_0"]], monod_r4[[4]]$pars[["Cmic_0"]],
+#   monod_r4[[5]]$pars[["Cmic_0"]], monod_r4[[6]]$pars[["Cmic_0"]]))
+
+monod_r1$goodness
+monod_r2_fix$goodness
+monod_r3_fix$goodness
+monod_r4_fix$goodness
+```
+
+```{r monod respiration calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+
+#results of the previous iteration (not run)
+# monod_r_results_par<-as.data.frame(rbind(monod_r1[[1]]$pars[1:4],
+#                       monod_r2_fix[[1]]$pars, monod_r2_fix[[2]]$pars,
+#                       monod_r2_fix[[3]]$pars,
+#                       monod_r3_fix[[1]]$pars, monod_r3_fix[[2]]$pars,
+#                       monod_r4_fix[[1]]$pars, monod_r4_fix[[2]]$pars,
+#                       monod_r4_fix[[3]]$pars, monod_r4_fix[[4]]$pars,
+#                       monod_r4_fix[[5]]$pars, monod_r4_fix[[6]]$pars))
+# monod_r_results$Cmic_init<-c(0.09125118)
+# monod_r_results_good<-rbind(monod_r1$goodness,
+#                             monod_r2_fix$goodness,
+#                             monod_r3_fix$goodness,
+#                             monod_r4_fix$goodness)
+# write.csv(monod_r_results_par, file = c("../monod_r_results_par.csv"), row.names = F)
+# write.csv(monod_r_results_good, file = c("../monod_r_results_good.csv"), row.names = F)
+
+monod_r_results_par<-read.csv("monod_r_results_par.csv")
+monod_r_results_good<-read.csv("monod_r_results_good.csv")
+
+
+t.s1.1<-data.frame(Vmax=monod_r_results_par[,1],
+                 Km=monod_r_results_par[,2],
+                 CUE=monod_r_results_par[,3],
+                 k=monod_r_results_par[,4])
+row.names(t.s1.1)<-c("All", "Broth", "Glass", "Wool",
+                    "Cellobiose", "Glucose",
+                    "Broth - Cellobiose", "Broth - Glucose",
+                    "Glass - Cellobiose", "Glass - Glucose",
+                    "Wool - Cellobiose", "Wool - Glucose")
+
+options(knitr.kable.NA = '')
+
+
+kable(t.s1.1, digits = c(2, 2, 2, 3), align = 'c', "html", booktabs=T, col.names = c('v', 'k', '$\\Y_{CUE}$', 'm'), row.names=T, caption = "_**Table S2:** Monod model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>%
+  kable_styling() %>%
+  group_rows("All", 1, 1) %>%
+  group_rows("Structure", 2, 4) %>%
+  group_rows("Substrate", 5, 6) %>%
+  group_rows("Each", 7, 12)
+
+kable(monod_r_results_good[c(3:6)], digits = c(2, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S3:** Goodness of fit of monod model calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>%
+  kable_styling() %>%
+  group_rows("All", 1, 1) %>%
+  group_rows("Structure", 2, 2) %>%
+  group_rows("Substrate", 3, 4) %>%
+  group_rows("Each", 4, 4)
+
+```
+
+#### Sub-microbial model
+
+```{r Sub-microbial model respiration calibration, eval=F, echo=T}
+#Loading the function
+source("../Rscripts/two_pool_r.R")
+source("../Rscripts/two_pool_r_fix.R")
+#across all treatments
+two_pool_r1<-two_pool_r(data=d, FACT = 4)
+#################################################
+no_cors<-detectCores()
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+#################################################
+#for different structures
+two_pool_r2<-two_pool_r(data=d, FACT = 2)
+two_pool_r2_fix<-two_pool_r_fix(data=d, FACT = 2)
+#for different substrates
+two_pool_r3<-two_pool_r(data=d, FACT = 1)
+two_pool_r3_fix<-two_pool_r_fix(data=d, FACT = 1)
+#for each separately
+two_pool_r4<-two_pool_r(data=d, FACT = 3)
+two_pool_r4_fix<-two_pool_r_fix(data=d, FACT = 3)
+#################################################
+stopImplicitCluster()
+#################################################
+# mean(c(two_pool_r4[[1]]$pars[["R_0"]], two_pool_r4[[2]]$pars[["R_0"]],
+#      two_pool_r4[[3]]$pars[["R_0"]], two_pool_r4[[4]]$pars[["R_0"]],
+#      two_pool_r4[[5]]$pars[["R_0"]], two_pool_r4[[6]]$pars[["R_0"]]))
+# mean(c(two_pool_r4[[1]]$pars[["S_0"]], two_pool_r4[[2]]$pars[["S_0"]],
+#      two_pool_r4[[3]]$pars[["S_0"]], two_pool_r4[[4]]$pars[["S_0"]],
+#      two_pool_r4[[5]]$pars[["S_0"]], two_pool_r4[[6]]$pars[["S_0"]]))
+
+two_pool_r1$goodness
+two_pool_r2_fix$goodness
+two_pool_r3_fix$goodness
+two_pool_r4_fix$goodness
+
+```
+
+```{r Sub-microbial model respiration calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+
+#results of the previous iteration (not run)
+# two_pool_r_results_par<-rbind(two_pool_r1[[1]]$pars[c(1:5)],
+#                    two_pool_r2_fix[[1]]$pars, two_pool_r2_fix[[2]]$pars,
+#                    two_pool_r2_fix[[3]]$pars,
+#                    two_pool_r3_fix[[1]]$pars, two_pool_r3_fix[[2]]$pars,
+#                    two_pool_r4_fix[[1]]$pars, two_pool_r4_fix[[2]]$pars,
+#                    two_pool_r4_fix[[3]]$pars, two_pool_r4_fix[[4]]$pars,
+#                    two_pool_r4_fix[[5]]$pars, two_pool_r4_fix[[6]]$pars)
+# two_pool_r_results_good<-rbind(two_pool_r1$goodness,
+#                               two_pool_r2$goodness,
+#                               two_pool_r3$goodness,
+#                               two_pool_r4$goodness)
+# write.csv(two_pool_r_results_par, file = c("./two_pool_r_results_par.csv"), row.names = F)
+# write.csv(two_pool_r_results_good, file = c("./two_pool_r_results_good.csv"), row.names = F)
+
+two_pool_r_results_par<-read.csv("two_pool_r_results_par.csv")
+two_pool_r_results_good<-read.csv("two_pool_r_results_good.csv")
+
+
+t.s3.1<-data.frame(Vmax=two_pool_r_results_par[,1],
+                 Km=two_pool_r_results_par[,2],
+                 f=two_pool_r_results_par[,3],
+                 k=two_pool_r_results_par[,4],
+                 Yu=two_pool_r_results_par[,5])
+row.names(t.s3.1)<-c("All", "Broth", "Glass", "Wool",
+                    "Cellobiose", "Glucose",
+                    "Broth - Cellobiose", "Broth - Glucose",
+                    "Glass - Cellobiose", "Glass - Glucose",
+                    "Wool - Cellobiose", "Wool - Glucose")
+
+options(knitr.kable.NA = '')
+
+
+kable(t.s3.1, digits = c(2, 2, 2, 3, 2), align = 'c', "html", booktabs=T, col.names = c('v', 'k', 'f', 'm', 'Y'), row.names=T, caption = "_**Table S4:** Sub-microbial model parameters calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>%
+  kable_styling() %>%
+  group_rows("All", 1, 1) %>%
+  group_rows("Structure", 2, 4) %>%
+  group_rows("Substrate", 5, 6) %>%
+  group_rows("Each", 7, 12)
+
+kable(two_pool_r_results_good[, c(3:6)], digits = c(2, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c('Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S5:** Goodness of fit of Sub-microbial model calibrated against respiration rate across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>%
+  kable_styling() %>%
+  group_rows("All", 1, 1) %>%
+  group_rows("Structure", 2, 2) %>%
+  group_rows("Substrate", 3, 4) %>%
+  group_rows("Each", 4, 4)
+
+```
+
+### Both models are calibrated against respiration rate, proteins and DNA concentration in the cells.
+
+Both models are calibrated against all data we measured. In addition to model parameters reported in tables above, conversion factors between proteins/DNA concentration and microbial biomass are estimated. For Monod model, initial concentration of microbial biomass is defined as an initial concentration of the DNA in the incubation vial divided by the conversion factor between the DNA concentration and microbial biomass. For Sub-microbial model, initial concentration of Structures is defined similarly - i.e. initial concentration of the DNA in the incubation vial divided by the conversion factor between the DNA concentration and Structures. However, initial concetration of Reserves cannot be defined because initial concentration of proteins is not know. Therefore, one more parameter is defined. This parameter is denoted as RS_0 in the respective function and define initial concentration of Reserves per unit of Structures. This parameter has to be fixed across treatments to reflect the reality.
+In addition, Monod model is calibrated against respiration rate and proteins or DNA concentration separately. When calibrated againnst protein concentration, initial concentration of microbial biomass is estimated and fixed across treatments.
+
+#### Monod model
+
+```{r Monod model - biomass components, eval=F, echo=T}
+#Proteins
+#Loading the function
+source("../Rscripts/monod_prot.R")
+source("../Rscripts/monod_prot_fix.R")
+#across all treatments
+monod_prot1<-monod_prot(data=d, FACT = 4)
+###############################################################
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+###############################################################
+#for different structures
+monod_prot2<-monod_prot(data=d, FACT = 2)
+monod_prot2_fix<-monod_prot_fix(data=d, FACT = 2)
+#for different substrates
+monod_prot3<-monod_prot(data=d, FACT = 1)
+monod_prot3_fix<-monod_prot_fix(data=d, FACT = 1)
+#for each separately
+monod_prot4<-monod_prot(data=d, FACT = 3)
+monod_prot4_fix<-monod_prot_fix(data=d, FACT = 3)
+###############################################################
+stopImplicitCluster()
+###############################################################
+monod_prot1$goodness
+monod_prot2_fix$goodness
+monod_prot3_fix$goodness
+monod_prot4_fix$goodness
+
+###############################################################
+#DNA
+#Loading the function
+source("../Rscripts/monod_i_DNA.R")
+#across all treatments
+monod_DNA1<-monod_DNA(data=d, FACT = 4)
+###############################################################
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+###############################################################
+#for different structures
+monod_DNA2<-monod_DNA(data=d, FACT = 2)
+#for different substrates
+monod_DNA3<-monod_DNA(data=d, FACT = 1)
+#for each separately
+monod_DNA4<-monod_DNA(data=d, FACT = 3)
+###############################################################
+stopImplicitCluster()
+###############################################################
+monod_DNA1$goodness
+monod_DNA2$goodness
+monod_DNA3$goodness
+monod_DNA4$goodness
+###############################################################
+#Proteins and DNA
+#Loading the function
+source("../Rscripts/monod_all.R")
+#across all treatments
+monod_all1<-monod_all(data=d, FACT = 4)
+###############################################################
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+###############################################################
+#for different structures
+monod_all2<-monod_all(data=d, FACT = 2)
+#for different substrates
+monod_all3<-monod_all(data=d, FACT = 1)
+#for each separately
+monod_all4<-monod_all(data=d, FACT = 3)
+###############################################################
+stopImplicitCluster()
+###############################################################
+monod_all1$goodness
+monod_all2$goodness
+monod_all3$goodness
+monod_all4$goodness
+```
+
+```{r Monod overall calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+
+# #results of the previous iteration (not run)
+# ##All measurements together
+# monod_all_results_par<-rbind(monod_all1[[1]]$pars,
+#                              monod_all2[[1]]$pars, monod_all2[[2]]$pars,
+#                              monod_all2[[3]]$pars,
+#                              monod_all3[[1]]$pars, monod_all3[[2]]$pars,
+#                              monod_all4[[1]]$pars, monod_all4[[2]]$pars,
+#                              monod_all4[[3]]$pars, monod_all4[[4]]$pars,
+#                              monod_all4[[5]]$pars, monod_all4[[6]]$pars)
+#
+# monod_all_results_good<-rbind(monod_all1$goodness,
+#                               monod_all2$goodness,
+#                               monod_all3$goodness,
+#                               monod_all4$goodness)
+#
+# write.csv(monod_all_results_par, file = c("../monod_all_results_par.csv"), row.names = F)
+# write.csv(monod_all_results_good, file = c("../monod_all_results_good.csv"), row.names = F)
+#
+# ##Respiration rate and proteins
+# monod_prot_results_par<-rbind(monod_prot1[[1]]$pars[c(1:5)],
+#                              monod_prot2_fix[[1]]$pars, monod_prot2_fix[[2]]$pars,
+#                              monod_prot2_fix[[3]]$pars,
+#                              monod_prot3_fix[[1]]$pars, monod_prot3_fix[[2]]$pars,
+#                              monod_prot4_fix[[1]]$pars, monod_prot4_fix[[2]]$pars,
+#                              monod_prot4_fix[[3]]$pars, monod_prot4_fix[[4]]$pars,
+#                              monod_prot4_fix[[5]]$pars, monod_prot4_fix[[6]]$pars)
+#
+# monod_prot_results_good<-rbind(monod_prot1$goodness,
+#                              monod_prot2_fix$goodness,
+#                              monod_prot3_fix$goodness,
+#                              monod_prot4_fix$goodness)
+#
+# write.csv(monod_prot_results_par, file = c("../monod_prot_results_par.csv"), row.names = F)
+# write.csv(monod_prot_results_good, file = c("../monod_prot_results_good.csv"), row.names = F)
+#
+# ##Respiration rate and DNA
+# monod_DNA_results_par<-rbind(monod_DNA1[[1]]$pars,
+#                              monod_DNA2[[1]]$pars, monod_DNA2[[2]]$pars,
+#                              monod_DNA2[[3]]$pars,
+#                              monod_DNA3[[1]]$pars, monod_DNA3[[2]]$pars,
+#                              monod_DNA4[[1]]$pars, monod_DNA4[[2]]$pars,
+#                              monod_DNA4[[3]]$pars, monod_DNA4[[4]]$pars,
+#                              monod_DNA4[[5]]$pars, monod_DNA4[[6]]$pars)
+#
+# monod_DNA_results_good<-rbind(monod_DNA1$goodness,
+#                               monod_DNA2$goodness,
+#                               monod_DNA3$goodness,
+#                               monod_DNA4$goodness)
+#
+# write.csv(monod_DNA_results_par, file = c("../monod_DNA_results_par.csv"), row.names = F)
+# write.csv(monod_DNA_results_good, file = c("../monod_DNA_results_good.csv"), row.names = F)
+
+#All measurements
+monod_all_results_par<-read.csv("monod_all_results_par.csv")
+monod_all_results_good<-read.csv("monod_all_results_good.csv")
+monod_all_results_good$variable<-rep(c("Respiration", "Proteins", "DNA"), 4)
+monod_all_results_good[monod_all_results_good$R2<0, "R2"]<-0
+#Respiration and proteins
+monod_prot_results_par<-read.csv("monod_prot_results_par.csv")
+monod_prot_results_good<-read.csv("monod_prot_results_good.csv")
+monod_prot_results_good$variable<-rep(c("Respiration", "Proteins"), 4)
+monod_prot_results_good[monod_prot_results_good$R2<0, "R2"]<-0
+#Respiration and DNA
+monod_DNA_results_par<-read.csv("monod_DNA_results_par.csv")
+monod_DNA_results_good<-read.csv("monod_DNA_results_good.csv")
+monod_DNA_results_good$variable<-rep(c("Respiration", "DNA"), 4)
+monod_DNA_results_good[monod_DNA_results_good$R2<0, "R2"]<-0
+
+t.s4.1<-data.frame(Name=c("All", "Broth", "Glass", "Wool",
+                    "Cellobiose", "Glucose",
+                    "Broth - Cellobiose", "Broth - Glucose",
+                    "Glass - Cellobiose", "Glass - Glucose",
+                    "Wool - Cellobiose", "Wool - Glucose"),
+                   Vmax=monod_all_results_par[,1],
+                   Km=monod_all_results_par[,2],
+                   CUE=monod_all_results_par[,3],
+                   k=monod_all_results_par[,4],
+                   fp=monod_all_results_par[,5],
+                   fd=monod_all_results_par[,6])
+
+options(knitr.kable.NA = '')
+
+
+kable(t.s4.1, digits = c(0, 2, 2, 2, 3, 3, 3), align = 'c', "html", booktabs=T, col.names = c(" ", 'v', 'k', '$\\Y_{CUE}$', 'm', '$\\f_{Proteins}$', '$\\f_{DNA}$'), row.names=F, caption = "_**Table S6:** Monod model parameters calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>%
+  kable_styling() %>%
+  group_rows("All", 1, 1) %>%
+  group_rows("Structure", 2, 4) %>%
+  group_rows("Substrate", 5, 6) %>%
+  group_rows("Each", 7, 12)
+
+kable(monod_all_results_good[,c(1, 4:7)], digits = c(0, 2, 2, 0, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S7:** Goodness of fit of Monod model calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>%
+  kable_styling() %>%
+  group_rows("All", 1, 3) %>%
+  group_rows("Structure", 4, 6) %>%
+  group_rows("Substrate", 7, 9) %>%
+  group_rows("Each", 10, 12)
+
+t.s4.2<-data.frame(Name=c("All", "Broth", "Glass", "Wool",
+                    "Cellobiose", "Glucose",
+                    "Broth - Cellobiose", "Broth - Glucose",
+                    "Glass - Cellobiose", "Glass - Glucose",
+                    "Wool - Cellobiose", "Wool - Glucose"),
+                   Vmax=monod_prot_results_par[,1],
+                   Km=monod_prot_results_par[,2],
+                   CUE=monod_prot_results_par[,3],
+                   k=monod_prot_results_par[,4],
+                   fp=monod_prot_results_par[,5])
+
+options(knitr.kable.NA = '')
+
+
+kable(t.s4.2, digits = c(0, 2, 2, 2, 3, 3), align = 'c', "html", booktabs=T, col.names = c(" ", 'v', 'k', '$\\Y_{CUE}$', 'm', '$\\f_{Proteins}$'), row.names=F, caption = "_**Table S8:** Monod model parameters calibrated against respiration rate and protein concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>%
+  kable_styling() %>%
+  group_rows("All", 1, 1) %>%
+  group_rows("Structure", 2, 4) %>%
+  group_rows("Substrate", 5, 6) %>%
+  group_rows("Each", 7, 12)
+
+kable(monod_prot_results_good[,c(1, 4:7)], digits = c(0, 2, 2, 0, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S9:** Goodness of fit of Monod model calibrated against respiration rate and protein concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>%
+  kable_styling() %>%
+  group_rows("All", 1, 1) %>%
+  group_rows("Structure", 3, 4) %>%
+  group_rows("Substrate", 5, 6) %>%
+  group_rows("Each", 7, 8)
+
+t.s4.3<-data.frame(Name=c("All", "Broth", "Glass", "Wool",
+                    "Cellobiose", "Glucose",
+                    "Broth - Cellobiose", "Broth - Glucose",
+                    "Glass - Cellobiose", "Glass - Glucose",
+                    "Wool - Cellobiose", "Wool - Glucose"),
+                   Vmax=monod_DNA_results_par[,1],
+                   Km=monod_DNA_results_par[,2],
+                   CUE=monod_DNA_results_par[,3],
+                   k=monod_DNA_results_par[,4],
+                   fd=monod_DNA_results_par[,5])
+
+options(knitr.kable.NA = '')
+
+
+kable(t.s4.3, digits = c(0, 2, 2, 2, 3, 3), align = 'c', "html", booktabs=T, col.names = c(" ", 'v', 'k', '$\\Y_{CUE}$', 'm', '$\\f_{DNA}$'), row.names=F, caption = "_**Table S10:** Monod model parameters calibrated against respiration rate and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>%
+  kable_styling() %>%
+  group_rows("All", 1, 1) %>%
+  group_rows("Structure", 2, 4) %>%
+  group_rows("Substrate", 5, 6) %>%
+  group_rows("Each", 7, 12)
+
+kable(monod_DNA_results_good[,c(1, 4:7)], digits = c(0, 2, 2, 0, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S11:** Goodness of fit of Monod model calibrated against respiration rate and protein concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>%
+  kable_styling() %>%
+  group_rows("All", 1, 2) %>%
+  group_rows("Structure", 3, 4) %>%
+  group_rows("Substrate", 5, 6) %>%
+  group_rows("Each", 7, 8)
+
+```
+
+#### Sub-microbial model
+
+Not all model parameters vary significantly across treatments. Parameters that doesn't show any variability across treatments are fixed.
+
+```{r Sub-microbial model calibration, eval=F, echo=T}
+#Loading the function
+source("./Rscripts/two_pool_allx.R")
+source("../Rscripts/two_pool_allx_fix.R")
+#across all treatments
+two_pool_allx_out1<-two_pool_allx(data=d, FACT = 4)
+
+###########################################################
+no_cors<-detectCores()-1
+cl<-makeCluster(no_cors)
+registerDoParallel(cl)
+###########################################################
+#for different structures
+two_pool_allx_out2<-two_pool_allx(data=d, FACT = 2)
+
+two_pool_allx_fix_out2<-two_pool_allx_fix(data=d, FACT = 2)
+two_pool_allx_fix_out2$goodness
+
+two_pool_allx_fix_out2[[1]]$pars
+two_pool_allx_fix_out2[[2]]$pars
+two_pool_allx_fix_out2[[3]]$pars
+
+# mean(c(two_pool_allx_fix_out2[[1]]$pars[["Vmax"]],
+#        two_pool_allx_fix_out2[[2]]$pars[["Vmax"]],
+#        two_pool_allx_fix_out2[[3]]$pars[["Vmax"]]))
+# mean(c(two_pool_allx_fix_out2[[1]]$pars[["Yu"]],
+#        two_pool_allx_fix_out2[[2]]$pars[["Yu"]],
+#        two_pool_allx_fix_out2[[3]]$pars[["Yu"]]))
+# mean(c(two_pool_allx_fix_out2[[1]]$pars[["k"]],
+#        two_pool_allx_fix_out2[[2]]$pars[["k"]],
+#        two_pool_allx_fix_out2[[3]]$pars[["k"]]))
+############################################################################
+#in the following code, the Vmax, Ys and k parameters are fixed across treatments
+#becuase its variability across treatments is minimal (data not shown)
+source("./Rscripts/two_pool_all_fixVmaxYuk.R")
+two_pool_all_fixVmaxYuk_out2<-two_pool_all_fixVmaxYuk(data=d, FACT = 2)
+two_pool_all_fixVmaxYuk_out2$goodness
+
+############################################################################
+#for different substrates
+two_pool_allx_fix_out3<-two_pool_allx_fix(data=d, FACT = 1)
+two_pool_allx_fix_out3$goodness
+#for each separately
+two_pool_allx_fix_out4<-two_pool_allx_fix(data=d, FACT = 3)
+two_pool_allx_fix_out4$goodness
+#in the following code, the Vmax Ys, and k parameters are fixed across treatments
+two_pool_all_fixVmaxYuk_out4<-two_pool_all_fixVmaxYuk(data=d, FACT = 3)
+two_pool_all_fixVmaxYuk_out4$goodness
+###########################################################
+stopImplicitCluster()
+###########################################################
+two_pool_allx_out1$goodness
+two_pool_all_fixVmaxYuk_out2$goodness
+two_pool_allx_fix_out3$goodness
+two_pool_all_fixVmaxYuk_out4$goodness
+
+
+# mean(c(two_pool_allx_out4[[1]]$pars[["RS_0"]],
+#        two_pool_allx_out4[[2]]$pars[["RS_0"]],
+#        two_pool_allx_out4[[3]]$pars[["RS_0"]],
+#        #two_pool_allx_out4[[4]]$pars[["RS_0"]],
+#        two_pool_allx_out4[[5]]$pars[["RS_0"]],
+#        two_pool_allx_out4[[6]]$pars[["RS_0"]]))
+
+
+```
+
+```{r Sub-microbial model overall calibration results, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+
+#results of the previous iteration (not run)
+# two_pool_all_results_par<-rbind(c(two_pool_allx_out1[[1]]$pars[c(1:8)], RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173,
+#                           two_pool_all_fixVmaxYuk_out2[[1]]$pars[1],
+#                           two_pool_all_fixVmaxYuk_out2[[1]]$pars[2],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out2[[1]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173,
+#                           two_pool_all_fixVmaxYuk_out2[[2]]$pars[1],
+#                           two_pool_all_fixVmaxYuk_out2[[2]]$pars[2],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out2[[2]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173,
+#                           two_pool_all_fixVmaxYuk_out2[[3]]$pars[1],
+#                           two_pool_all_fixVmaxYuk_out2[[3]]$pars[2],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out2[[3]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(two_pool_allx_fix_out3[[1]]$pars[c(1:8)], RS_0 = 0.04012019),
+#                         c(two_pool_allx_fix_out3[[2]]$pars[c(1:8)], RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173,
+#                           two_pool_all_fixVmaxYuk_out4[[1]]$pars[c(1:2)],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out4[[1]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173,
+#                           two_pool_all_fixVmaxYuk_out4[[2]]$pars[c(1:2)],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out4[[2]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173,
+#                           two_pool_all_fixVmaxYuk_out4[[3]]$pars[c(1:2)],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out4[[3]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173,
+#                           two_pool_all_fixVmaxYuk_out4[[4]]$pars[c(1:2)],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out4[[4]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173,
+#                           two_pool_all_fixVmaxYuk_out4[[5]]$pars[c(1:2)],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out4[[5]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019),
+#                         c(Vmax = 0.2468173,
+#                           two_pool_all_fixVmaxYuk_out4[[6]]$pars[c(1:2)],
+#                           k = 0.007046304,
+#                           Yu = 0.3731948,
+#                           two_pool_all_fixVmaxYuk_out4[[6]]$pars[c(3:5)],
+#                           RS_0 = 0.04012019)
+#                         )
+# two_pool_all_results_good<-rbind(two_pool_allx_out1$goodness,
+#                                two_pool_all_fixVmaxYuk_out2$goodness,
+#                                two_pool_allx_fix_out3$goodness,
+#                                two_pool_all_fixVmaxYuk_out4$goodness)
+#
+# write.csv(two_pool_all_results_par, file = c("./two_pool_all_results_par.csv"), row.names = F)
+# write.csv(two_pool_all_results_good, file = c("./two_pool_all_results_good.csv"), row.names = F)
+
+two_pool_all_results_par<-read.csv("two_pool_all_results_par.csv")
+two_pool_all_results_good<-read.csv("two_pool_all_results_good.csv")
+two_pool_all_results_good$variable<-rep(c("Respiration", "Proteins", "DNA"), 4)
+two_pool_all_results_good[two_pool_all_results_good$R2<0, "R2"]<-0
+
+
+t.s6.1<-data.frame(Name=c("All", "Broth", "Glass", "Wool",
+                    "Cellobiose", "Glucose",
+                    "Broth - Cellobiose", "Broth - Glucose",
+                    "Glass - Cellobiose", "Glass - Glucose",
+                    "Wool - Cellobiose", "Wool - Glucose"),
+                   Vmax=two_pool_all_results_par[,1],
+                   Km=two_pool_all_results_par[,2],
+                   f=two_pool_all_results_par[,3],
+                   k=two_pool_all_results_par[,4],
+                   Yu=two_pool_all_results_par[,5],
+                   fpr=two_pool_all_results_par[,6],
+                   fps=two_pool_all_results_par[,7],
+                   fds=two_pool_all_results_par[,8],
+                   RS_0=two_pool_all_results_par[,9])
+
+options(knitr.kable.NA = '')
+
+
+kable(t.s6.1, digits = c(0, 2, 2, 2, 3, 2, 2, 2, 3, 3), align = 'c', "html", booktabs=T, col.names = c(" ","v", 'k', 'f', 'm', 'Y', '$\\B_{R-Proteins}$', '$\\B_{S-Proteins}$', '$\\B_{S-DNA}$', '$\\RS_{0}$'), row.names=F, caption = "_**Table S12:** Sub-microbial model parameters calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>%
+  kable_styling() %>%
+  group_rows("All", 1, 1) %>%
+  group_rows("Structure", 2, 4) %>%
+  group_rows("Substrate", 5, 6) %>%
+  group_rows("Each", 7, 12)
+
+kable(two_pool_all_results_good[, c(1, 4:7)], digits = c(0, 2, 2, 2, 2), align = 'c', "html", booktabs=T, col.names = c(" " , 'Log Likelihood', '$\\R^{2}$', 'Number of parameters', 'AIC'), row.names=F, caption = "_**Table S13:** Goodness of fit of Sub-microbial model calibrated against respiration rate, protein and DNA concentration across all treatments (All), for different levels of incubation system complexity separately (Structure), for Glucose and Celluloze treatments separately (Substrate), and for all experimental treatments separatelly (Each). See Materials and Methods for symbols explanation._") %>%
+  kable_styling() %>%
+  group_rows("All", 1, 3) %>%
+  group_rows("Structure", 4, 6) %>%
+  group_rows("Substrate", 7, 9) %>%
+  group_rows("Each", 10, 12)
+
+```
+
+```{r}
+
+fpars<-t.s6.1[c(2:4), ]
+fpars$SA<-c(0, 332, 400)
+
+fpars$Km.sd<-c(summary(two_pool_all_fixVmaxYuk_out2[[1]]$par_prof)[2,1],
+               summary(two_pool_all_fixVmaxYuk_out2[[2]]$par_prof)[2,1],
+               summary(two_pool_all_fixVmaxYuk_out2[[3]]$par_prof)[2,1])
+fpars$fr.sd<-c(summary(two_pool_all_fixVmaxYuk_out2[[1]]$par_prof)[2,4]+
+                 summary(two_pool_all_fixVmaxYuk_out2[[1]]$par_prof)[2,5],
+               summary(two_pool_all_fixVmaxYuk_out2[[2]]$par_prof)[2,4]+
+                 summary(two_pool_all_fixVmaxYuk_out2[[2]]$par_prof)[2,5],
+               summary(two_pool_all_fixVmaxYuk_out2[[3]]$par_prof)[2,4]+
+                 summary(two_pool_all_fixVmaxYuk_out2[[3]]$par_prof)[2,5])
+
+grid.arrange(ggplot(fpars, aes(SA, Km)) +
+  geom_point(cex=6, pch=21, aes(fill = Name)) + theme_min + stat_smooth(method=lm, se = F, colour="grey30") +
+  geom_errorbar(aes(ymin=Km-Km.sd, ymax=Km+Km.sd)) +
+  scale_fill_manual(values=c("black", "grey", "white")) +
+  xlab(expression(paste("Total surface area (", cm^{2}, ")"))) +
+  ylab(expression(paste("Affinity to substrate (", mu, "mol ", L^{-1}, ")"))) +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.75, 0.75))+
+  ggtitle("A)"),
+  ggplot(fpars, aes(SA, fpr+fps)) +
+  geom_point(cex=6, pch=21, aes(fill = Name), show.legend = F) + theme_min + stat_smooth(method=lm, se = F, colour="grey30") +
+  geom_errorbar(aes(ymin=fpr+fps-fr.sd, ymax=fpr+fps+fr.sd)) +
+  scale_fill_manual(values=c("black", "grey", "white")) +
+  xlab(expression(paste("Total surface area (", cm^{2}, ")"))) +
+  ylab("Abundance of proteins in cells") + ggtitle("B)"),
+  nrow=1)
+
+```
+
+```{r}
+source("./Rscripts/two_pool_plot.R")
+
+sim_out<-two_pool_plot(fpars)
+
+bplot<-m0 %>% filter(Substrate=="Glucose" | Substrate=="Cellobiose") %>%
+  group_by(Structure, Substrate, Day) %>%
+  summarise(P = mean(Prot.in*0.46/12.01/4, na.rm=T),
+            P.sd = sd(Prot.in*0.46/12.01/4, na.rm=T),
+            D = mean(DNA*0.51/12.01/4, na.rm=T),
+            D.sd = sd(DNA*0.51/12.01/4, na.rm=T))
+bplot$Struc<-NA
+
+for(i in 1:nrow(bplot)){
+  if(bplot$Structure[i]=="Broth"){
+    bplot$Struc[i]<-"BROTH"
+  }else{
+    if(bplot$Structure[i]=="Glass wool"){
+      bplot$Struc[i]<-"WOOL"
+    }else{
+      bplot$Struc[i]<-"GLASS"
+    }
+  }
+}
+
+bplot$Struc<-factor(bplot$Struc, levels=c("BROTH", "GLASS", "WOOL"))
+
+ggplot(bplot, aes(x=Day*24))+
+    geom_point(cex=6, aes(y=P, colour="Cellular Proteins", shape=Substrate)) +
+  geom_errorbar(aes(ymin=P-P.sd, ymax=P+P.sd, color="Cellular Proteins"), width=0.0001, lwd=1)+
+  geom_line(data = sim_out, aes(x=time, y=Protc, colour="Cellular Proteins"), lwd=1.5)+
+    geom_point(cex=6, aes(y=D*28, colour="DNA", shape=Substrate))+
+  geom_errorbar(aes(ymin=(D-D.sd)*28, ymax=(D+D.sd)*28, color="DNA"), width=0.0001, lwd=1)+
+  geom_line(data = sim_out, aes(x=time, y=DNAc*28, colour="DNA"), lwd=1.5)+
+    scale_y_continuous(sec.axis = sec_axis(~./28,
+                       name = expression(paste("DNA (", mu ,"mol(",C[DNA],")" ,ml^{-1}, ")"))), limits = c(0, 3))+
+    scale_colour_manual(values = c( "black", "grey60"))+
+    labs(y = expression(paste("Cellular Proteins (", mu ,"mol(",C[Proteins],")" ,ml^{-1}, ")")),
+         x = "Time (h)")+
+    theme_min + facet_wrap(~Struc, ncol=1) + expand_limits(x = 0, y = 0) +
+  theme(legend.title = element_blank(),
+        legend.direction = "horizontal",
+        legend.spacing.y = unit(2.6, "in"),
+        legend.spacing.x = unit(0.05, "in"),
+        legend.position = c(0.65, 0.45),
+        legend.background = element_blank(),
+        )
+
+
+source("./Rscripts/monod_plot.R")
+sim_monod_out<-monod_plot(t.s4.1)
+
+bplot$Struc<-factor(bplot$Struc, levels=c("BROTH", "GLASS", "WOOL"))
+
+ggplot(bplot, aes(x=Day*24))+
+    geom_point(cex=6, aes(y=P, colour="Cellular Proteins", shape=Substrate)) +
+  geom_errorbar(aes(ymin=P-P.sd, ymax=P+P.sd, color="Cellular Proteins"), width=0.0001, lwd=1)+
+  geom_line(data = sim_out, aes(x=time, y=Protc, colour="Cellular Proteins"), lwd=1.5)+
+  geom_line(data = sim_monod_out, aes(x=time, y=Protc, colour="Cellular Proteins"), lwd=1, linetype="dashed")+
+    geom_point(cex=6, aes(y=D*28, colour="DNA", shape=Substrate))+
+  geom_errorbar(aes(ymin=(D-D.sd)*28, ymax=(D+D.sd)*28, color="DNA"), width=0.0001, lwd=1)+
+  geom_line(data = sim_out, aes(x=time, y=DNAc*28, colour="DNA"), lwd=1.5)+
+  geom_line(data = sim_monod_out, aes(x=time, y=DNAc*28, colour="DNA"), lwd=1, linetype="dashed")+
+    scale_y_continuous(sec.axis = sec_axis(~./28,
+                       name = expression(paste("DNA (", mu ,"mol(",C[DNA],")" ,ml^{-1}, ")"))), limits = c(0, 3))+
+    scale_colour_manual(values = c( "black", "grey60"))+
+    labs(y = expression(paste("Cellular Proteins (", mu ,"mol(",C[Proteins],")" ,ml^{-1}, ")")),
+         x = "Time (h)")+
+    theme_min + facet_wrap(~Struc, ncol=1) + expand_limits(x = 0, y = 0) +
+  theme(legend.title = element_blank(),
+        legend.direction = "horizontal",
+        legend.spacing.y = unit(2.6, "in"),
+        legend.spacing.x = unit(0.05, "in"),
+        legend.position = c(0.65, 0.45),
+        legend.background = element_blank(),
+        )
+
+ggplot(sim_out, aes(x=time))+
+    geom_line(lwd=1.5, aes(y=Protc/(R+S)*100, colour="Cellular Proteins")) +
+    geom_line(lwd=1.5, aes(y=DNAc/(R+S)*15*100, colour="DNA"))+
+    scale_y_continuous(sec.axis = sec_axis(~./15,
+                       name = expression(paste(frac(C[DNA], Biomass)%*%100))))+
+    scale_colour_manual(values = c( "black", "grey60"))+
+    labs(y = expression(paste(frac(C[Proteins], Biomass)%*%100)),
+         x = "Time (h)")+
+    theme_min + facet_wrap(~Struc, ncol=1) + expand_limits(x = 0, y = 0) +
+  theme(legend.title = element_blank(),
+        legend.direction = "horizontal",
+        legend.spacing.y = unit(2.6, "in"),
+        legend.spacing.x = unit(0.05, "in"),
+        legend.position = c(0.55, 0.45),
+        legend.background = element_blank(),
+        )
+
+
+```
