@@ -1,12 +1,10 @@
-﻿# History files
+# History files
 .Rhistory
 .Rapp.history
 
 # Session Data files
 *.RData
 
-#scripts for parameters estimation
-data_analysis.R
 
 # Example code in package build process
 *-Ex.R
@@ -19,6 +17,7 @@ data_analysis.R
 
 # RStudio files
 .Rproj.user/
+*.Rproj
 
 # produced vignettes
 vignettes/*.html
@@ -37,26 +36,6 @@ vignettes/*.pdf
 *.md
 *.tex
 
-# Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
-rsconnect/
-
-#figures
-*.pdf
-FIGURES/
-R/
-OLD/
-
 #html output
 *.html
-
-#Community data
-fungi.csv
-bacteria.csv
-
-#Supplementary information data
-monodplus_FigS1.csv
-monod_FigS1.csv
-
-#Old version of the code
-Si_code_ns.Rmd
 
